@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #5e203b;
+  --color-primary-muted: #9d7988;
+
+  --color-secondary: #d0a45f;
+  --color-secondary-dark: #d6a642;
+  --color-secondary-muted: #c8aa7b;
+  --color-secondary-light: #e7d6b8;
+
+  --color-accent: #154a32;
+
+  --color-background: #f8f7f3;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --foreground: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+@layer utilities {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-2xl font-semibold transition duration-150 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white shadow-lg shadow-primary/20 hover:bg-[#4a1a2f];
+  }
+
+  .btn-gold {
+    @apply bg-secondary text-white shadow-lg shadow-secondary/20 hover:bg-secondary-dark;
+  }
+
+  .btn-secondary {
+    @apply border border-slate-200 bg-white text-slate-700 hover:bg-slate-100;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-primary hover:bg-slate-100;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-sm;
+  }
+
+  .btn-md {
+    @apply px-5 py-3 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-6 py-4 text-base;
+  }
+}
+
+::selection {
+  background: rgba(94, 32, 59, 0.15);
+}
+
+/* Custom Map InfoWindow Styling */
+.gm-style-iw {
+  padding: 0 !important;
+  max-width: 280px !important;
+  background: white !important;
+  border-radius: 24px !important;
+  box-shadow: 0 10px 25px rgba(94, 32, 59, 0.08) !important;
+}
+
+.gm-style-iw-d {
+  overflow: hidden !important;
+}
+
+.gm-style-iw-tc::after {
+  background: white !important;
+}
+
+.gm-ui-hover-effect {
+  top: 8px !important;
+  right: 8px !important;
+  background: #f8f7f3 !important;
+  border-radius: 50% !important;
+}

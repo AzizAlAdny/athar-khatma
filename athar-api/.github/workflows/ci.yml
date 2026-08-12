@@ -1,0 +1,79 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: ['8.2']
+    
+    defaults:
+      run:
+        working-directory: ./athar-api
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, imagick
+          coverage: none
+      
+      - name: Copy .env
+        run: cp .env.example .env
+      
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      
+      - name: Generate application key
+        run: php artisan key:generate
+      
+      - name: Run migrations
+        run: php artisan migrate --force
+      
+      - name: Clear cache
+        run: php artisan cache:clear && php artisan config:clear
+      
+      - name: Run tests
+        run: php artisan test
+      
+      - name: Run Pint (Laravel Pint)
+        run: vendor/bin/pint --test
+      
+      - name: PHP Security Checker
+        uses: symfonycorp/security-checker-action@v5
+        with:
+          lock: athar-api/composer.lock
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./athar-api
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, imagick
+      
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      
+      - name: Check PHP syntax
+        run: find . -name "*.php" -not -path "./vendor/*" -not -path "./storage/*" -not -path "./bootstrap/cache/*" -exec php -l {} \; | grep -v "No syntax errors"

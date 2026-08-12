@@ -1,0 +1,137 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use App\Models\Khatma;
+use App\Models\Gift;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class SecurityTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_user_cannot_access_other_users_khatma()
+    {
+        $user1 = User::factory()->create(['role' => 'khatma']);
+        $user2 = User::factory()->create(['role' => 'khatma']);
+
+        $gift = Gift::factory()->create();
+        $khatma = Khatma::factory()->create([
+            'user_id' => $user2->id,
+            'completion_date' => now()->addDays(7),
+            'type' => 'فردية',
+            'status' => 'active',
+            'impact_score' => 20,
+        ]);
+
+        $token = $user1->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_user_can_access_own_khatma()
+    {
+        $user = User::factory()->create(['role' => 'khatma']);
+
+        $gift = Gift::factory()->create();
+        $khatma = Khatma::factory()->create([
+            'user_id' => $user->id,
+            'completion_date' => now()->addDays(7),
+            'type' => 'فردية',
+            'status' => 'active',
+            'impact_score' => 20,
+        ]);
+
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+
+        $response->assertStatus(200);
+    }
+
+    public function test_admin_can_access_any_khatma()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'khatma']);
+
+        $gift = Gift::factory()->create();
+        $khatma = Khatma::factory()->create([
+            'user_id' => $user->id,
+            'completion_date' => now()->addDays(7),
+            'type' => 'فردية',
+            'status' => 'active',
+            'impact_score' => 20,
+        ]);
+
+        $token = $admin->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+
+        $response->assertStatus(200);
+    }
+
+    public function test_user_cannot_access_other_users_profile()
+    {
+        $user1 = User::factory()->create(['role' => 'khatma']);
+        $user2 = User::factory()->create(['role' => 'khatma']);
+
+        $token = $user1->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)->get("/api/users/{$user2->id}/profile");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_unauthenticated_user_cannot_access_protected_routes()
+    {
+        $response = $this->getJson('/api/khatmas');
+        $response->assertStatus(401);
+
+        $response = $this->getJson('/api/user');
+        $response->assertStatus(401);
+    }
+
+    public function test_registration_prevents_admin_role_assignment()
+    {
+        $response = $this->postJson('/api/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'admin',
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertDatabaseMissing('users', [
+            'email' => 'test@example.com',
+            'role' => 'admin',
+        ]);
+    }
+
+    public function test_mass_assignment_prevention_in_need_creation()
+    {
+        $user = User::factory()->create(['role' => 'seeker']);
+        $gift = Gift::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withToken($token)->postJson('/api/needs', [
+            'gift_id' => $gift->id,
+            'description' => 'Test need',
+            'city' => 'Riyadh',
+            'latitude' => 24.7136,
+            'longitude' => 46.6753,
+            'status' => 'fulfilled', // Attempt to override status
+            'user_id' => 999, // Attempt to override user_id
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('needs', [
+            'user_id' => $user->id, // Should use authenticated user's ID
+            'status' => 'open', // Should use default status
+        ]);
+    }
+}
