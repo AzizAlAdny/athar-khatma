@@ -1,0 +1,96 @@
+# Dependencies
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+
+# Laravel
+athar-api/storage/
+athar-api/bootstrap/cache/
+athar-api/.env
+athar-api/.env.backup
+athar-api/.env.production
+athar-api/.env.local
+athar-api/hot
+athar-api/public/hot
+athar-api/public/storage
+athar-api/public/build
+athar-api/public/vendor
+
+# Next.js
+client/.next/
+client/out/
+client/build/
+client/.turbo/
+client/.env.local
+client/.env.production.local
+client/.env.development.local
+client/.env.test.local
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+athar-api/storage/logs/
+athar-api/storage/framework/cache/
+athar-api/storage/framework/sessions/
+athar-api/storage/framework/views/
+
+# Cache
+athar-api/bootstrap/cache/config.php
+athar-api/bootstrap/cache/services.php
+athar-api/bootstrap/cache/routes-v7.php
+athar-api/bootstrap/cache/packages.php
+
+# Testing
+athar-api/phpunit.xml
+athar-api/.phpunit.result.cache
+athar-api/.phpunit.cache
+
+# Build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Session
+athar-api/storage/framework/sessions/*
+
+# Keys
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

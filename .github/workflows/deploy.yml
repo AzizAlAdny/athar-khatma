@@ -1,0 +1,111 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  backend-deploy:
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: production
+      url: https://api.your-domain.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, imagick
+      
+      - name: Install Composer dependencies
+        working-directory: ./athar-api
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+      
+      - name: Copy production environment
+        working-directory: ./athar-api
+        run: cp .env.production.example .env
+      
+      - name: Generate application key
+        working-directory: ./athar-api
+        run: php artisan key:generate
+      
+      - name: Run migrations
+        working-directory: ./athar-api
+        run: php artisan migrate --force
+      
+      - name: Clear and cache config
+        working-directory: ./athar-api
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+      
+      - name: Optimize for production
+        working-directory: ./athar-api
+        run: php artisan optimize
+      
+      - name: Deploy to server (SSH)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/athar-api
+            git pull origin main
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize
+            sudo systemctl reload php-fpm
+            sudo systemctl reload nginx
+
+  frontend-deploy:
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: production
+      url: https://your-domain.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci
+      
+      - name: Build Next.js
+        working-directory: ./client
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.APP_URL }}
+      
+      - name: Deploy to server (SSH)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/client
+            git pull origin main
+            npm ci
+            npm run build
+            pm2 restart client || pm2 start npm --name "client" -- start
