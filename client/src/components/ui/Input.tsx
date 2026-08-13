@@ -8,6 +8,7 @@ interface BaseProps {
   icon?: LucideIcon;
   error?: string | null;
   containerClassName?: string;
+  disabled?: boolean;
 }
 
 type InputProps = BaseProps & InputHTMLAttributes<HTMLInputElement> & { as?: 'input' };
@@ -21,7 +22,9 @@ export default function Input(props: ComponentProps) {
   const baseClasses = `w-full px-5 py-3.5 rounded-2xl border outline-none transition-all duration-200 text-primary font-semibold placeholder:text-slate-400 placeholder:font-normal bg-slate-50/50 hover:bg-slate-50 focus:bg-white ${
     Icon ? 'pr-12' : ''
   } ${
-    error
+    (rest as any).disabled
+      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200'
+      : error
       ? 'border-red-500 focus:ring-4 focus:ring-red-500/10'
       : 'border-slate-100 focus:ring-4 focus:ring-primary/5 focus:border-primary'
   }`;

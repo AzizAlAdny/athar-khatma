@@ -76,6 +76,7 @@ export default function NeedManagement() {
                 <th className="pb-5 font-black text-right">الهدية</th>
                 <th className="pb-5 font-black text-right">الوصف</th>
                 <th className="pb-5 font-black text-right">المدينة</th>
+                <th className="pb-5 font-black text-right">الحي</th>
                 <th className="pb-5 font-black text-right">تاريخ الإنشاء</th>
                 <th className="pb-5 font-black text-right pr-4">الإجراءات</th>
               </tr>
@@ -89,6 +90,7 @@ export default function NeedManagement() {
                     {need.description || '-'}
                   </td>
                   <td className="py-6 text-slate-600 font-semibold">{need.city || '-'}</td>
+                  <td className="py-6 text-slate-600 font-semibold">{need.neighborhood || '-'}</td>
                   <td className="py-6 text-slate-600 font-semibold">
                     {need.created_at_human || '-'}
                   </td>

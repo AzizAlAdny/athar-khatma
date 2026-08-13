@@ -8,7 +8,7 @@ import {
   InfoWindow
 } from '@vis.gl/react-google-maps';
 import AtharProfile from '../ui/AtharProfile';
-import { getMapPins, getKhatmaProfile, KhatmaPin } from '@/services/api';
+import { getMapPins, getPublicProfile, KhatmaPin } from '@/services/api';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { ChevronDown, MapPin, Filter, X } from 'lucide-react';
@@ -32,12 +32,12 @@ const ImpactMap = () => {
   const [mapError, setMapError] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string>('الرياض');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [cities, setCities] = useState<string[]>([]);
 
   useEffect(() => {
     getMapPins()
       .then(data => {
+        console.log('Map pins received:', data);
         setPins(data);
         // Apply initial filter (Riyadh)
         const initialFiltered = data.filter(p => p.city === 'الرياض');
@@ -49,17 +49,13 @@ const ImpactMap = () => {
           setCities(availableCities);
         }
       })
-      .catch(err => console.error('Map fetch error:', err));
+      .catch(err => {
+        console.error('Map fetch error:', err);
+        setMapError(true);
+      });
   }, []);
 
-  // Update map camera when city changes
-  useEffect(() => {
-    if (mapInstance && CITY_COORDINATES[selectedCity]) {
-      const { lat, lng, zoom } = CITY_COORDINATES[selectedCity];
-      mapInstance.setCenter({ lat, lng });
-      mapInstance.setZoom(zoom);
-    }
-  }, [selectedCity, mapInstance]);
+
 
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
@@ -76,7 +72,7 @@ const ImpactMap = () => {
   };
 
   const openProfile = (id: number) => {
-    getKhatmaProfile(id)
+    getPublicProfile(id)
       .then(data => setSelectedProfile(data))
       .catch(err => console.error('Profile fetch error:', err));
   };
@@ -86,7 +82,7 @@ const ImpactMap = () => {
   };
 
   const getGlowColor = (level: number) => {
-    switch(level) {
+    switch (level) {
       case 3: return '#D0A45F'; // Main Gold
       case 2: return '#154A32'; // Deep Green
       case 1: return '#5E203B'; // Deep Burgundy
@@ -131,9 +127,8 @@ const ImpactMap = () => {
             <div className="absolute top-full mt-2 left-0 w-full bg-white rounded-2xl shadow-xl border border-secondary-light/10 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
               <button
                 onClick={() => handleCityChange('all')}
-                className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-gray-50 ${
-                  selectedCity === 'all' ? 'text-secondary bg-background/50' : 'text-primary-muted'
-                }`}
+                className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-gray-50 ${selectedCity === 'all' ? 'text-secondary bg-background/50' : 'text-primary-muted'
+                  }`}
               >
                 جميع المدن
               </button>
@@ -141,9 +136,8 @@ const ImpactMap = () => {
                 <button
                   key={city}
                   onClick={() => handleCityChange(city)}
-                  className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-gray-50 last:border-0 ${
-                    selectedCity === city ? 'text-secondary bg-background/50' : 'text-primary-muted'
-                  }`}
+                  className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-gray-50 last:border-0 ${selectedCity === city ? 'text-secondary bg-background/50' : 'text-primary-muted'
+                    }`}
                 >
                   {city}
                 </button>
@@ -165,6 +159,8 @@ const ImpactMap = () => {
           <Map
             defaultCenter={CITY_COORDINATES['الرياض']}
             defaultZoom={CITY_COORDINATES['الرياض'].zoom}
+            center={CITY_COORDINATES[selectedCity]}
+            zoom={CITY_COORDINATES[selectedCity].zoom}
             mapId="ATHAR_IMPACT_MAP"
             className="w-full h-full"
             disableDefaultUI={false}
@@ -180,53 +176,63 @@ const ImpactMap = () => {
               />
             ))}
 
-            {infoWindowData && (
-              <InfoWindow
-                position={infoWindowData.location}
-                onCloseClick={() => setInfoWindowData(null)}
-                headerDisabled
-              >
-                <div className="p-3 pr-8 text-right relative min-w-[200px]" dir="rtl">
-                  {/* Custom Close Button */}
-                  <button
-                    onClick={() => setInfoWindowData(null)}
-                    className="absolute top-0 left-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                    aria-label="Close"
-                  >
-                    <X size={18} />
-                  </button>
+            {infoWindowData && (() => {
+              const lat = typeof infoWindowData.location.lat === 'string' ? parseFloat(infoWindowData.location.lat) : infoWindowData.location.lat;
+              const lng = typeof infoWindowData.location.lng === 'string' ? parseFloat(infoWindowData.location.lng) : infoWindowData.location.lng;
 
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
-                    <h3 className="font-black text-lg text-[#154A32] leading-tight">{infoWindowData.user_name}</h3>
+              if (isNaN(lat) || isNaN(lng)) {
+                console.error('Invalid InfoWindow coordinates:', infoWindowData.location);
+                return null;
+              }
+
+              return (
+                <InfoWindow
+                  position={{ lat, lng }}
+                  onCloseClick={() => setInfoWindowData(null)}
+                  headerDisabled
+                >
+                  <div className="p-3 pr-8 text-right relative min-w-[200px]" dir="rtl">
+                    {/* Custom Close Button */}
+                    <button
+                      onClick={() => setInfoWindowData(null)}
+                      className="absolute top-0 left-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                      aria-label="Close"
+                    >
+                      <X size={18} />
+                    </button>
+
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
+                      <h3 className="font-black text-lg text-[#154A32] leading-tight">{infoWindowData.user_name}</h3>
+                    </div>
+
+                    <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                      <MapPin size={10} /> {selectedCity === 'all' ? 'المملكة العربية السعودية' : selectedCity}
+                    </p>
+
+                    <p className="text-sm text-gray-600 mb-3 border-t border-gray-50 pt-2">
+                      إجمالي الأثر: <span className="font-black text-[#D0A45F] text-base">{infoWindowData.total_impact || 0}</span>
+                    </p>
+
+                    <div className="flex flex-wrap gap-1 justify-end mb-4">
+                      {infoWindowData.services.slice(0, 3).map(s => (
+                        <span key={s} className="px-2 py-0.5 bg-background border border-secondary-light/10 rounded-lg text-[9px] font-bold text-primary-muted">{s}</span>
+                      ))}
+                      {infoWindowData.services.length > 3 && (
+                        <span className="px-2 py-0.5 bg-gray-50 rounded-lg text-[9px] font-bold text-gray-400">+{infoWindowData.services.length - 3}</span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => openProfile(infoWindowData.user_id)}
+                      className="w-full py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-[#4a1a2f] transition-all shadow-md shadow-primary/10 active:scale-95"
+                    >
+                      عرض الملف الشخصي
+                    </button>
                   </div>
-
-                  <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                    <MapPin size={10} /> {selectedCity === 'all' ? 'المملكة العربية السعودية' : selectedCity}
-                  </p>
-
-                  <p className="text-sm text-gray-600 mb-3 border-t border-gray-50 pt-2">
-                    إجمالي الأثر: <span className="font-black text-[#D0A45F] text-base">{infoWindowData.total_impact || 0}</span>
-                  </p>
-
-                  <div className="flex flex-wrap gap-1 justify-end mb-4">
-                    {infoWindowData.services.slice(0, 3).map(s => (
-                      <span key={s} className="px-2 py-0.5 bg-background border border-secondary-light/10 rounded-lg text-[9px] font-bold text-primary-muted">{s}</span>
-                    ))}
-                    {infoWindowData.services.length > 3 && (
-                      <span className="px-2 py-0.5 bg-gray-50 rounded-lg text-[9px] font-bold text-gray-400">+{infoWindowData.services.length - 3}</span>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => openProfile(infoWindowData.user_id)}
-                    className="w-full py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-[#4a1a2f] transition-all shadow-md shadow-primary/10 active:scale-95"
-                  >
-                    عرض الملف الشخصي
-                  </button>
-                </div>
-              </InfoWindow>
-            )}
+                </InfoWindow>
+              );
+            })()}
           </Map>
         </APIProvider>
       </div>
@@ -247,9 +253,20 @@ const ImpactMap = () => {
 };
 
 const CustomMarker = ({ pin, onClick, getGlowColor, getGlowShadow }: any) => {
+  const lat = typeof pin.location.lat === 'string' ? parseFloat(pin.location.lat) : pin.location.lat;
+  const lng = typeof pin.location.lng === 'string' ? parseFloat(pin.location.lng) : pin.location.lng;
+
+  // Validate coordinates before rendering
+  if (isNaN(lat) || isNaN(lng)) {
+    console.error('Invalid coordinates for pin:', pin);
+    return null;
+  }
+
+  const position = { lat, lng };
+
   return (
     <AdvancedMarker
-      position={pin.location}
+      position={position}
       onClick={onClick}
     >
       <div
@@ -309,8 +326,11 @@ const OsmFallback = ({ pins, openProfile }: any) => {
       el.style.border = '2px solid white';
       el.style.cursor = 'pointer';
 
+      const lat = typeof pin.location.lat === 'string' ? parseFloat(pin.location.lat) : pin.location.lat;
+      const lng = typeof pin.location.lng === 'string' ? parseFloat(pin.location.lng) : pin.location.lng;
+
       new maplibregl.Marker(el)
-        .setLngLat([pin.location.lng, pin.location.lat])
+        .setLngLat([lng, lat])
         .setPopup(new maplibregl.Popup({ offset: 25 })
           .setHTML(`
             <div class="p-3 text-right" dir="rtl">

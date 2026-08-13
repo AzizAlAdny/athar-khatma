@@ -60,6 +60,12 @@ export default function CommunityNeeds() {
                     <div className="flex items-center gap-2 text-xs text-gray-400 font-bold mt-3">
                       <MapPin size={12} className="text-secondary" />
                       <span>{need.city || 'الرياض'}</span>
+                      {need.neighborhood && (
+                        <>
+                          <span className="mx-1 opacity-50">•</span>
+                          <span>{need.neighborhood}</span>
+                        </>
+                      )}
                       <span className="mx-1 opacity-50">•</span>
                       <span>منذ {need.created_at_human || 'قليل'}</span>
                     </div>

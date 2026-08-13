@@ -149,4 +149,30 @@ class AuthController extends Controller
             }),
         ]);
     }
+
+    public function publicProfile($id)
+    {
+        $user = User::with(['khatmas.services.gift'])->findOrFail($id);
+
+        // Get the latest khatma if it exists
+        $khatma = $user->khatmas->sortByDesc('created_at')->first();
+
+        return response()->json([
+            'id' => $user->id,
+            'user' => [
+                'name' => $user->name,
+                'city' => $user->city,
+            ],
+            'completion_date' => $khatma?->completion_date,
+            'impact_score' => $khatma?->impact_score ?? 0,
+            'achievements' => $khatma ? $khatma->services->map(function ($service) {
+                return [
+                    'gift_name' => $service->gift->name,
+                    'category' => $service->gift->category,
+                    'status' => $service->status,
+                    'date' => $service->created_at->format('Y-m-d'),
+                ];
+            }) : [],
+        ]);
+    }
 }

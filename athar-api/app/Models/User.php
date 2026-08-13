@@ -27,6 +27,7 @@ class User extends Authenticatable
         'role',
         'bio',
         'city',
+        'neighborhood',
         'latitude',
         'longitude',
     ];

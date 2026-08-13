@@ -3,7 +3,7 @@ import Link from 'next/link';
 import ImpactMap from '../components/maps/ImpactMap';
 import AppShell from '../components/ui/AppShell';
 import Hero from '../components/ui/Hero';
-import { getStats } from '@/services/api';
+import { getPublicStats } from '@/services/api';
 import {
   BookOpen,
   Heart,
@@ -27,7 +27,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    getStats()
+    getPublicStats()
       .then(data => {
         setStats(data);
         setLoading(false);

@@ -20,6 +20,8 @@ Route::middleware('throttle:5,1')->group(function () {
 Route::get('/gifts', [GiftController::class, 'index']);
 Route::get('/needs', [NeedController::class, 'index']);
 Route::middleware('throttle:60,1')->get('/map', [KhatmaController::class, 'map']);
+Route::get('/public-stats', [StatsController::class, 'publicStats']);
+Route::get('/users/{id}/public-profile', [AuthController::class, 'publicProfile']);
 
 // Health check endpoint
 Route::get('/health', function () {

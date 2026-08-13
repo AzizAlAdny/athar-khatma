@@ -14,6 +14,7 @@ export interface Need {
   gift?: { name: string; icon?: string };
   description?: string;
   city?: string;
+  neighborhood?: string;
   created_at_human?: string;
   [key: string]: any;
 }
@@ -150,8 +151,9 @@ export const getGifts = () => fetchJson<Gift[]>('/gifts');
 export const getNeeds = () => fetchJson<Need[]>('/needs');
 export const getMapPins = () => fetchJson<KhatmaPin[]>('/map');
 export const getKhatmaProfile = (id: number) => fetchJson<KhatmaProfile>(`/users/${id}/profile`);
+export const getPublicProfile = (id: number) => fetchJson<KhatmaProfile>(`/users/${id}/public-profile`);
 export const getUserKhatmas = () => fetchJson<{ khatmas: any[], total_impact_score: number }>('/khatmas');
-export const getStats = () => fetchJson<Record<string, any>>('/stats');
+export const getPublicStats = () => fetchJson<Record<string, any>>('/public-stats');
 export const getAdminStats = () => fetchJson<AdminStats>('/stats');
 export const getAdminUsers = (params?: { role?: string; search?: string; page?: number; per_page?: number }) => {
   const queryString = new URLSearchParams(params as any).toString();
@@ -205,8 +207,9 @@ export const createNeed = (payload: {
   gift_id: number;
   description: string;
   city?: string;
-  lat?: number;
-  lng?: number;
+  neighborhood?: string;
+  latitude?: number;
+  longitude?: number;
 }) =>
   fetchJson<Need>('/needs', {
     method: 'POST',

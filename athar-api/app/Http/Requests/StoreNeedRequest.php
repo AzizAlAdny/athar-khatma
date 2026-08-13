@@ -27,6 +27,7 @@ class StoreNeedRequest extends FormRequest
             'gift_id' => 'required|exists:gifts,id',
             'description' => 'required|string|max:1000',
             'city' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
         ];
@@ -45,6 +46,7 @@ class StoreNeedRequest extends FormRequest
             'description.required' => 'الوصف مطلوب',
             'description.max' => 'الوصف يجب أن لا يتجاوز 1000 حرف',
             'city.max' => 'اسم المدينة يجب أن لا يتجاوز 255 حرف',
+            'neighborhood.max' => 'اسم الحي يجب أن لا يتجاوز 255 حرف',
             'latitude.numeric' => 'خط العرض يجب أن يكون رقماً',
             'latitude.between' => 'خط العرض يجب أن يكون بين -90 و 90',
             'longitude.numeric' => 'خط الطول يجب أن يكون رقماً',

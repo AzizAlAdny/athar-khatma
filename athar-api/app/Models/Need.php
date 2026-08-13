@@ -14,6 +14,7 @@ class Need extends Model
         'gift_id',
         'description',
         'city',
+        'neighborhood',
         'latitude',
         'longitude',
         'status',

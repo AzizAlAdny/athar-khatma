@@ -66,8 +66,8 @@ class KhatmaRepository implements KhatmaRepositoryInterface
                     'user_name' => $first->user->name,
                     'city' => $first->user->city,
                     'location' => [
-                        'lat' => $first->user->latitude,
-                        'lng' => $first->user->longitude,
+                        'lat' => (float) $first->user->latitude,
+                        'lng' => (float) $first->user->longitude,
                     ],
                     'glow_level' => $glowLevel,
                     'services' => $userKhatmas->flatMap->services->pluck('gift.name')->unique()->values(),

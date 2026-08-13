@@ -93,7 +93,7 @@ class KhatmaService
         $khatmas = $this->khatmaRepository->findByUserId($userId);
 
         return [
-            'khatmas' => $khatmas,
+            'khatmas' => KhatmaResource::collection($khatmas),
             'total_impact_score' => $khatmas->sum('impact_score')
         ];
     }

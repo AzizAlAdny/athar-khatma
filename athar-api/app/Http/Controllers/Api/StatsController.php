@@ -12,6 +12,16 @@ use Illuminate\Http\Request;
 
 class StatsController extends Controller
 {
+    public function publicStats()
+    {
+        return response()->json([
+            'total_khatmas' => Khatma::count(),
+            'active_initiatives' => Khatma::where('status', KhatmaConstants::STATUS_ACTIVE)->count(),
+            'total_volunteers' => User::where('role', 'khatma')->count(),
+            'impact_hours' => KhatmaService::count() * KhatmaConstants::IMPACT_HOURS_PER_SERVICE,
+        ]);
+    }
+
     public function index()
     {
         $recent_activities = Khatma::with(['user', 'services.gift'])

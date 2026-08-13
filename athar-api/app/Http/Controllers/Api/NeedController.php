@@ -35,6 +35,7 @@ class NeedController extends Controller
             'gift_id' => $request->gift_id,
             'description' => strip_tags($request->description),
             'city' => $request->city ? strip_tags($request->city) : null,
+            'neighborhood' => $request->neighborhood ? strip_tags($request->neighborhood) : null,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
         ]);
