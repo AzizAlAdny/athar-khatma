@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
 import { User, Mail, Lock, MapPin, Briefcase, Gift, ArrowLeft } from 'lucide-react';
-import { register, getGifts, Gift as GiftType, saveAuthUser } from '@/services/api';
+import { register, getGifts, Gift as GiftType } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 interface Neighborhood {
@@ -143,8 +143,7 @@ export default function Register() {
       };
 
       const data = await register(payload as any);
-      login(data.user);
-      saveAuthUser(data.user);
+      login(data.user, data.token);
       router.push('/auth/verify');
     } catch (err: any) {
       setErrors({ general: err.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً.' });

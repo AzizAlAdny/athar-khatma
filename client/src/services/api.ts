@@ -75,45 +75,40 @@ export interface PaginatedUsers {
 
 export interface AuthResponse {
   user: User;
+  token?: string;
   message?: string;
 }
 
-// CSRF token bootstrap for cookie-based (stateful) auth.
-// Cross-domain setup: the API's XSRF-TOKEN cookie belongs to the API domain and
-// cannot be read by this app's JavaScript, so we fetch the token in the
-// response body of GET /api/csrf-token and send it via the X-CSRF-TOKEN header.
-let csrfToken: string | null = null;
+// Token-based (Bearer) auth. Cross-domain cookie auth is not viable here:
+// browsers block third-party cookies, so the API's session/XSRF cookies are
+// never stored by this app. Auth happens via a Sanctum personal access token
+// returned by /login and /register, persisted here, and sent as a Bearer header.
+export const authTokenKey = 'auth_token';
 
-async function ensureCsrfToken(): Promise<void> {
-  if (csrfToken) return;
-  const response = await fetch(`${API_BASE}/csrf-token`, {
-    credentials: 'include',
-    headers: { Accept: 'application/json' },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch CSRF token (status ${response.status})`);
-  }
-  const data = await response.json();
-  csrfToken = data.token;
+function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(authTokenKey);
 }
+
+export const saveAuthToken = (token: string) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(authTokenKey, token);
+  }
+};
 
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   headers.set('Accept', 'application/json');
 
-  // For unsafe methods, ensure the CSRF token is present and attach the header.
-  const method = (options?.method || 'GET').toUpperCase();
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    await ensureCsrfToken();
-    if (csrfToken) {
-      headers.set('X-CSRF-TOKEN', csrfToken);
-    }
+  // Attach the bearer token when present (stateless API — no cookies needed).
+  const token = getStoredToken();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
-    credentials: 'include', // send/receive the session cookie
   });
 
   const text = await response.text();
@@ -179,6 +174,9 @@ export const fetchUser = async () => {
   const res = await fetchJson<{ data: User }>('/user');
   return res.data;
 };
+
+export const logout = () =>
+  fetchJson<{ message: string }>('/logout', { method: 'POST' });
 
 export const logoutAll = () =>
   fetchJson<{ message: string }>('/logout-all', { method: 'POST' });
@@ -266,5 +264,6 @@ export const saveAuthUser = (user: User) => {
 export const clearAuthStorage = () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(authUserKey);
+    localStorage.removeItem(authTokenKey);
   }
 };

@@ -71,8 +71,9 @@ services:
         sync: false
 
       # --- Auth ---
+      # Bearer tokens (Authorization header) — 7-day lifetime.
       - key: SANCTUM_TOKEN_EXPIRATION
-        value: "60"
+        value: "10080"
 
       # --- Misc ---
       - key: LOG_CHANNEL

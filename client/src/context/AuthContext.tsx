@@ -6,13 +6,15 @@ import {
   authUserKey,
   clearAuthStorage,
   saveAuthUser,
+  saveAuthToken,
+  logout as apiLogout,
   User
 } from '@/services/api';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (userData: User) => void;
+  login: (userData: User, token?: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -42,12 +44,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadStoredAuth();
   }, []);
 
-  const login = (userData: User) => {
+  const login = (userData: User, token?: string) => {
     setUser(userData);
     saveAuthUser(userData);
+    if (token) {
+      saveAuthToken(token);
+    }
   };
 
   const logout = () => {
+    // Best-effort server-side token revocation; clear local state regardless.
+    apiLogout().catch(() => {});
     setUser(null);
     clearAuthStorage();
     router.push('/auth/login');

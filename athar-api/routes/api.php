@@ -22,15 +22,6 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware('signed')
     ->name('api.verification.verify');
 
-// Sanctum CSRF cookie endpoint for first-party SPA (cookie-based auth)
-Route::get('/sanctum/csrf-cookie', [\Laravel\Sanctum\Http\Controllers\CsrfCookieController::class, 'show']);
-
-// CSRF token via response body for cross-domain SPAs: the XSRF-TOKEN cookie is
-// set for the API's domain and therefore NOT readable by JS on the frontend
-// domain. The token is fetched here and sent back via the X-CSRF-TOKEN header
-// (accepted raw by Laravel's VerifyCsrfToken).
-Route::get('/csrf-token', fn (Request $request) => response()->json(['token' => csrf_token()]));
-
 Route::get('/gifts', [GiftController::class, 'index']);
 Route::get('/needs', [NeedController::class, 'index']);
 Route::middleware('throttle:60,1')->get('/map', [KhatmaController::class, 'map']);
@@ -97,4 +88,3 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/needs', [NeedController::class, 'store'])->middleware(['verified']);
     });
 });
-

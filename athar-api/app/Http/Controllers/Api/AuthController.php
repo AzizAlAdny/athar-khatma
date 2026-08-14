@@ -49,9 +49,10 @@ class AuthController extends Controller
             ]);
 
             // Email verification is triggered automatically via the MustVerifyEmail
-            // contract + the Registered event listener. Log in the new user so the
-            // first-party SPA session is established immediately.
-            Auth::login($user);
+            // contract + the Registered event listener. Issue a bearer token for the
+            // SPA (cross-domain session cookies are blocked by browsers, so the
+            // client authenticates via the Authorization header instead).
+            $token = $user->createToken('auth_token', $user->tokenAbilities())->plainTextToken;
 
             $this->auditService->record('register', $user, $request);
             $this->notificationService->notifyAdminNewUser($user);
@@ -59,6 +60,7 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Registration successful. Please verify your email.',
                 'user' => new UserResource($user),
+                'token' => $token,
             ], 201);
         });
     }
@@ -95,10 +97,8 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->firstOrFail();
 
-        // Regenerate the session only for session-capable (SPA) requests.
-        if ($request->hasSession()) {
-            $request->session()->regenerate();
-        }
+        // Issue a bearer token for the SPA (Authorization header auth; no cookies).
+        $token = $user->createToken('auth_token', $user->tokenAbilities())->plainTextToken;
 
         $this->auditService->record('login', $user, $request);
         Log::info('User login successful', [
@@ -109,6 +109,7 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => new UserResource($user),
+            'token' => $token,
         ]);
     }
 

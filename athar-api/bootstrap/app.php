@@ -14,8 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Make first-party SPA API requests stateful (cookie-based session auth)
-        $middleware->statefulApi();
+        // Stateless token-based API: the SPA authenticates via a Sanctum bearer
+        // token in the Authorization header. Cookie-based SPA auth (statefulApi)
+        // is intentionally NOT used because the frontend is served on a different
+        // domain and browsers block the third-party session cookies it needs.
 
         // Apply security headers to all responses
         $middleware->prepend(SecurityHeaders::class);
