@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import { Mail, CheckCircle2, LogOut, RefreshCw } from 'lucide-react';
-import { resendEmailVerification, fetchUser } from '@/services/api';
+import { resendEmailVerification, verifyEmailLink, fetchUser } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function VerifyEmail() {
@@ -13,6 +13,7 @@ export default function VerifyEmail() {
   const [error, setError] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [verifyingLink, setVerifyingLink] = useState(false);
 
   // When the user clicks the email link, the API verifies and redirects here
   // with ?verified=1 — auto-refresh the user and proceed to the dashboard.
@@ -32,6 +33,39 @@ export default function VerifyEmail() {
       })();
     }
   }, [router.query.verified]);
+
+  // Email links land here with the API's signed params
+  // (?id=..&hash=..&expires=..&signature=..). Forward them to the API to
+  // actually mark the email verified, then refresh the user.
+  useEffect(() => {
+    const { id, hash, expires, signature } = router.query;
+    if (!id || !hash || !expires || !signature || typeof id !== 'string') return;
+    if (verifyingLink) return;
+    setVerifyingLink(true);
+    setError(null);
+
+    (async () => {
+      try {
+        await verifyEmailLink(id as string, hash as string, expires as string, signature as string);
+        setMessage('تم التحقق من بريدكِ الإلكتروني بنجاح!');
+        try {
+          const freshUser = await fetchUser();
+          login(freshUser);
+          router.push('/dashboard');
+        } catch {
+          // Verification succeeded, but this browser isn't signed in —
+          // keep the success message; the user can log in afterwards.
+        }
+      } catch (err: any) {
+        setError(
+          err.message ||
+            'رابط التحقق غير صالح أو منتهي الصلاحية. يرجى إعادة إرسال رابط التحقق.'
+        );
+      } finally {
+        setVerifyingLink(false);
+      }
+    })();
+  }, [router.query]);
 
   const handleResend = async () => {
     setError(null);

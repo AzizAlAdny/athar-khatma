@@ -205,8 +205,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Verify an email address via a signed link (clicked from the email).
-     * Marks the email verified and redirects to the frontend verify page.
+     * Verify an email address via a signed link. The SPA calls this with
+     * Accept: application/json (fetch cannot follow a cross-origin redirect
+     * to the frontend), while plain link hits get the redirect.
      */
     public function verifyEmail(Request $request, $id, $hash)
     {
@@ -216,15 +217,25 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid verification link.'], 403);
         }
 
+        $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
         if ($user->hasVerifiedEmail()) {
-            return redirect(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/auth/verify?verified=1');
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Email already verified.', 'verified' => true]);
+            }
+
+            return redirect($frontend . '/auth/verify?verified=1');
         }
 
         $user->markEmailAsVerified();
 
         $this->auditService->record('email_verified', $user, $request);
 
-        return redirect(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/auth/verify?verified=1');
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Email verified successfully.', 'verified' => true]);
+        }
+
+        return redirect($frontend . '/auth/verify?verified=1');
     }
 
     public function profile(Request $request, $id)

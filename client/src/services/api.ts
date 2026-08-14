@@ -170,6 +170,20 @@ export const register = (payload: {
 export const resendEmailVerification = () =>
   fetchJson<{ message: string }>('/email/resend', { method: 'POST' });
 
+// Complete email verification from the signed link params carried on the
+// frontend verify page URL (id, hash, expires, signature).
+export const verifyEmailLink = (
+  id: string,
+  hash: string,
+  expires: string,
+  signature: string
+) => {
+  const qs = new URLSearchParams({ expires, signature }).toString();
+  return fetchJson<{ message: string; verified: boolean }>(
+    `/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}?${qs}`
+  );
+};
+
 export const fetchUser = async () => {
   const res = await fetchJson<{ data: User }>('/user');
   return res.data;
