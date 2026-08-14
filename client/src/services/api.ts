@@ -79,34 +79,34 @@ export interface AuthResponse {
 }
 
 // CSRF token bootstrap for cookie-based (stateful) auth.
-let csrfCookieReady = false;
+// Cross-domain setup: the API's XSRF-TOKEN cookie belongs to the API domain and
+// cannot be read by this app's JavaScript, so we fetch the token in the
+// response body of GET /api/csrf-token and send it via the X-CSRF-TOKEN header.
+let csrfToken: string | null = null;
 
-async function ensureCsrfCookie(): Promise<void> {
-  if (csrfCookieReady) return;
-  // Hit the Sanctum CSRF-cookie endpoint to set the XSRF-TOKEN cookie.
-  await fetch(`${API_BASE.replace(/\/api$/, '')}/sanctum/csrf-cookie`, {
+async function ensureCsrfToken(): Promise<void> {
+  if (csrfToken) return;
+  const response = await fetch(`${API_BASE}/csrf-token`, {
     credentials: 'include',
+    headers: { Accept: 'application/json' },
   });
-  csrfCookieReady = true;
-}
-
-function readCsrfCookie(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  if (!response.ok) {
+    throw new Error(`Failed to fetch CSRF token (status ${response.status})`);
+  }
+  const data = await response.json();
+  csrfToken = data.token;
 }
 
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   headers.set('Accept', 'application/json');
 
-  // For unsafe methods, ensure the CSRF cookie is present and attach the header.
+  // For unsafe methods, ensure the CSRF token is present and attach the header.
   const method = (options?.method || 'GET').toUpperCase();
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    await ensureCsrfCookie();
-    const xsrf = readCsrfCookie();
-    if (xsrf) {
-      headers.set('X-XSRF-TOKEN', xsrf);
+    await ensureCsrfToken();
+    if (csrfToken) {
+      headers.set('X-CSRF-TOKEN', csrfToken);
     }
   }
 
