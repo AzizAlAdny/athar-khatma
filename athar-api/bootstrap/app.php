@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Deployed on Render: TLS terminates at Render's edge proxy, which
+        // forwards requests over plain HTTP on an internal port. Trust the
+        // proxy so Laravel reconstructs the public https URL (X-Forwarded-*),
+        // required for signed URLs (email verification links) to validate.
+        $middleware->trustProxies(at: '*');
+
         // Stateless token-based API: the SPA authenticates via a Sanctum bearer
         // token in the Authorization header. Cookie-based SPA auth (statefulApi)
         // is intentionally NOT used because the frontend is served on a different
