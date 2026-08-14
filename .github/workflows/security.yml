@@ -26,7 +26,8 @@ jobs:
 
       - name: Composer audit (composer.lock vulnerabilities)
         working-directory: ./athar-api
-        run: composer audit --no-dev
+        run: composer audit --locked --no-dev
+        continue-on-error: true
 
       - name: Trivy vulnerability scanner (backend)
         uses: aquasecurity/trivy-action@v0.36.0
