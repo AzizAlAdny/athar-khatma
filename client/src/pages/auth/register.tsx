@@ -144,7 +144,8 @@ export default function Register() {
 
       const data = await register(payload as any);
       login(data.user, data.token);
-      router.push('/auth/verify');
+      // Email verification is disabled — go straight to the dashboard.
+      router.push('/dashboard');
     } catch (err: any) {
       setErrors({ general: err.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً.' });
     } finally {

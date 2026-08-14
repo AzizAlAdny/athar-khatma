@@ -33,6 +33,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:khatma,seeker',
             'city' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
         ]);
@@ -44,8 +45,12 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
                 'city' => $request->city,
+                'neighborhood' => $request->neighborhood,
                 'latitude' => $request->lat,
                 'longitude' => $request->lng,
+                // Email verification is currently disabled: users are
+                // considered verified immediately at registration.
+                'email_verified_at' => now(),
             ]);
 
             // Issue a bearer token for the SPA (cross-domain session cookies are
@@ -56,22 +61,11 @@ class AuthController extends Controller
             $this->auditService->record('register', $user, $request);
             $this->notificationService->notifyAdminNewUser($user);
 
-            // Send the verification email immediately. User::create() does NOT
-            // fire the Registered event, so without this the new user never
-            // receives the link and must use the manual resend endpoint. Mail
-            // failures are logged but must not fail the registration itself.
-            try {
-                $user->sendEmailVerificationNotification();
-            } catch (\Throwable $e) {
-                Log::warning('Verification email failed at register', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            // Email verification is disabled for now — users are marked
+            // verified at registration, so no verification email is sent.
 
             return response()->json([
-                'message' => 'Registration successful. Please verify your email.',
+                'message' => 'Registration successful.',
                 'user' => new UserResource($user),
                 'token' => $token,
             ], 201);
