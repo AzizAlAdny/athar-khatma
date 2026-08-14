@@ -48,14 +48,27 @@ class AuthController extends Controller
                 'longitude' => $request->lng,
             ]);
 
-            // Email verification is triggered automatically via the MustVerifyEmail
-            // contract + the Registered event listener. Issue a bearer token for the
-            // SPA (cross-domain session cookies are blocked by browsers, so the
-            // client authenticates via the Authorization header instead).
+            // Issue a bearer token for the SPA (cross-domain session cookies are
+            // blocked by browsers, so the client authenticates via the
+            // Authorization header instead).
             $token = $user->createToken('auth_token', $user->tokenAbilities())->plainTextToken;
 
             $this->auditService->record('register', $user, $request);
             $this->notificationService->notifyAdminNewUser($user);
+
+            // Send the verification email immediately. User::create() does NOT
+            // fire the Registered event, so without this the new user never
+            // receives the link and must use the manual resend endpoint. Mail
+            // failures are logged but must not fail the registration itself.
+            try {
+                $user->sendEmailVerificationNotification();
+            } catch (\Throwable $e) {
+                Log::warning('Verification email failed at register', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'message' => 'Registration successful. Please verify your email.',
@@ -174,7 +187,19 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email already verified.'], 200);
         }
 
-        $user->sendEmailVerificationNotification();
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            Log::error('Verification email resend failed', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Could not send the verification email right now. Please try again later.',
+            ], 502);
+        }
 
         return response()->json(['message' => 'Verification link sent.']);
     }
