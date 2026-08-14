@@ -5,7 +5,8 @@ import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
 import { User, Mail, Lock, MapPin, Briefcase, Gift, ArrowLeft } from 'lucide-react';
-import { register, getGifts, Gift as GiftType, saveAuthToken, saveAuthUser } from '@/services/api';
+import { register, getGifts, Gift as GiftType, saveAuthUser } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Neighborhood {
   name: string;
@@ -78,9 +79,11 @@ const CITY_DATA: Record<string, Neighborhood[]> = {
 
 export default function Register() {
   const router = useRouter();
+  const { login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [role, setRole] = useState('khatma');
   const [city, setCity] = useState('الرياض');
   const [neighborhood, setNeighborhood] = useState('');
@@ -88,6 +91,7 @@ export default function Register() {
     name?: string;
     email?: string;
     password?: string;
+    passwordConfirm?: string;
     city?: string;
     neighborhood?: string;
     general?: string
@@ -106,7 +110,8 @@ export default function Register() {
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'صيغة البريد الإلكتروني غير صحيحة';
 
     if (!password) newErrors.password = 'كلمة المرور مطلوبة';
-    else if (password.length < 6) newErrors.password = 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
+    else if (password.length < 8) newErrors.password = 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
+    else if (password !== passwordConfirm) newErrors.passwordConfirm = 'كلمتا المرور غير متطابقتين';
 
     if (!city) newErrors.city = 'الرجاء اختيار المدينة';
     if (!neighborhood) newErrors.neighborhood = 'الرجاء اختيار الحي السكني';
@@ -129,6 +134,7 @@ export default function Register() {
         name,
         email,
         password,
+        password_confirmation: passwordConfirm,
         role,
         city,
         neighborhood,
@@ -137,9 +143,9 @@ export default function Register() {
       };
 
       const data = await register(payload as any);
-      saveAuthToken(data.access_token);
+      login(data.user);
       saveAuthUser(data.user);
-      router.push('/dashboard');
+      router.push('/auth/verify');
     } catch (err: any) {
       setErrors({ general: err.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً.' });
     } finally {
@@ -237,6 +243,18 @@ export default function Register() {
             icon={Lock}
             placeholder="••••••••"
             error={errors.password}
+            required
+          />
+
+          <Input
+            containerClassName="md:col-span-2"
+            label="تأكيد كلمة المرور"
+            type="password"
+            value={passwordConfirm}
+            onChange={e => setPasswordConfirm(e.target.value)}
+            icon={Lock}
+            placeholder="•••••••••"
+            error={errors.passwordConfirm}
             required
           />
         </div>

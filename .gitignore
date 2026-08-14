@@ -3,6 +3,8 @@ node_modules/
 vendor/
 composer.lock
 package-lock.json
+# Keep the API's composer.lock tracked for reproducible builds (Render/Docker)
+!athar-api/composer.lock
 
 # Laravel
 athar-api/storage/
@@ -94,3 +96,7 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# DOCUMENT
+docs/
+plan.md

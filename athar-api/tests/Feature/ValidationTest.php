@@ -13,8 +13,8 @@ class ValidationTest extends TestCase
 
     public function test_khatma_validation_requires_completion_date()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'type' => 'فردية',
@@ -27,8 +27,8 @@ class ValidationTest extends TestCase
 
     public function test_khatma_validation_requires_type()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),
@@ -41,8 +41,8 @@ class ValidationTest extends TestCase
 
     public function test_khatma_validation_requires_gift_ids()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),
@@ -55,8 +55,8 @@ class ValidationTest extends TestCase
 
     public function test_khatma_validation_rejects_invalid_type()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),
@@ -70,8 +70,8 @@ class ValidationTest extends TestCase
 
     public function test_need_validation_requires_gift_id()
     {
-        $user = User::factory()->create(['role' => 'seeker']);
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['role' => 'seeker', 'email_verified_at' => now()]);
+        $token = $user->createToken('test-token', ['need:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/needs', [
             'description' => 'Test need',
@@ -84,8 +84,8 @@ class ValidationTest extends TestCase
 
     public function test_need_validation_requires_description()
     {
-        $user = User::factory()->create(['role' => 'seeker']);
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['role' => 'seeker', 'email_verified_at' => now()]);
+        $token = $user->createToken('test-token', ['need:create'])->plainTextToken;
 
         $gift = Gift::factory()->create();
 
@@ -136,9 +136,8 @@ class ValidationTest extends TestCase
             'role' => 'khatma',
         ]);
 
-        // Laravel's confirmed validation might not catch this if passwords are both valid
-        // Let's just check that registration fails if we provide different passwords
-        $response->assertStatus(200);
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['password']);
     }
 
     public function test_name_validation_is_required()

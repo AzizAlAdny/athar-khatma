@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,11 +14,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Make first-party SPA API requests stateful (cookie-based session auth)
+        $middleware->statefulApi();
+
+        // Apply security headers to all responses
+        $middleware->prepend(SecurityHeaders::class);
+
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
+            'role' => RoleMiddleware::class,
+            'security.headers' => SecurityHeaders::class,
+            'ability' => \App\Http\Middleware\TokenAbilityMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
+

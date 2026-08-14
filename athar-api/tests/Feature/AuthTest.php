@@ -19,6 +19,7 @@ class AuthTest extends TestCase
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password123',
+            'password_confirmation' => 'password123',
             'role' => 'khatma',
             'city' => 'Riyadh',
             'lat' => 24.7136,
@@ -27,10 +28,9 @@ class AuthTest extends TestCase
 
         $response = $this->postJson('/api/register', $payload);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
             ->assertJsonStructure([
-                'access_token',
-                'token_type',
+                'message',
                 'user' => [
                     'id', 'name', 'email', 'role', 'city', 'latitude', 'longitude'
                 ]
@@ -56,6 +56,7 @@ class AuthTest extends TestCase
             'name' => 'Seeker User',
             'email' => 'seeker@example.com',
             'password' => 'password123',
+            'password_confirmation' => 'password123',
             'role' => 'seeker',
             'city' => 'Jeddah',
             'lat' => 21.4858,
@@ -64,7 +65,7 @@ class AuthTest extends TestCase
 
         $response = $this->postJson('/api/register', $payload);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
         $this->assertDatabaseHas('users', [
             'email' => 'seeker@example.com',
             'role' => 'seeker',

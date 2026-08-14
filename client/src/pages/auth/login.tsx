@@ -36,7 +36,7 @@ export default function Login() {
 
     try {
       const data = await apiLogin(email, password);
-      login(data.user, data.access_token);
+      login(data.user);
       router.push('/dashboard');
     } catch (err: any) {
       setErrors({ general: err.message || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.' });

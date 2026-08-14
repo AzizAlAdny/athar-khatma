@@ -5,22 +5,24 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Models\Khatma;
-use App\Models\KhatmaService;
+use App\Services\AuthAuditService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
     protected $notificationService;
+    protected $auditService;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService, AuthAuditService $auditService)
     {
         $this->notificationService = $notificationService;
+        $this->auditService = $auditService;
     }
 
     public function register(Request $request)
@@ -28,7 +30,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:khatma,seeker',
             'city' => 'nullable|string|max:255',
             'lat' => 'nullable|numeric',
@@ -46,22 +48,40 @@ class AuthController extends Controller
                 'longitude' => $request->lng,
             ]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Email verification is triggered automatically via the MustVerifyEmail
+            // contract + the Registered event listener. Log in the new user so the
+            // first-party SPA session is established immediately.
+            Auth::login($user);
 
-            // Notify admins about new user registration
+            $this->auditService->record('register', $user, $request);
             $this->notificationService->notifyAdminNewUser($user);
 
             return response()->json([
-                'access_token' => $token,
-                'token_type' => 'Bearer',
+                'message' => 'Registration successful. Please verify your email.',
                 'user' => new UserResource($user),
-            ]);
+            ], 201);
         });
     }
 
     public function login(Request $request)
     {
+        $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        $key = 'login:' . $request->email . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+            return response()->json([
+                'message' => 'Too many login attempts. Try again in ' . $seconds . ' seconds.',
+            ], 429);
+        }
+
         if (!Auth::attempt($request->only('email', 'password'))) {
+            RateLimiter::hit($key, 15 * 60);
+            $this->auditService->record('login_failed', null, $request, ['email' => $request->email]);
             Log::warning('Failed login attempt', [
                 'email' => $request->email,
                 'ip' => $request->ip(),
@@ -71,10 +91,16 @@ class AuthController extends Controller
             ], 401);
         }
 
+        RateLimiter::clear($key);
+
         $user = User::where('email', $request->email)->firstOrFail();
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Regenerate the session only for session-capable (SPA) requests.
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
+        $this->auditService->record('login', $user, $request);
         Log::info('User login successful', [
             'user_id' => $user->id,
             'email' => $user->email,
@@ -82,8 +108,6 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
             'user' => new UserResource($user),
         ]);
     }
@@ -91,17 +115,90 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = $request->user();
+
+        $this->auditService->record('logout', $user, $request);
         Log::info('User logout', [
             'user_id' => $user->id,
             'email' => $user->email,
             'ip' => $request->ip(),
         ]);
 
-        $request->user()->currentAccessToken()->delete();
+        // Revoke the bearer token if the request was token-authenticated.
+        $token = $user->currentAccessToken();
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
+
+        // Invalidate the session only for session-authenticated (SPA) requests.
+        if ($request->hasSession()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json([
             'message' => 'Successfully logged out'
         ]);
+    }
+
+    /**
+     * Revoke all tokens and end the current session.
+     */
+    public function logoutAll(Request $request)
+    {
+        $user = $request->user();
+
+        $this->auditService->record('logout_all', $user, $request);
+        $user->tokens()->delete();
+
+        if ($request->hasSession()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return response()->json([
+            'message' => 'Logged out of all devices.'
+        ]);
+    }
+
+    /**
+     * Resend the email verification notification.
+     */
+    public function resendVerification(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified.'], 200);
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return response()->json(['message' => 'Verification link sent.']);
+    }
+
+    /**
+     * Verify an email address via a signed link (clicked from the email).
+     * Marks the email verified and redirects to the frontend verify page.
+     */
+    public function verifyEmail(Request $request, $id, $hash)
+    {
+        $user = \App\Models\User::findOrFail($id);
+
+        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            return response()->json(['message' => 'Invalid verification link.'], 403);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/auth/verify?verified=1');
+        }
+
+        $user->markEmailAsVerified();
+
+        $this->auditService->record('email_verified', $user, $request);
+
+        return redirect(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')) . '/auth/verify?verified=1');
     }
 
     public function profile(Request $request, $id)

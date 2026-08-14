@@ -17,6 +17,14 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// Email verification via signed link (clicked from the email) — public, validated by signature
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->middleware('signed')
+    ->name('api.verification.verify');
+
+// Sanctum CSRF cookie endpoint for first-party SPA (cookie-based auth)
+Route::get('/sanctum/csrf-cookie', [\Laravel\Sanctum\Http\Controllers\CsrfCookieController::class, 'show']);
+
 Route::get('/gifts', [GiftController::class, 'index']);
 Route::get('/needs', [NeedController::class, 'index']);
 Route::middleware('throttle:60,1')->get('/map', [KhatmaController::class, 'map']);
@@ -28,7 +36,7 @@ Route::get('/health', function () {
     try {
         $databaseStatus = DB::connection()->getPdo() ? 'up' : 'down';
         $cacheStatus = Cache::get('health_check', 'ok') === 'ok' ? 'up' : 'down';
-        
+
         return response()->json([
             'status' => 'ok',
             'timestamp' => now()->toIso8601String(),
@@ -49,6 +57,11 @@ Route::get('/health', function () {
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+
+    // Email verification (resend)
+    Route::post('/email/resend', [AuthController::class, 'resendVerification']);
+
     Route::get('/user', function (Request $request) {
         return new \App\Http\Resources\UserResource($request->user());
     });
@@ -69,11 +82,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/khatmas', [KhatmaController::class, 'index']);
 
-    Route::middleware('role:khatma,admin')->group(function () {
-        Route::post('/khatmas', [KhatmaController::class, 'store']);
+    // Write routes require a verified email + the role-based token ability.
+    Route::middleware('role:khatma,admin', 'ability:khatma:create')->group(function () {
+        Route::post('/khatmas', [KhatmaController::class, 'store'])->middleware(['verified']);
     });
 
-    Route::middleware('role:seeker,admin')->group(function () {
-        Route::post('/needs', [NeedController::class, 'store']);
+    Route::middleware('role:seeker,admin', 'ability:need:create')->group(function () {
+        Route::post('/needs', [NeedController::class, 'store'])->middleware(['verified']);
     });
 });
+

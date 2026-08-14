@@ -23,6 +23,7 @@ class UserResource extends JsonResource
             'city' => $this->city,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
+            'email_verified' => $this->hasVerifiedEmail(),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
         ];
     }

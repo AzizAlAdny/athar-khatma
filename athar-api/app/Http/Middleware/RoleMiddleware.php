@@ -2,12 +2,17 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\AuthAuditService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
+    public function __construct(protected AuthAuditService $auditService)
+    {
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -23,6 +28,10 @@ class RoleMiddleware
         $user = $request->user();
 
         if (!in_array($user->role, $roles)) {
+            $this->auditService->record('role_denied', $user, $request, [
+                'required_roles' => $roles,
+                'user_role' => $user->role,
+            ]);
             return response()->json([
                 'message' => 'Your role (' . $user->role . ') does not have permission to access this resource.'
             ], 403);
@@ -31,3 +40,4 @@ class RoleMiddleware
         return $next($request);
     }
 }
+

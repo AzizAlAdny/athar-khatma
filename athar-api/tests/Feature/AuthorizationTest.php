@@ -24,9 +24,9 @@ class AuthorizationTest extends TestCase
 
     public function test_khatma_can_create_khatma()
     {
-        $khatma = User::factory()->create(['role' => 'khatma']);
+        $khatma = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         $gift = Gift::factory()->create();
-        $token = $khatma->createToken('test-token')->plainTextToken;
+        $token = $khatma->createToken('test-token', ['khatma:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),
@@ -39,9 +39,9 @@ class AuthorizationTest extends TestCase
 
     public function test_seeker_cannot_create_khatma()
     {
-        $seeker = User::factory()->create(['role' => 'seeker']);
+        $seeker = User::factory()->create(['role' => 'seeker', 'email_verified_at' => now()]);
         $gift = Gift::factory()->create();
-        $token = $seeker->createToken('test-token')->plainTextToken;
+        $token = $seeker->createToken('test-token', ['need:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),

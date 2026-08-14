@@ -114,9 +114,9 @@ class SecurityTest extends TestCase
 
     public function test_mass_assignment_prevention_in_need_creation()
     {
-        $user = User::factory()->create(['role' => 'seeker']);
+        $user = User::factory()->create(['role' => 'seeker', 'email_verified_at' => now()]);
         $gift = Gift::factory()->create();
-        $token = $user->createToken('test-token')->plainTextToken;
+        $token = $user->createToken('test-token', ['need:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/needs', [
             'gift_id' => $gift->id,

@@ -1,0 +1,22 @@
+# Never bake secrets or local artifacts into the Docker image.
+# On Render, all config comes from environment variables (Dashboard or render.yaml).
+.env
+.env.*
+!.env.example
+!.env.production.example
+vendor/
+node_modules/
+storage/
+bootstrap/cache/
+public/hot
+public/storage
+public/build
+.phpunit.result.cache
+.phpunit.cache/
+tests/
+.github/
+docs/
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

@@ -20,7 +20,8 @@ class AuthenticationTest extends TestCase
             'role' => 'khatma',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
+        $response->assertJsonStructure(['message', 'user' => ['id', 'name', 'email', 'role']]);
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
             'role' => 'khatma',
@@ -76,6 +77,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create([
             'email' => 'test@example.com',
             'password' => bcrypt('Password123!'),
+            'email_verified_at' => now(),
         ]);
 
         $response = $this->postJson('/api/login', [
@@ -85,8 +87,6 @@ class AuthenticationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
-            'access_token',
-            'token_type',
             'user' => [
                 'id',
                 'name',
@@ -113,15 +113,11 @@ class AuthenticationTest extends TestCase
 
     public function test_user_can_logout()
     {
-        $user = User::factory()->create();
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['email_verified_at' => now()]);
 
-        $response = $this->withToken($token)->postJson('/api/logout');
+        $response = $this->actingAs($user)->postJson('/api/logout');
 
         $response->assertStatus(200);
-        $this->assertDatabaseMissing('personal_access_tokens', [
-            'tokenable_id' => $user->id,
-        ]);
     }
 
     public function test_protected_route_requires_authentication()
@@ -133,10 +129,9 @@ class AuthenticationTest extends TestCase
 
     public function test_authenticated_user_can_access_protected_route()
     {
-        $user = User::factory()->create();
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['email_verified_at' => now()]);
 
-        $response = $this->withToken($token)->getJson('/api/user');
+        $response = $this->actingAs($user)->getJson('/api/user');
 
         $response->assertStatus(200);
         $response->assertJson([
@@ -179,7 +174,7 @@ class AuthenticationTest extends TestCase
             'role' => 'khatma',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
     }
 
     public function test_registration_accepts_seeker_role()
@@ -192,6 +187,6 @@ class AuthenticationTest extends TestCase
             'role' => 'seeker',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
     }
 }

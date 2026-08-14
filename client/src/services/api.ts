@@ -48,6 +48,7 @@ export interface User {
   bio?: string;
   latitude?: number;
   longitude?: number;
+  email_verified?: boolean;
   created_at?: string;
 }
 
@@ -73,25 +74,46 @@ export interface PaginatedUsers {
 }
 
 export interface AuthResponse {
-  access_token: string;
-  token_type: string;
   user: User;
+  message?: string;
+}
+
+// CSRF token bootstrap for cookie-based (stateful) auth.
+let csrfCookieReady = false;
+
+async function ensureCsrfCookie(): Promise<void> {
+  if (csrfCookieReady) return;
+  // Hit the Sanctum CSRF-cookie endpoint to set the XSRF-TOKEN cookie.
+  await fetch(`${API_BASE.replace(/\/api$/, '')}/sanctum/csrf-cookie`, {
+    credentials: 'include',
+  });
+  csrfCookieReady = true;
+}
+
+function readCsrfCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   headers.set('Accept', 'application/json');
 
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem(authTokenKey);
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+  // For unsafe methods, ensure the CSRF cookie is present and attach the header.
+  const method = (options?.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    await ensureCsrfCookie();
+    const xsrf = readCsrfCookie();
+    if (xsrf) {
+      headers.set('X-XSRF-TOKEN', xsrf);
     }
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    credentials: 'include', // send/receive the session cookie
   });
 
   const text = await response.text();
@@ -107,7 +129,9 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
         console.error('Non-JSON error response:', text);
       }
     }
-    throw new Error(errorMessage);
+    const err = new Error(errorMessage) as Error & { status?: number };
+    err.status = response.status;
+    throw err;
   }
 
   try {
@@ -133,6 +157,7 @@ export const register = (payload: {
   name: string;
   email: string;
   password: string;
+  password_confirmation: string;
   role: string;
   city?: string;
   neighborhood?: string;
@@ -146,6 +171,17 @@ export const register = (payload: {
     },
     body: JSON.stringify(payload),
   });
+
+export const resendEmailVerification = () =>
+  fetchJson<{ message: string }>('/email/resend', { method: 'POST' });
+
+export const fetchUser = async () => {
+  const res = await fetchJson<{ data: User }>('/user');
+  return res.data;
+};
+
+export const logoutAll = () =>
+  fetchJson<{ message: string }>('/logout-all', { method: 'POST' });
 
 export const getGifts = () => fetchJson<Gift[]>('/gifts');
 export const getNeeds = () => fetchJson<Need[]>('/needs');
@@ -219,14 +255,7 @@ export const createNeed = (payload: {
     body: JSON.stringify(payload),
   });
 
-export const authTokenKey = 'auth_token';
 export const authUserKey = 'auth_user';
-
-export const saveAuthToken = (token: string) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(authTokenKey, token);
-  }
-};
 
 export const saveAuthUser = (user: User) => {
   if (typeof window !== 'undefined') {
@@ -236,7 +265,6 @@ export const saveAuthUser = (user: User) => {
 
 export const clearAuthStorage = () => {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem(authTokenKey);
     localStorage.removeItem(authUserKey);
   }
 };

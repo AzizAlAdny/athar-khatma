@@ -1,0 +1,81 @@
+# Render Blueprint — Athar Khatma API (Laravel, Docker runtime)
+# Docs: https://render.com/docs/blueprint-spec
+# After pushing this file, go to https://dashboard.render.com -> New -> Blueprint
+# and select the AzizAlAdny/athar-khatma repo. Values marked `sync: false`
+# are prompted once and stored securely in Render (never committed).
+services:
+  - type: web
+    name: athar-api
+    runtime: docker
+    rootDir: athar-api
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # --- Application ---
+      - key: APP_NAME
+        value: "Athar Khatma API"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY            # paste from local .env (base64:...) or: php artisan key:generate --show
+        sync: false
+      - key: APP_URL            # e.g. https://athar-api.onrender.com
+        sync: false
+
+      # --- Database (Supabase PostgreSQL, Session pooler 5432 / IPv4) ---
+      # Easiest: paste the full connection string as DB_URL
+      # postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+
+      # --- Sessions / cache / queue live in the same Postgres DB ---
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_ENCRYPT
+        value: "false"
+      - key: SESSION_DOMAIN
+        value: ""
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+
+      # --- Mail (Resend) ---
+      - key: MAIL_MAILER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM_ADDRESS   # onboarding@resend.dev until a domain is verified
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: "ختمة وأثر"
+
+      # --- Frontend / CORS ---
+      - key: FRONTEND_URL        # e.g. https://athar-khatma.vercel.app
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SANCTUM_STATEFUL_DOMAINS
+        sync: false
+
+      # --- Auth ---
+      - key: SANCTUM_TOKEN_EXPIRATION
+        value: "60"
+
+      # --- Misc ---
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: BROADCAST_CONNECTION
+        value: log
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false

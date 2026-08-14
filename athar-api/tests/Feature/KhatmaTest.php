@@ -15,7 +15,7 @@ class KhatmaTest extends TestCase
 
     public function test_authenticated_user_can_store_khatma()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         Sanctum::actingAs($user);
 
         $gift1 = Gift::create(['name' => 'Gift 1', 'slug' => 'gift-1', 'category' => 'test', 'icon' => 'test', 'description' => 'test']);
