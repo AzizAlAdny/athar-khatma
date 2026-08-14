@@ -41,6 +41,12 @@ services:
         value: "false"
       - key: SESSION_DOMAIN
         value: ""
+      # Cross-site cookies: Vercel frontend authenticates against this API on
+      # a different domain, so cookies must be SameSite=None + Secure.
+      - key: SESSION_SAME_SITE
+        value: none
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
       - key: CACHE_STORE
         value: database
       - key: QUEUE_CONNECTION
