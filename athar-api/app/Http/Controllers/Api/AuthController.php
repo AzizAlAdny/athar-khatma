@@ -48,10 +48,12 @@ class AuthController extends Controller
                 'neighborhood' => $request->neighborhood,
                 'latitude' => $request->lat,
                 'longitude' => $request->lng,
-                // Email verification is currently disabled: users are
-                // considered verified immediately at registration.
-                'email_verified_at' => now(),
             ]);
+
+            // Email verification is currently disabled: users are
+            // considered verified immediately at registration.
+            // (email_verified_at is not mass-assignable, hence forceFill.)
+            $user->forceFill(['email_verified_at' => now()])->save();
 
             // Issue a bearer token for the SPA (cross-domain session cookies are
             // blocked by browsers, so the client authenticates via the
