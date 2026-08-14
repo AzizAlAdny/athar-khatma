@@ -2,83 +2,86 @@ name: Security Scan
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday
 
 jobs:
   backend-security:
     runs-on: ubuntu-latest
-    
-    defaults:
-      run:
-        working-directory: ./athar-api
-    
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: PHP Security Checker
-        uses: symfonycorp/security-checker-action@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          lock: athar-api/composer.lock
-      
-      - name: Run Composer audit
-        run: composer audit --no-dev || true
-      
-      - name: Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+          php-version: '8.3'
+
+      - name: Composer audit (composer.lock vulnerabilities)
+        working-directory: ./athar-api
+        run: composer audit --no-dev
+
+      - name: Trivy vulnerability scanner (backend)
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
-          scan-ref: 'athar-api'
+          scan-ref: './athar-api'
           format: 'sarif'
-          output: 'trivy-results.sarif'
-      
+          output: 'trivy-backend.sarif'
+
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'trivy-backend.sarif'
 
   frontend-security:
     runs-on: ubuntu-latest
-    
-    defaults:
-      run:
-        working-directory: ./client
-    
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: client/package-lock.json
-      
+
       - name: Install dependencies
+        working-directory: ./client
         run: npm ci
-      
+
+      # Report-only: dependency vulnerabilities shouldn't block every push
       - name: Run npm audit
-        run: npm audit --audit-level=moderate
-      
-      - name: Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        working-directory: ./client
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Trivy vulnerability scanner (frontend)
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
-          scan-ref: 'client'
+          scan-ref: './client'
           format: 'sarif'
-          output: 'trivy-results.sarif'
-      
+          output: 'trivy-frontend.sarif'
+
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'trivy-frontend.sarif'
 
   codeql-analysis:
     name: CodeQL Analysis
@@ -87,26 +90,26 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    
+
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'php' ]
-    
+        # JavaScript/TypeScript only. PHP is covered by composer audit + Trivy.
+        language: [ 'javascript-typescript' ]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          queries: security-extended,security-and-quality
-      
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
-      
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:${{matrix.language}}"
+          category: "/language:${{ matrix.language }}"

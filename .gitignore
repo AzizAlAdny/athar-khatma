@@ -3,8 +3,9 @@ node_modules/
 vendor/
 composer.lock
 package-lock.json
-# Keep the API's composer.lock tracked for reproducible builds (Render/Docker)
+# Keep lockfiles tracked for reproducible CI + Vercel builds
 !athar-api/composer.lock
+!client/package-lock.json
 
 # Laravel
 athar-api/storage/
