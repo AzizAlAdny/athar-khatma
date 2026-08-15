@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreKhatmaRequest;
 use App\Http\Resources\KhatmaResource;
 use App\Models\Khatma;
+use App\Models\KhatmaService as KhatmaServiceModel;
 use App\Services\KhatmaService;
 use App\Repositories\Contracts\KhatmaRepositoryInterface;
 use Illuminate\Http\Request;
@@ -43,6 +44,28 @@ class KhatmaController extends Controller
     public function map()
     {
         return response()->json($this->khatmaService->getMapData());
+    }
+
+    /**
+     * Public feed of the most recently given gifts (khatma services),
+     * with provider name only — no sensitive user data.
+     */
+    public function recent()
+    {
+        $gifts = KhatmaServiceModel::with(['gift', 'khatma.user'])
+            ->latest()
+            ->limit(6)
+            ->get()
+            ->map(fn ($service) => [
+                'gift_name' => $service->gift->name ?? null,
+                'user_name' => $service->khatma->user->name ?? null,
+                'city' => $service->khatma->user->city ?? null,
+                'created_at' => optional($service->created_at)->toIso8601String(),
+            ])
+            ->filter(fn ($item) => $item['gift_name'] && $item['user_name'])
+            ->values();
+
+        return response()->json($gifts);
     }
 
     public function show(Request $request, $id)

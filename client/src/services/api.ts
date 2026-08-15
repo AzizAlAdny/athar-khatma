@@ -30,6 +30,13 @@ export interface KhatmaPin {
   total_impact?: number;
 }
 
+export interface RecentGift {
+  gift_name: string;
+  user_name: string;
+  city?: string;
+  created_at?: string;
+}
+
 export interface KhatmaProfile {
   id: number;
   user: { name: string; bio: string; city: string };
@@ -198,6 +205,7 @@ export const logoutAll = () =>
 export const getGifts = () => fetchJson<Gift[]>('/gifts');
 export const getNeeds = () => fetchJson<Need[]>('/needs');
 export const getMapPins = () => fetchJson<KhatmaPin[]>('/map');
+export const getRecentGifts = () => fetchJson<RecentGift[]>('/recent-khatmas');
 export const getKhatmaProfile = (id: number) => fetchJson<KhatmaProfile>(`/users/${id}/profile`);
 export const getPublicProfile = (id: number) => fetchJson<KhatmaProfile>(`/users/${id}/public-profile`);
 export const getUserKhatmas = () => fetchJson<{ khatmas: any[], total_impact_score: number }>('/khatmas');

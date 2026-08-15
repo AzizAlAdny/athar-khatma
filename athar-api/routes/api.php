@@ -25,6 +25,7 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 Route::get('/gifts', [GiftController::class, 'index']);
 Route::get('/needs', [NeedController::class, 'index']);
 Route::middleware('throttle:60,1')->get('/map', [KhatmaController::class, 'map']);
+Route::middleware('throttle:60,1')->get('/recent-khatmas', [KhatmaController::class, 'recent']);
 Route::get('/public-stats', [StatsController::class, 'publicStats']);
 Route::get('/users/{id}/public-profile', [AuthController::class, 'publicProfile']);
 

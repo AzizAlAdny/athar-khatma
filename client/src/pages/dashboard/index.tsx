@@ -53,9 +53,9 @@ const UserDashboard = () => {
           <Link href="/khatma/register" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a1a2f] transition-all shadow-xl shadow-primary/10 active:scale-95">
             <Plus size={18} /> سجلي ختمتك
           </Link>
-          <button className="bg-white text-primary border border-secondary-light/30 px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
+          <Link href="/my-gifts" className="bg-white text-primary border border-secondary-light/30 px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
             <Sparkles size={18} /> تابعي أثرك
-          </button>
+          </Link>
         </>
       }
     />
