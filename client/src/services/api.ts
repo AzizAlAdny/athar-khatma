@@ -223,6 +223,11 @@ export const deleteNeed = (id: number) =>
   fetchJson<{ message: string }>(`/admin/needs/${id}`, {
     method: 'DELETE',
   });
+// Seeker deleting their own need (ownership enforced server-side).
+export const deleteMyNeed = (id: number) =>
+  fetchJson<{ message: string }>(`/needs/${id}`, {
+    method: 'DELETE',
+  });
 export const createUser = (payload: {
   name: string;
   email: string;

@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   BookOpen,
   Gift,
   HelpCircle,
-  Users,
-  Map as MapIcon,
+  Plus,
+  LogIn,
+  UserPlus,
   BarChart3,
-  Store,
   Settings,
   LogOut,
   X,
@@ -22,21 +22,65 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-const navItems = [
-  { label: 'الرئيسية', href: '/dashboard', activePath: '/dashboard', Icon: Home },
+type NavItem = {
+  label: string;
+  href: string;
+  activePath: string;
+  Icon: any;
+};
+
+// Nav items per role. Guests only see the landing + auth entry points.
+const guestNav: NavItem[] = [
+  { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'تسجيل الدخول', href: '/auth/login', activePath: '/auth/login', Icon: LogIn },
+  { label: 'إنشاء حساب', href: '/auth/register', activePath: '/auth/register', Icon: UserPlus },
+];
+
+const seekerNav: NavItem[] = [
+  { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'طلباتي', href: '/needs', activePath: '/needs', Icon: HelpCircle },
+  { label: 'طلب احتياج', href: '/needs/register', activePath: '/needs/register', Icon: Plus },
   { label: 'هداياي', href: '/my-gifts', activePath: '/my-gifts', Icon: Gift },
-  { label: 'طلب محتاج', href: '/needs', activePath: '/needs', Icon: HelpCircle },
-  { label: 'الخريطة', href: '/dashboard', activePath: '/dashboard', Icon: MapIcon },
+];
+
+const khatmaNav: NavItem[] = [
+  { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'تسجيل ختمة', href: '/khatma/register', activePath: '/khatma/register', Icon: Plus },
+  { label: 'طلبات المحتاجين', href: '/needs/browse', activePath: '/needs/browse', Icon: HelpCircle },
+  { label: 'هداياي', href: '/my-gifts', activePath: '/my-gifts', Icon: Gift },
+];
+
+const adminNav: NavItem[] = [
+  { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'تسجيل ختمة', href: '/khatma/register', activePath: '/khatma/register', Icon: Plus },
+  { label: 'طلبات المحتاجين', href: '/needs/browse', activePath: '/needs/browse', Icon: HelpCircle },
+  { label: 'هداياي', href: '/my-gifts', activePath: '/my-gifts', Icon: Gift },
   { label: 'التقارير', href: '/admin', activePath: '/admin', Icon: BarChart3 },
 ];
 
+function getNavItems(role?: string, isAuthenticated = false): NavItem[] {
+  if (!isAuthenticated) return guestNav;
+  switch (role) {
+    case 'seeker':
+      return seekerNav;
+    case 'khatma':
+      return khatmaNav;
+    case 'admin':
+      return adminNav;
+    default:
+      return guestNav;
+  }
+}
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
   };
+
+  const navItems = getNavItems(user?.role, isAuthenticated);
 
   return (
     <>
@@ -49,9 +93,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed top-[88px] bottom-0 right-0 z-[80] w-24 bg-white border-l border-secondary-light/30 flex flex-col items-center py-6 shadow-[10px_0_40px_rgba(94,32,59,0.03)] transition-transform duration-300 xl:translate-x-0 ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        } overflow-y-auto no-scrollbar`}
+        className={`fixed top-[88px] bottom-0 right-0 z-[80] w-24 bg-white border-l border-secondary-light/30 flex flex-col items-center py-6 shadow-[10px_0_40px_rgba(94,32,59,0.03)] transition-transform duration-300 xl:translate-x-0 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+          } overflow-y-auto no-scrollbar`}
       >
         <div className="flex h-full flex-col items-center w-full">
           {/* Mobile Close Button */}
@@ -69,11 +112,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Link
                   key={label}
                   href={href}
-                  className={`group relative flex flex-col items-center gap-1 rounded-2xl py-3 w-full transition-all duration-300 ${
-                    isActive
-                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                      : 'text-primary-muted hover:bg-background hover:text-primary'
-                  }`}
+                  className={`group relative flex flex-col items-center gap-1 rounded-2xl py-3 w-full transition-all duration-300 ${isActive
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-primary-muted hover:bg-background hover:text-primary'
+                    }`}
                   onClick={() => onClose && onClose()}
                 >
                   <div className={`${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform`}>
@@ -90,24 +132,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             })}
           </nav>
 
-          <div className="mt-auto pb-6 w-full px-2 space-y-4">
-            <Link
-              href="/settings"
-              className="flex flex-col items-center gap-1 text-primary-muted hover:text-primary hover:bg-background rounded-xl py-2 transition group w-full"
-              onClick={() => onClose && onClose()}
-            >
-              <Settings className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] font-bold opacity-80 group-hover:opacity-100">الإعدادات</span>
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex flex-col items-center gap-1 text-primary-muted hover:text-red-600 hover:bg-red-50 rounded-xl py-2 transition group w-full"
-            >
-              <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              <span className="text-[10px] font-bold opacity-80 group-hover:opacity-100">خروج</span>
-            </button>
-          </div>
+          {isAuthenticated && (
+            <div className="mt-auto pb-6 w-full px-2 space-y-4">
+              <Link
+                href="/settings"
+                className="hidden flex-col items-center gap-1 text-primary-muted hover:text-primary hover:bg-background rounded-xl py-2 transition group w-full"
+                onClick={() => onClose && onClose()}
+              >
+                <Settings className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-bold opacity-80 group-hover:opacity-100">الإعدادات</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex flex-col items-center gap-1 text-primary-muted hover:text-red-600 hover:bg-red-50 rounded-xl py-2 transition group w-full"
+              >
+                <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-bold opacity-80 group-hover:opacity-100">خروج</span>
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

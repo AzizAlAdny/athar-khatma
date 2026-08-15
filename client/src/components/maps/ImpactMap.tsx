@@ -101,15 +101,15 @@ const ImpactMap = () => {
   }
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden shadow-lg bg-gray-50 flex flex-col h-full">
+    <div className="relative w-full rounded-xl overflow-hidden shadow-lg bg-background flex flex-col h-full">
       {/* Header matching the reference image layout */}
       <div className="p-4 bg-white flex justify-between items-center" dir="rtl">
-        <h2 className="text-xl font-black text-primary">خريطة الأثر</h2>
+        <h2 className="text-lg font-black text-primary">خريطة الأثر</h2>
 
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="bg-[#F8F7F3] px-4 py-2 rounded-2xl flex items-center gap-3 hover:bg-gray-100 transition-all min-w-[140px] border border-gray-100"
+            className="bg-background px-4 py-2 rounded-2xl flex items-center gap-3 hover:bg-secondary-light/20 transition-all min-w-[140px] border border-secondary-light/30"
           >
             <ChevronDown
               size={16}
@@ -118,7 +118,7 @@ const ImpactMap = () => {
             <span className="text-sm font-black text-primary flex-1 text-center">
               {selectedCity === 'all' ? 'جميع المدن' : selectedCity}
             </span>
-            <div className="bg-white p-1.5 rounded-lg text-secondary shadow-sm border border-gray-50">
+            <div className="bg-white p-1.5 rounded-lg text-secondary shadow-sm border border-secondary-light/20">
               <MapPin size={14} />
             </div>
           </button>
@@ -127,7 +127,7 @@ const ImpactMap = () => {
             <div className="absolute top-full mt-2 left-0 w-full bg-white rounded-2xl shadow-xl border border-secondary-light/10 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
               <button
                 onClick={() => handleCityChange('all')}
-                className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-gray-50 ${selectedCity === 'all' ? 'text-secondary bg-background/50' : 'text-primary-muted'
+                className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-background ${selectedCity === 'all' ? 'text-secondary bg-background/50' : 'text-primary-muted'
                   }`}
               >
                 جميع المدن
@@ -136,7 +136,7 @@ const ImpactMap = () => {
                 <button
                   key={city}
                   onClick={() => handleCityChange(city)}
-                  className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-gray-50 last:border-0 ${selectedCity === city ? 'text-secondary bg-background/50' : 'text-primary-muted'
+                  className={`w-full text-right px-5 py-3 text-sm font-bold transition-colors hover:bg-background border-b border-background last:border-0 ${selectedCity === city ? 'text-secondary bg-background/50' : 'text-primary-muted'
                     }`}
                 >
                   {city}
@@ -148,6 +148,7 @@ const ImpactMap = () => {
       </div>
 
       <div className="relative flex-1 min-h-[500px]">
+        <MapsErrorBoundary onError={() => setMapError(true)}>
         <APIProvider
           apiKey={GOOGLE_MAPS_API_KEY}
           onLoad={() => console.log('Google Maps API loaded')}
@@ -195,7 +196,7 @@ const ImpactMap = () => {
                     {/* Custom Close Button */}
                     <button
                       onClick={() => setInfoWindowData(null)}
-                      className="absolute top-0 left-0 p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                      className="absolute top-0 left-0 p-1.5 text-primary-muted hover:text-red-500 transition-colors"
                       aria-label="Close"
                     >
                       <X size={18} />
@@ -203,15 +204,15 @@ const ImpactMap = () => {
 
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
-                      <h3 className="font-black text-lg text-[#154A32] leading-tight">{infoWindowData.user_name}</h3>
+                      <h3 className="font-black text-lg text-accent leading-tight">{infoWindowData.user_name}</h3>
                     </div>
 
-                    <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                    <p className="text-xs text-primary-muted mb-2 flex items-center gap-1">
                       <MapPin size={10} /> {selectedCity === 'all' ? 'المملكة العربية السعودية' : selectedCity}
                     </p>
 
-                    <p className="text-sm text-gray-600 mb-3 border-t border-gray-50 pt-2">
-                      إجمالي الأثر: <span className="font-black text-[#D0A45F] text-base">{infoWindowData.total_impact || 0}</span>
+                    <p className="text-sm text-primary-muted mb-3 border-t border-secondary-light/20 pt-2">
+                      إجمالي الأثر: <span className="font-black text-secondary text-base">{infoWindowData.total_impact || 0}</span>
                     </p>
 
                     <div className="flex flex-wrap gap-1 justify-end mb-4">
@@ -219,7 +220,7 @@ const ImpactMap = () => {
                         <span key={s} className="px-2 py-0.5 bg-background border border-secondary-light/10 rounded-lg text-[9px] font-bold text-primary-muted">{s}</span>
                       ))}
                       {infoWindowData.services.length > 3 && (
-                        <span className="px-2 py-0.5 bg-gray-50 rounded-lg text-[9px] font-bold text-gray-400">+{infoWindowData.services.length - 3}</span>
+                        <span className="px-2 py-0.5 bg-background border border-secondary-light/10 rounded-lg text-[9px] font-bold text-primary-muted">+{infoWindowData.services.length - 3}</span>
                       )}
                     </div>
 
@@ -235,6 +236,7 @@ const ImpactMap = () => {
             })()}
           </Map>
         </APIProvider>
+        </MapsErrorBoundary>
       </div>
 
       {selectedProfile && (
@@ -251,6 +253,29 @@ const ImpactMap = () => {
     </div>
   );
 };
+
+// Catches Google Maps runtime failures (e.g. demo-key quota exhausted,
+// marker/InfoWindow portals without a live map container) and hands control
+// back to ImpactMap so it can render the OSM fallback.
+class MapsErrorBoundary extends React.Component<
+  { onError: () => void; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error('Google Maps runtime error, switching to fallback map:', error);
+    this.props.onError();
+  }
+
+  render() {
+    return this.state.hasError ? null : this.props.children;
+  }
+}
 
 const CustomMarker = ({ pin, onClick, getGlowColor, getGlowShadow }: any) => {
   const lat = typeof pin.location.lat === 'string' ? parseFloat(pin.location.lat) : pin.location.lat;
@@ -334,11 +359,11 @@ const OsmFallback = ({ pins, openProfile }: any) => {
         .setPopup(new maplibregl.Popup({ offset: 25 })
           .setHTML(`
             <div class="p-3 text-right" dir="rtl">
-              <h3 class="font-black text-[#154A32] mb-1">${pin.user_name}</h3>
-              <p class="text-[11px] text-gray-600 mb-3">إجمالي الأثر: <span class="font-bold text-[#D0A45F]">${pin.total_impact || 0}</span></p>
+              <h3 class="font-black text-accent mb-1">${pin.user_name}</h3>
+              <p class="text-[11px] text-primary-muted mb-3">إجمالي الأثر: <span class="font-bold text-secondary">${pin.total_impact || 0}</span></p>
               <button
                 id="profile-btn-${pin.user_id}"
-                class="w-full py-2 bg-[#154A32] text-white text-[10px] font-black rounded-xl hover:bg-[#0d3121] transition-colors"
+                class="w-full py-2 bg-accent text-white text-[10px] font-black rounded-xl hover:bg-[#0d3121] transition-colors"
               >
                 عرض الملف الشخصي
               </button>

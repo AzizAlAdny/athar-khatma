@@ -52,4 +52,36 @@ class NeedController extends Controller
 
         return response()->json($need, 201);
     }
+
+    /**
+     * Delete a need. Seekers may only delete their own needs; admins may delete any.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $need = Need::find($id);
+
+        if (!$need) {
+            return response()->json(['message' => 'Need not found'], 404);
+        }
+
+        if ($request->user()->id !== $need->user_id && $request->user()->role !== 'admin') {
+            Log::warning('Unauthorized need deletion attempt', [
+                'user_id' => $request->user()->id,
+                'need_id' => $need->id,
+                'need_owner_id' => $need->user_id,
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['message' => 'Unauthorized. You can only delete your own needs.'], 403);
+        }
+
+        $need->delete();
+
+        Log::info('Need deleted', [
+            'user_id' => $request->user()->id,
+            'need_id' => (int) $id,
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json(['message' => 'Need deleted successfully']);
+    }
 }

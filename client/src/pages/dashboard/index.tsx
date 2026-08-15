@@ -12,6 +12,7 @@ import {
   Pencil,
   Sparkles,
   UserPlus,
+  User,
   Gift,
   Video,
   MapPin,
@@ -20,13 +21,13 @@ import {
 } from 'lucide-react';
 
 const options = [
-  { label: 'تحفيظ كبيرات السن', icon: UserPlus, color: 'bg-orange-50 text-orange-600' },
-  { label: 'تحفيظ صغار', icon: Heart, color: 'bg-purple-50 text-purple-600' },
-  { label: 'تعليم خادمات', icon: BookOpen, color: 'bg-green-50 text-green-600' },
-  { label: 'تقديم غرفة زوم', icon: Video, color: 'bg-blue-50 text-blue-600' },
-  { label: 'تصميم إعلان', icon: Sparkles, color: 'bg-pink-50 text-pink-600' },
-  { label: 'كتابة محتوى', icon: Pencil, color: 'bg-indigo-50 text-indigo-600' },
-  { label: 'إهداء مصحف', icon: Gift, color: 'bg-emerald-50 text-emerald-600' },
+  { label: 'تحفيظ كبيرات السن', icon: UserPlus, color: 'bg-background text-secondary' },
+  { label: 'تحفيظ صغار', icon: Heart, color: 'bg-background text-primary' },
+  { label: 'تعليم خادمات', icon: BookOpen, color: 'bg-background text-accent' },
+  { label: 'تقديم غرفة زوم', icon: Video, color: 'bg-background text-secondary-dark' },
+  { label: 'تصميم إعلان', icon: Sparkles, color: 'bg-background text-secondary-muted' },
+  { label: 'كتابة محتوى', icon: Pencil, color: 'bg-background text-primary-muted' },
+  { label: 'إهداء مصحف', icon: Gift, color: 'bg-background text-secondary' },
 ];
 
 const requests = [
@@ -75,7 +76,7 @@ const UserDashboard = () => {
                 <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
                   <Icon size={20} />
                 </div>
-                <span className="text-[11px] font-black text-primary text-center leading-tight">{label}</span>
+                <span className="text-sm font-black text-primary text-center leading-tight">{label}</span>
               </button>
             ))}
           </section>
@@ -92,16 +93,16 @@ const UserDashboard = () => {
               <div className="bg-white p-6 md:p-8 rounded-[40px] border border-secondary-light/30 shadow-sm h-full flex flex-col">
                 <h3 className="text-lg font-black text-primary mb-6">الرحلة إلى الأثر</h3>
                 <div className="space-y-6 relative flex-1">
-                  <div className="absolute right-[17px] top-2 bottom-2 w-0.5 bg-background"></div>
+                  <div className="absolute right-[17px] top-2 bottom-2 w-0.5 bg-secondary-light"></div>
                   {[
                     { step: '1', title: 'اختاري ختمتك', detail: 'حددي نوع الختمة وأهدافها.', status: 'completed' },
-                    { step: '2', title: 'اضيفي هدية', detail: 'اكتملي بخيار هدية يرفع الأثر.', status: 'current' },
-                    { step: '3', title: 'تابعي مساهمتك', detail: 'رصد الأثر يصل إليك بوضوح.', status: 'upcoming' },
+                    { step: '2', title: 'اضيفي هدية', detail: 'اكتملي بخيار هدية يرفع الأثر.', status: 'completed' },
+                    { step: '3', title: 'تابعي مساهمتك', detail: 'رصد الأثر يصل إليك بوضوح.', status: 'completed' },
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-4 relative z-10">
                       <div className="flex flex-col items-center shrink-0">
                         {item.status === 'completed' ? (
-                          <div className="w-9 h-9 bg-secondary rounded-full flex items-center justify-center text-white shadow-sm border-4 border-white">
+                          <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center text-white shadow-sm border-4 border-white">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                           </div>
                         ) : item.status === 'current' ? (
@@ -113,8 +114,8 @@ const UserDashboard = () => {
                         )}
                       </div>
                       <div className="bg-white pr-2 py-1 text-right">
-                        <p className={`text-sm font-black ${item.status === 'upcoming' ? 'text-secondary-light' : 'text-slate-900'}`}>{item.title}</p>
-                        <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">{item.detail}</p>
+                        <p className={`text-base font-black ${item.status === 'upcoming' ? 'text-secondary-light' : 'text-primary'}`}>{item.title}</p>
+                        <p className="text-sm text-primary-muted font-medium mt-1 leading-relaxed">{item.detail}</p>
                       </div>
                     </div>
                   ))}
@@ -136,8 +137,8 @@ const UserDashboard = () => {
                         <Gift size={18} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-black text-gray-800 group-hover:text-secondary transition-colors">{gift.title}</h4>
-                        <p className="text-[10px] text-gray-400 font-bold mt-0.5">{gift.user} • {gift.time}</p>
+                        <h4 className="text-sm font-black text-primary group-hover:text-secondary transition-colors">{gift.title}</h4>
+                        <p className="text-xs text-primary-muted font-bold mt-0.5">{gift.user} • {gift.time}</p>
                       </div>
                     </div>
                     <ChevronLeft size={16} className="text-secondary-light group-hover:translate-x-1 transition-all" />
@@ -157,8 +158,8 @@ const UserDashboard = () => {
                       <MapPin size={18} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-gray-800 leading-tight group-hover:text-accent transition-colors">{request.title}</h4>
-                      <p className="text-[10px] text-gray-400 mt-1.5 font-bold flex items-center gap-1">
+                      <h4 className="text-sm font-black text-primary leading-tight group-hover:text-accent transition-colors">{request.title}</h4>
+                      <p className="text-xs text-primary-muted mt-1.5 font-bold flex items-center gap-1">
                         <span>{request.loc}</span>
                         <span>•</span>
                         <span>{request.subtitle}</span>
@@ -173,9 +174,11 @@ const UserDashboard = () => {
             {/* Inspiring Initiatives Card */}
             <div className="bg-primary rounded-[40px] p-8 text-white relative overflow-hidden flex flex-col justify-between shadow-xl">
               <div className="relative z-10">
-                <h3 className="text-xl font-black mb-4">مبادرات ملهمة</h3>
+                <h3 className="text-lg font-black mb-4">مبادرات ملهمة</h3>
                 <div className="flex items-center gap-4 mb-6">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sara" className="w-12 h-12 rounded-full bg-white/10 p-0.5 border border-white/20" />
+                  <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-secondary">
+                    <User size={20} />
+                  </div>
                   <div>
                     <h4 className="text-sm font-black">أم سارة</h4>
                     <p className="text-[10px] text-secondary-muted opacity-70">رائدة مبادرات الأثر</p>

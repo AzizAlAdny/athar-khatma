@@ -100,7 +100,7 @@ export default function MyGifts() {
                           {(khatma.achievements || []).map((achievement: any, idx: number) => (
                             <div key={idx} className="flex items-center gap-2 bg-background px-4 py-2 rounded-xl border border-secondary-light/10">
                               <Gift size={14} className="text-secondary" />
-                              <span className="text-[11px] font-black text-primary">{achievement.gift_name}</span>
+                              <span className="text-xs font-black text-primary">{achievement.gift_name}</span>
                             </div>
                           ))}
                         </div>

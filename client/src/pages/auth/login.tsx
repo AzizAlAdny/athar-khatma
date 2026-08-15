@@ -52,7 +52,7 @@ export default function Login() {
       footer={
         <>
           ليس لديكِ حساب حتى الآن؟{' '}
-          <Link href="/auth/register" className="text-[#5E203B] font-black hover:opacity-70 transition-opacity inline-flex items-center gap-1">
+          <Link href="/auth/register" className="text-primary font-black hover:opacity-70 transition-opacity inline-flex items-center gap-1">
             انضمي إلينا الآن <ArrowLeft size={14} />
           </Link>
         </>
@@ -83,7 +83,7 @@ export default function Login() {
               required
             />
             <div className="text-left px-1">
-              <span className="text-[11px] font-bold text-slate-400">نسيتي كلمة المرور؟ تواصلي مع الدعم الفني</span>
+              <span className="text-xs font-bold text-primary-muted">نسيتي كلمة المرور؟ تواصلي مع الدعم الفني</span>
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default function Login() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-[#5E203B] hover:bg-[#4a1a2f] shadow-xl shadow-[#5E203B]/10 transition-all active:scale-95"
+          className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
         >
           {isSubmitting ? 'جاري التحقق...' : 'تسجيل الدخول'}
         </Button>

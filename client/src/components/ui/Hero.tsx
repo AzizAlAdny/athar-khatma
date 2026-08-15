@@ -12,7 +12,7 @@ interface HeroAction {
 }
 
 interface HeroProps {
-  title: string;
+  title: React.ReactNode;
   subtitle: string;
   variant?: 'primary' | 'accent' | 'secondary' | 'simple';
   actions?: React.ReactNode;

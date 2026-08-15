@@ -86,5 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:seeker,admin', 'ability:need:create')->group(function () {
         Route::post('/needs', [NeedController::class, 'store'])->middleware(['verified']);
+        // Seekers can delete their own needs (ownership checked in the controller).
+        Route::delete('/needs/{id}', [NeedController::class, 'destroy'])->middleware(['verified']);
     });
 });

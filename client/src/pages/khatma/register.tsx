@@ -131,8 +131,8 @@ export default function RegisterKhatma() {
                   type="button"
                   onClick={() => toggleGift(gift.id)}
                   className={`group relative flex flex-col p-6 rounded-[2rem] border-2 transition-all duration-300 text-right ${isSelected
-                      ? 'border-secondary bg-secondary/5 shadow-[0_0_20px_rgba(208,164,95,0.1)]'
-                      : 'border-background bg-background/30 hover:border-secondary-light hover:bg-background'
+                    ? 'border-secondary bg-secondary/5 shadow-[0_0_20px_rgba(208,164,95,0.1)]'
+                    : 'border-background bg-background/30 hover:border-secondary-light hover:bg-background'
                     }`}
                 >
                   {isSelected && (

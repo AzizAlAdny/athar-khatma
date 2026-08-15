@@ -53,8 +53,8 @@ export default function NeedManagement() {
     return (
       <div className="bg-red-50 border border-red-100 text-red-600 p-8 rounded-[2.5rem] text-center flex flex-col items-center">
         <AlertCircle size={48} className="mb-4" />
-        <h3 className="text-xl font-black mb-2">عذراً، حدث خطأ</h3>
-        <p className="font-medium">{error}</p>
+        <h3 className="text-xl font-black text-primary mb-2">عذراً، حدث خطأ</h3>
+        <p className="text-primary-muted font-medium">{error}</p>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export default function NeedManagement() {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-right">
+          <table className="w-full text-right text-sm">
             <thead>
               <tr className="border-b border-background text-primary-muted text-sm">
                 <th className="pb-5 font-black pr-4 text-right">المعرف</th>
@@ -85,13 +85,13 @@ export default function NeedManagement() {
               {needs.map((need) => (
                 <tr key={need.id} className="group hover:bg-background/30 transition-colors">
                   <td className="py-6 font-black text-primary pr-4">#{need.id}</td>
-                  <td className="py-6 text-slate-600 font-semibold">{need.gift?.name || '-'}</td>
-                  <td className="py-6 text-slate-600 font-semibold max-w-xs truncate">
+                  <td className="py-6 text-primary-muted font-semibold">{need.gift?.name || '-'}</td>
+                  <td className="py-6 text-primary-muted font-semibold max-w-xs truncate">
                     {need.description || '-'}
                   </td>
-                  <td className="py-6 text-slate-600 font-semibold">{need.city || '-'}</td>
-                  <td className="py-6 text-slate-600 font-semibold">{need.neighborhood || '-'}</td>
-                  <td className="py-6 text-slate-600 font-semibold">
+                  <td className="py-6 text-primary-muted font-semibold">{need.city || '-'}</td>
+                  <td className="py-6 text-primary-muted font-semibold">{need.neighborhood || '-'}</td>
+                  <td className="py-6 text-primary-muted font-semibold">
                     {need.created_at_human || '-'}
                   </td>
                   <td className="py-6 pr-4">

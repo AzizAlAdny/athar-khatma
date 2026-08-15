@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X as XIcon, Award, MapPin, Star } from 'lucide-react';
+import { X as XIcon, Award, MapPin, Star, User } from 'lucide-react';
 
 interface Achievement {
   gift_name: string;
@@ -38,7 +38,7 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
 
         <div className="relative inline-block">
           <div className="w-28 h-28 bg-background border-4 border-white shadow-xl rounded-[2.5rem] mx-auto flex items-center justify-center text-4xl font-black text-primary overflow-hidden">
-             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.name}`} alt="Avatar" />
+             <User size={56} />
           </div>
           <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg border-4 border-white">
              <Star size={18} fill="currentColor" />

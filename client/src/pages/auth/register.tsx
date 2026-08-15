@@ -161,7 +161,7 @@ export default function Register() {
       footer={
         <>
           لديكِ حساب بالفعل؟{' '}
-          <Link href="/auth/login" className="text-[#5E203B] font-black hover:opacity-70 transition-opacity inline-flex items-center gap-1">
+          <Link href="/auth/login" className="text-primary font-black hover:opacity-70 transition-opacity inline-flex items-center gap-1">
             تسجيل الدخول <ArrowLeft size={14} />
           </Link>
         </>
@@ -269,7 +269,7 @@ export default function Register() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-5 rounded-[1.25rem] text-lg font-black bg-[#5E203B] hover:bg-[#4a1a2f] shadow-xl shadow-[#5E203B]/10 transition-all active:scale-95"
+            className="w-full py-5 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
           >
             {isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب الآن'}
           </Button>

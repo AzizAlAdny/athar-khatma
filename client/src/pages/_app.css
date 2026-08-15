@@ -13,8 +13,8 @@
 
   --color-background: #f8f7f3;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-cairo), Tahoma, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :root {
@@ -59,11 +59,11 @@ textarea {
   }
 
   .btn-secondary {
-    @apply border border-slate-200 bg-white text-slate-700 hover:bg-slate-100;
+    @apply border border-secondary-light/30 bg-white text-primary hover:bg-background;
   }
 
   .btn-ghost {
-    @apply bg-transparent text-primary hover:bg-slate-100;
+    @apply bg-transparent text-primary hover:bg-background;
   }
 
   .btn-sm {

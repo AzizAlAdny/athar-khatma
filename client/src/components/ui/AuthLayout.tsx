@@ -34,10 +34,10 @@ export default function AuthLayout({
             <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white mb-6 shadow-sm overflow-hidden">
                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-[#2D243F] tracking-tight mb-3">
+            <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight mb-3">
               {title}
             </h1>
-            <p className="text-slate-500 text-base md:text-lg font-medium max-w-sm mx-auto leading-relaxed">
+            <p className="text-primary-muted text-sm md:text-lg font-bold max-w-sm mx-auto leading-relaxed">
               {subtitle}
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function AuthLayout({
 
           {/* Footer Section */}
           {footer && (
-            <div className="mt-5 pt-4 border-t border-slate-50 text-center text-slate-500 font-medium">
+            <div className="mt-5 pt-4 border-t border-secondary-light/30 text-center text-primary-muted font-medium">
               {footer}
             </div>
           )}

@@ -82,7 +82,7 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-[1.5rem] font-black transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${
                   activeTab === tab.id
                     ? 'bg-primary text-white shadow-md'
                     : 'text-primary-muted hover:bg-background'
@@ -102,8 +102,8 @@ export default function AdminDashboard() {
           ) : error ? (
             <div className="bg-red-50 border border-red-100 text-red-600 p-8 rounded-[2.5rem] text-center flex flex-col items-center">
               <AlertCircle size={48} className="mb-4" />
-              <h3 className="text-xl font-black mb-2">عذراً، حدث خطأ</h3>
-              <p className="font-medium">{error}</p>
+              <h3 className="text-xl font-black text-primary mb-2">عذراً، حدث خطأ</h3>
+              <p className="text-primary-muted font-medium">{error}</p>
             </div>
           ) : (
             <>
@@ -196,14 +196,14 @@ function UsersTab({ users, onRoleChange }: { users: User[]; onRoleChange: (id: n
     <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-black text-primary">إدارة المستخدمين</h2>
-        <button className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-[1.5rem] font-black hover:bg-primary/90 transition-colors">
+        <button className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-[1.5rem] text-sm font-black hover:bg-primary/90 transition-colors">
           <Plus size={20} />
           إضافة مستخدم
         </button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-right">
+        <table className="w-full text-right text-sm">
           <thead>
             <tr className="border-b border-background text-primary-muted text-sm">
               <th className="pb-5 font-black pr-4 text-right">الاسم</th>
@@ -217,7 +217,7 @@ function UsersTab({ users, onRoleChange }: { users: User[]; onRoleChange: (id: n
             {users.length > 0 ? users.map((user) => (
               <tr key={user.id} className="group hover:bg-background/30 transition-colors">
                 <td className="py-6 font-black text-primary pr-4">{user.name}</td>
-                <td className="py-6 text-slate-600 font-semibold">{user.email}</td>
+                <td className="py-6 text-primary-muted font-semibold">{user.email}</td>
                 <td className="py-6">
                   <select
                     value={user.role}
@@ -229,7 +229,7 @@ function UsersTab({ users, onRoleChange }: { users: User[]; onRoleChange: (id: n
                     <option value="admin">مشرفة</option>
                   </select>
                 </td>
-                <td className="py-6 text-slate-600 font-semibold">{user.city || '-'}</td>
+                <td className="py-6 text-primary-muted font-semibold">{user.city || '-'}</td>
                 <td className="py-6 pr-4">
                   <button className="text-secondary font-black hover:underline cursor-pointer flex items-center gap-1">
                     <Edit size={16} />
@@ -257,7 +257,7 @@ function ContentTab() {
       <div className="flex gap-2 bg-white rounded-[2rem] p-2 shadow-sm border border-secondary-light/30 w-fit">
         <button
           onClick={() => setContentType('khatmas')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-[1.5rem] font-black transition-all ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${
             contentType === 'khatmas'
               ? 'bg-primary text-white shadow-md'
               : 'text-primary-muted hover:bg-background'
@@ -268,7 +268,7 @@ function ContentTab() {
         </button>
         <button
           onClick={() => setContentType('needs')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-[1.5rem] font-black transition-all ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${
             contentType === 'needs'
               ? 'bg-accent text-white shadow-md'
               : 'text-primary-muted hover:bg-background'

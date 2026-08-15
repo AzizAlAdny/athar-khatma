@@ -106,7 +106,7 @@ export default function VerifyEmail() {
       footer={
         <button
           onClick={() => { logout(); }}
-          className="text-slate-500 font-medium hover:text-[#5E203B] transition-colors inline-flex items-center gap-1"
+          className="text-primary-muted font-medium hover:text-primary transition-colors inline-flex items-center gap-1"
         >
           <LogOut size={14} /> تسجيل الخروج
         </button>
@@ -114,16 +114,16 @@ export default function VerifyEmail() {
     >
       <div className="space-y-6 text-center">
         <div className="flex justify-center">
-          <div className="w-20 h-20 rounded-full bg-[#5E203B]/5 flex items-center justify-center text-[#5E203B]">
+          <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center text-primary">
             <Mail size={36} />
           </div>
         </div>
 
-        <p className="text-sm text-slate-600 font-medium leading-relaxed">
+        <p className="text-sm text-primary-muted font-medium leading-relaxed">
           تم إنشاء حسابكِ بنجاح. لإكمال التسجيل والبدء في صناعة الأثر، يرجى الضغط على رابط التحقق الذي أرسلناه إلى:
         </p>
 
-        <p className="text-base font-black text-[#2D243F] break-all" dir="ltr">
+        <p className="text-base font-black text-primary break-all" dir="ltr">
           {user?.email}
         </p>
 
@@ -144,7 +144,7 @@ export default function VerifyEmail() {
             type="button"
             disabled={checking}
             onClick={handleCheckVerified}
-            className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-[#5E203B] hover:bg-[#4a1a2f] shadow-xl shadow-[#5E203B]/10 transition-all active:scale-95"
+            className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
           >
             {checking ? (
               <span className="inline-flex items-center justify-center gap-2">
@@ -159,13 +159,13 @@ export default function VerifyEmail() {
             type="button"
             disabled={resending}
             onClick={handleResend}
-            className="w-full py-3 rounded-[1.25rem] text-sm font-black text-[#5E203B] bg-white border border-[#5E203B]/20 hover:bg-[#5E203B]/5 transition-all active:scale-95 disabled:opacity-60"
+            className="w-full py-3 rounded-[1.25rem] text-sm font-black text-primary bg-white border border-primary/20 hover:bg-primary/5 transition-all active:scale-95 disabled:opacity-60"
           >
             {resending ? 'جاري الإرسال...' : 'إعادة إرسال رابط التحقق'}
           </button>
         </div>
 
-        <p className="text-xs text-slate-400 font-medium pt-2">
+        <p className="text-xs text-primary-muted font-medium pt-2">
           لم تصلي الرسالة؟ تحققي من مجلد الرسائل غير المرغوب فيها (Spam).
         </p>
       </div>
