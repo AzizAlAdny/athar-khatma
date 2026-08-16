@@ -26,7 +26,7 @@ class MessageController extends Controller
         $need = Need::find($id);
 
         if (!$need) {
-            return response()->json(['message' => 'Need not found'], 404);
+            return response()->json(['message' => 'الطلب غير موجود'], 404);
         }
 
         $user = $request->user();
@@ -55,7 +55,7 @@ class MessageController extends Controller
         $need = Need::find($id);
 
         if (!$need) {
-            return response()->json(['message' => 'Need not found'], 404);
+            return response()->json(['message' => 'الطلب غير موجود'], 404);
         }
 
         $user = $request->user();

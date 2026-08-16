@@ -18,7 +18,6 @@ class KhatmaResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'completion_date' => $this->completion_date,
-            'type' => $this->type,
             'impact_score' => $this->impact_score,
             'status' => $this->status,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),

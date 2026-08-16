@@ -49,7 +49,7 @@ Route::get('/health', function () {
         return response()->json([
             'status' => 'error',
             'timestamp' => now()->toIso8601String(),
-            'error' => 'Service unavailable',
+            'error' => 'الخدمة غير متوفرة حالياً',
         ], 503);
     }
 });
@@ -65,6 +65,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return new \App\Http\Resources\UserResource($request->user());
     });
+
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
 
     // Protected routes that require authentication
     Route::get('/khatmas/{id}', [KhatmaController::class, 'show']);

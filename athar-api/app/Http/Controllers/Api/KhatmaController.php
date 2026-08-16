@@ -29,7 +29,7 @@ class KhatmaController extends Controller
         $khatma = $this->khatmaService->createKhatma($request->user()->id, $request->all());
 
         return response()->json([
-            'message' => 'Khatma recorded successfully',
+            'message' => 'تم تسجيل الختمة بنجاح',
             'khatma' => new KhatmaResource($khatma),
         ], 201);
     }
@@ -74,7 +74,7 @@ class KhatmaController extends Controller
         $khatma = $this->khatmaRepository->findById($id);
 
         if (!$khatma) {
-            return response()->json(['message' => 'Khatma not found'], 404);
+            return response()->json(['message' => 'الختمة غير موجودة'], 404);
         }
 
         // Authorization check: only allow users to view their own khatmas or admins
@@ -85,7 +85,7 @@ class KhatmaController extends Controller
                 'khatma_owner_id' => $khatma->user_id,
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['message' => 'Unauthorized. You can only view your own khatmas.'], 403);
+            return response()->json(['message' => 'غير مصرح لك بعرض هذه الختمة.'], 403);
         }
 
         return response()->json(new KhatmaResource($khatma));

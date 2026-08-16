@@ -221,6 +221,21 @@ export const fetchUser = async () => {
   return res.data;
 };
 
+export const updateUserProfile = (payload: {
+  name?: string;
+  display_name?: string;
+  bio?: string;
+  city?: string;
+  neighborhood?: string;
+}) =>
+  fetchJson<{ message: string; user: User }>('/user/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
 export const logout = () =>
   fetchJson<{ message: string }>('/logout', { method: 'POST' });
 

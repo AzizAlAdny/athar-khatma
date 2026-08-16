@@ -40,7 +40,7 @@ class NotificationController extends Controller
         $notification = $request->user()->notifications()->where('id', $id)->first();
 
         if (!$notification) {
-            return response()->json(['message' => 'Notification not found'], 404);
+            return response()->json(['message' => 'الإشعار غير موجود'], 404);
         }
 
         $notification->markAsRead();

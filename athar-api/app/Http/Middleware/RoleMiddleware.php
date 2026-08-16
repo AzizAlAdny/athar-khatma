@@ -22,7 +22,7 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!$request->user()) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+            return response()->json(['message' => 'يجب تسجيل الدخول أولاً.'], 401);
         }
 
         $user = $request->user();
@@ -33,7 +33,7 @@ class RoleMiddleware
                 'user_role' => $user->role,
             ]);
             return response()->json([
-                'message' => 'Your role (' . $user->role . ') does not have permission to access this resource.'
+                'message' => 'ليس لديك صلاحية الوصول لهذا المورد.'
             ], 403);
         }
 

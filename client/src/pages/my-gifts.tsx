@@ -43,7 +43,7 @@ export default function MyGifts() {
       actions={
         <Link href="/khatma/register">
           <Button className="bg-white text-primary border border-secondary-light/30 px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
-            <Plus size={18} /> سجلِي ختمة جديدة
+            <Plus size={18} /> ختمة جديدة
           </Button>
         </Link>
       }
@@ -122,7 +122,7 @@ export default function MyGifts() {
               <h3 className="text-xl font-black text-primary mb-2">لا يوجد سجل عطاء حالياً</h3>
               <p className="text-primary-muted font-bold mb-8 max-w-sm mx-auto">سجلي ختمتكِ الأولى اليوم واختاري هديتكِ للمجتمع لتبدأي في صناعة الأثر.</p>
               <Link href="/khatma/register">
-                <Button className="btn-gold px-12 py-4 text-sm font-black">ابدأي الآن ✨</Button>
+                <Button className="btn-gold px-12 py-4 text-sm font-black">ابدأ الآن ✨</Button>
               </Link>
             </div>
           )}

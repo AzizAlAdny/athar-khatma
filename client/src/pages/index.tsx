@@ -9,11 +9,24 @@ import { useAuth } from '@/context/AuthContext';
 // Human-friendly Arabic relative time for the gifts feed.
 const timeAgo = (iso?: string) => {
   if (!iso) return '';
-  const hours = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
-  if (hours < 1) return 'منذ أقل من ساعة';
-  if (hours < 24) return `منذ ${hours} ${hours === 1 ? 'ساعة' : 'ساعات'}`;
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'الآن';
+  if (mins === 1) return 'منذ دقيقة';
+  if (mins === 2) return 'منذ دقيقتين';
+  if (mins < 11) return `منذ ${mins} دقائق`;
+  if (mins < 60) return `منذ ${mins} دقيقة`;
+
+  const hours = Math.floor(mins / 60);
+  if (hours === 1) return 'منذ ساعة';
+  if (hours === 2) return 'منذ ساعتين';
+  if (hours < 11) return `منذ ${hours} ساعات`;
+  if (hours < 24) return `منذ ${hours} ساعة`;
+
   const days = Math.floor(hours / 24);
-  if (days < 30) return `منذ ${days} ${days === 1 ? 'يوم' : days === 2 ? 'يومين' : 'أيام'}`;
+  if (days === 1) return 'منذ يوم';
+  if (days === 2) return 'منذ يومين';
+  if (days < 11) return `منذ ${days} أيام`;
+
   return new Date(iso).toLocaleDateString('ar-SA');
 };
 import {
@@ -78,7 +91,7 @@ export default function Home() {
   // Guests get signup/login CTAs; signed-in users go to their role's main action.
   const primaryAction = !isAuthenticated ? (
     <Link href="/auth/register" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a1a2f] transition-all shadow-xl shadow-primary/10 active:scale-95">
-      <UserPlus size={18} /> أنشئي حسابك
+      <UserPlus size={18} />تسجيل
     </Link>
   ) : user?.role === 'seeker' ? (
     <Link href="/needs" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a1a2f] transition-all shadow-xl shadow-primary/10 active:scale-95">
@@ -92,7 +105,7 @@ export default function Home() {
 
   const secondaryAction = !isAuthenticated ? (
     <Link href="/auth/login" className="bg-white text-primary border border-secondary-light/30 px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
-      <LogIn size={18} /> تسجيل الدخول
+      <LogIn size={18} />دخول
     </Link>
   ) : user?.role === 'seeker' ? (
     <Link href="/needs" className="bg-white text-primary border border-secondary-light/30 px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
@@ -100,7 +113,7 @@ export default function Home() {
     </Link>
   ) : (
     <Link href="/needs/browse" className="bg-white text-primary border border-secondary-light/30 px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
-      <Info size={18} /> تصفحي الطلبات
+      <Info size={18} /> تصفح الطلبات
     </Link>
   );
 
@@ -234,13 +247,13 @@ export default function Home() {
           {/* Start Gift Card */}
           <div className="bg-primary rounded-[32px] md:rounded-[40px] p-8 relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[250px] border border-white/10">
             <div className="relative z-10">
-              <h3 className="text-3xl font-black mb-3 text-secondary">بدئي بأول هدية</h3>
+              <h3 className="text-3xl font-black mb-3 text-secondary">ابداء بأول هدية</h3>
               <p className="text-secondary-light text-sm font-bold leading-relaxed opacity-80">واجعلي ختمتك بداية لأثر جميل</p>
             </div>
             <div className="absolute -left-10 -bottom-10 opacity-10">
               <Gift size={200} color="var(--color-secondary)" />
             </div>
-            <Link href="/khatma/register" className="bg-secondary text-white py-4 rounded-2xl font-black text-sm z-10 w-full hover:bg-secondary-dark transition-all mt-8 active:scale-95 shadow-lg shadow-secondary/20 text-center">تصفحي الهدايا</Link>
+            <Link href="/khatma/register" className="bg-secondary text-white py-4 rounded-2xl font-black text-sm z-10 w-full hover:bg-secondary-dark transition-all mt-8 active:scale-95 shadow-lg shadow-secondary/20 text-center">تصفح الهدايا</Link>
           </div>
 
           {/* Recent Gifts */}
@@ -333,7 +346,7 @@ export default function Home() {
                 <UserPlus size={120} color="var(--color-secondary)" />
               </div>
               <h3 className="text-xl font-black mb-4 relative z-10">انضمي إلينا</h3>
-              <p className="text-sm text-secondary-light mb-6 opacity-70 relative z-10 font-bold">أنشئي حسابك وابدئي صناعة الأثر اليوم</p>
+              <p className="text-sm text-secondary-light mb-6 opacity-70 relative z-10 font-bold">انشاء حسابك وابدائي صناعة الأثر اليوم</p>
               <Link href="/auth/register" className="bg-white text-primary py-3 px-8 rounded-2xl text-sm font-black transition-colors relative z-10 border border-white/20 active:scale-95">
                 إنشاء حساب جديد
               </Link>

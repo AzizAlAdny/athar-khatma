@@ -6,7 +6,33 @@ import Button from '@/components/ui/Button';
 import Hero from '@/components/ui/Hero';
 import Input from '@/components/ui/Input';
 import { getGifts, recordKhatma, Gift as GiftType } from '@/services/api';
-import { Calendar, Gift as GiftIcon, CheckCircle2, ChevronRight, BookOpen } from 'lucide-react';
+import {
+  Calendar,
+  Gift as GiftIcon,
+  CheckCircle2,
+  ChevronRight,
+  BookOpen,
+  Users,
+  Baby,
+  Video,
+  PenTool,
+  Edit3,
+  UserRound,
+  Gift
+} from 'lucide-react';
+
+const renderGiftIcon = (iconName: string) => {
+  switch (iconName) {
+    case 'user-round': return <UserRound size={20} />;
+    case 'baby': return <Baby size={20} />;
+    case 'users': return <Users size={20} />;
+    case 'video': return <Video size={20} />;
+    case 'pen-tool': return <PenTool size={20} />;
+    case 'edit-3': return <Edit3 size={20} />;
+    case 'book-open': return <BookOpen size={20} />;
+    default: return <Gift size={20} />;
+  }
+};
 
 export default function RegisterKhatma() {
   const router = useRouter();
@@ -128,9 +154,9 @@ export default function RegisterKhatma() {
                       <CheckCircle2 size={20} fill="currentColor" className="text-white" />
                     </div>
                   )}
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-5 transition-transform group-hover:scale-110 ${isSelected ? 'bg-secondary text-white shadow-lg' : 'bg-white text-primary-muted shadow-sm'
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${isSelected ? 'bg-secondary text-white shadow-lg' : 'bg-white text-primary-muted shadow-sm'
                     }`}>
-                    🎁
+                    {renderGiftIcon(gift.icon)}
                   </div>
                   <h3 className={`text-lg font-black transition-colors ${isSelected ? 'text-secondary' : 'text-primary'}`}>
                     {gift.name}

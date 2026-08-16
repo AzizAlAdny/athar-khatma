@@ -22,9 +22,22 @@ const timeAgo = (value?: string): string => {
   if (!value) return '';
   const mins = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
   if (mins < 1) return 'الآن';
+  if (mins === 1) return 'منذ دقيقة';
+  if (mins === 2) return 'منذ دقيقتين';
+  if (mins < 11) return `منذ ${mins} دقائق`;
   if (mins < 60) return `منذ ${mins} دقيقة`;
+
   const hours = Math.floor(mins / 60);
+  if (hours === 1) return 'منذ ساعة';
+  if (hours === 2) return 'منذ ساعتين';
+  if (hours < 11) return `منذ ${hours} ساعات`;
   if (hours < 24) return `منذ ${hours} ساعة`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'منذ يوم';
+  if (days === 2) return 'منذ يومين';
+  if (days < 11) return `منذ ${days} أيام`;
+
   return new Date(value).toLocaleDateString('ar-SA');
 };
 

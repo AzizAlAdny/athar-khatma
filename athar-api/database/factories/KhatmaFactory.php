@@ -21,7 +21,6 @@ class KhatmaFactory extends Factory
         return [
             'user_id' => User::factory(),
             'completion_date' => fake()->dateTimeBetween('+1 week', '+1 month'),
-            'type' => fake()->randomElement(['فردية', 'جماعية']),
             'status' => 'active',
             'impact_score' => fake()->numberBetween(10, 100),
         ];

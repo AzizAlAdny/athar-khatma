@@ -213,9 +213,19 @@ export default function Register() {
             value={name}
             onChange={e => setName(e.target.value)}
             icon={User}
-                        placeholder="اكتبي اسمكِ الكامل"
+                        placeholder="ادخلي اسمكِ الكامل"
             error={errors.name}
             required
+          />
+
+          <Input
+            containerClassName="md:col-span-2"
+            label="اسم العرض (اختياري)"
+            type="text"
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            icon={User}
+            placeholder="الاسم الذي سيظهر للآخرين"
           />
 
           <Input

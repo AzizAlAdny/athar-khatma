@@ -69,7 +69,7 @@ class AuthController extends Controller
             // verified at registration, so no verification email is sent.
 
             return response()->json([
-                'message' => 'Registration successful.',
+                'message' => 'تم التسجيل بنجاح.',
                 'user' => new UserResource($user),
                 'token' => $token,
             ], 201);
@@ -100,7 +100,7 @@ class AuthController extends Controller
                 'ip' => $request->ip(),
             ]);
             return response()->json([
-                'message' => 'Invalid login details'
+                'message' => 'بيانات الدخول غير صحيحة'
             ], 401);
         }
 
@@ -149,7 +149,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'message' => 'Successfully logged out'
+            'message' => 'تم تسجيل الخروج بنجاح'
         ]);
     }
 
@@ -170,7 +170,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'message' => 'Logged out of all devices.'
+            'message' => 'تم تسجيل الخروج من جميع الأجهزة.'
         ]);
     }
 
@@ -182,7 +182,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified.'], 200);
+            return response()->json(['message' => 'البريد الإلكتروني مفعل بالفعل.'], 200);
         }
 
         try {
@@ -199,7 +199,7 @@ class AuthController extends Controller
             ], 502);
         }
 
-        return response()->json(['message' => 'Verification link sent.']);
+        return response()->json(['message' => 'تم إرسال رابط التفعيل.']);
     }
 
     /**
@@ -212,14 +212,14 @@ class AuthController extends Controller
         $user = \App\Models\User::findOrFail($id);
 
         if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return response()->json(['message' => 'Invalid verification link.'], 403);
+            return response()->json(['message' => 'رابط تفعيل غير صالح.'], 403);
         }
 
         $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
 
         if ($user->hasVerifiedEmail()) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Email already verified.', 'verified' => true]);
+                return response()->json(['message' => 'البريد الإلكتروني مفعل بالفعل.', 'verified' => true]);
             }
 
             return redirect($frontend . '/auth/verify?verified=1');
@@ -230,10 +230,38 @@ class AuthController extends Controller
         $this->auditService->record('email_verified', $user, $request);
 
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Email verified successfully.', 'verified' => true]);
+            return response()->json(['message' => 'تم تفعيل البريد الإلكتروني بنجاح.', 'verified' => true]);
         }
 
         return redirect($frontend . '/auth/verify?verified=1');
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'display_name' => 'nullable|string|max:255',
+            'bio' => 'nullable|string|max:1000',
+            'city' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+        ]);
+
+        $user->update([
+            'name' => $validated['name'] ?? $user->name,
+            'display_name' => $request->has('display_name') ? strip_tags($validated['display_name']) : $user->display_name,
+            'bio' => $request->has('bio') ? strip_tags($validated['bio']) : $user->bio,
+            'city' => $validated['city'] ?? $user->city,
+            'neighborhood' => $request->has('neighborhood') ? $validated['neighborhood'] : $user->neighborhood,
+        ]);
+
+        $this->auditService->record('profile_updated', $user, $request);
+
+        return response()->json([
+            'message' => 'تم تحديث الملف الشخصي بنجاح.',
+            'user' => new UserResource($user),
+        ]);
     }
 
     public function profile(Request $request, $id)
@@ -247,7 +275,7 @@ class AuthController extends Controller
                 'target_user_id' => $user->id,
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['message' => 'Unauthorized. You can only view your own profile.'], 403);
+            return response()->json(['message' => 'غير مصرح لك بعرض ملف شخصي آخر.'], 403);
         }
 
         // Get the latest khatma if it exists

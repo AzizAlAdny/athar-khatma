@@ -68,7 +68,7 @@ class AdminController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Role updated successfully',
+            'message' => 'تم تحديث الدور بنجاح',
             'user' => $user,
         ]);
     }
@@ -84,7 +84,7 @@ class AdminController extends Controller
             'khatma_user_id' => $khatma->user_id,
         ]);
 
-        return response()->json(['message' => 'Khatma deleted successfully']);
+        return response()->json(['message' => 'تم حذف الختمة بنجاح']);
     }
 
     public function deleteNeed($id)
@@ -98,7 +98,7 @@ class AdminController extends Controller
             'need_user_id' => $need->user_id,
         ]);
 
-        return response()->json(['message' => 'Need deleted successfully']);
+        return response()->json(['message' => 'تم حذف الطلب بنجاح']);
     }
 
     public function createUser(Request $request)
@@ -126,7 +126,7 @@ class AdminController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'User created successfully',
+            'message' => 'تم إنشاء المستخدم بنجاح',
             'user' => $user,
         ], 201);
     }

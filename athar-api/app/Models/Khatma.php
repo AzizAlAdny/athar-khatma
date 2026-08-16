@@ -14,7 +14,6 @@ class Khatma extends Model
     protected $fillable = [
         'user_id',
         'completion_date',
-        'type',
         'impact_score',
         'status',
     ];

@@ -61,7 +61,7 @@ class NeedController extends Controller
         $need = Need::find($id);
 
         if (!$need) {
-            return response()->json(['message' => 'Need not found'], 404);
+            return response()->json(['message' => 'الطلب غير موجود'], 404);
         }
 
         if ($request->user()->id !== $need->user_id && $request->user()->role !== 'admin') {
@@ -71,7 +71,7 @@ class NeedController extends Controller
                 'need_owner_id' => $need->user_id,
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['message' => 'Unauthorized. You can only delete your own needs.'], 403);
+            return response()->json(['message' => 'غير مصرح لك بحذف هذا الطلب.'], 403);
         }
 
         $need->delete();
@@ -82,6 +82,6 @@ class NeedController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        return response()->json(['message' => 'Need deleted successfully']);
+        return response()->json(['message' => 'تم حذف الطلب بنجاح']);
     }
 }

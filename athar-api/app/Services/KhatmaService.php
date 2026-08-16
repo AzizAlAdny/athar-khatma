@@ -50,14 +50,12 @@ class KhatmaService
             // Sanitize input data
             $sanitizedData = [
                 'completion_date' => $data['completion_date'],
-                'type' => strip_tags($data['type'] ?? 'فردية'),
                 'gift_ids' => array_map('intval', $data['gift_ids']),
             ];
 
             $khatmaData = [
                 'user_id' => $userId,
                 'completion_date' => $sanitizedData['completion_date'],
-                'type' => $sanitizedData['type'],
                 'status' => KhatmaConstants::STATUS_ACTIVE,
                 'impact_score' => count($sanitizedData['gift_ids']) * KhatmaConstants::IMPACT_POINTS_PER_GIFT,
             ];
