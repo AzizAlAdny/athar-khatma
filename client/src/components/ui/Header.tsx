@@ -1,18 +1,91 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Bell, MessageSquare, Search, Menu, LogIn, UserPlus, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Bell, CheckCheck, MessageSquare, Search, Menu, LogIn, UserPlus, User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import {
+  ApiNotification,
+  getNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '@/services/api';
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
+/** Short relative label for notification timestamps (Arabic, fuzzy). */
+const timeAgo = (value?: string): string => {
+  if (!value) return '';
+  const mins = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
+  if (mins < 1) return 'الآن';
+  if (mins < 60) return `منذ ${mins} دقيقة`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `منذ ${hours} ساعة`;
+  return new Date(value).toLocaleDateString('ar-SA');
+};
+
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, isAuthenticated } = useAuth();
   const userName = user?.name || 'زائرة';
   const roleLabel = user?.role === 'seeker' ? 'طالبة عون' : user?.role === 'admin' ? 'مشرفة' : 'ختماتي';
+
+  const router = useRouter();
+  const [bellOpen, setBellOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  // Poll the unread badge every 15s while signed in.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let mounted = true;
+    const load = () =>
+      getUnreadNotificationCount()
+        .then(r => { if (mounted) setUnread(r.unread); })
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, 15000);
+    return () => { mounted = false; clearInterval(timer); };
+  }, [isAuthenticated]);
+
+  const toggleBell = async () => {
+    const next = !bellOpen;
+    setBellOpen(next);
+    if (!next) return;
+    setLoadingNotifications(true);
+    try {
+      setNotifications(await getNotifications());
+    } catch {
+      /* keep the previous list on failure */
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const openNotification = async (n: ApiNotification) => {
+    setBellOpen(false);
+    if (!n.read_at) {
+      try {
+        await markNotificationRead(n.id);
+        setUnread(count => Math.max(0, count - 1));
+      } catch { /* the badge resyncs on the next poll */ }
+    }
+    if (n.need_id) router.push(`/needs/${n.need_id}/chat`);
+  };
+
+  const readAll = async () => {
+    try {
+      await markAllNotificationsRead();
+      setUnread(0);
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, read_at: n.read_at ?? new Date().toISOString() }))
+      );
+    } catch { /* silent: the list resyncs on next open */ }
+  };
 
   return (
     <header className="bg-white px-4 md:px-10 py-4 flex justify-between items-center sticky top-0 z-[60] border-b border-secondary-light/30 w-full shadow-sm">
@@ -83,10 +156,82 @@ export default function Header({ onMenuClick }: HeaderProps) {
         )}
 
         <div className="flex gap-2 md:gap-3 pr-2 md:pr-4 border-r border-secondary-light/30">
-           <div className="hidden relative text-primary-muted hover:text-primary cursor-pointer p-2 rounded-xl bg-background">
-             <Bell size={18} />
-             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-           </div>
+           {isAuthenticated && (
+             <div className="relative">
+               <button
+                 type="button"
+                 onClick={toggleBell}
+                 aria-label="الإشعارات"
+                 className="relative text-primary-muted hover:text-primary cursor-pointer p-2 rounded-xl bg-background transition-colors"
+               >
+                 <Bell size={18} />
+                 {unread > 0 && (
+                   <span className="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-black rounded-full border-2 border-white flex items-center justify-center">
+                     {unread > 9 ? '9+' : unread}
+                   </span>
+                 )}
+               </button>
+
+               {bellOpen && (
+                 <>
+                   <button
+                     type="button"
+                     aria-label="إغلاق الإشعارات"
+                     className="fixed inset-0 z-40 cursor-default bg-transparent"
+                     onClick={() => setBellOpen(false)}
+                   />
+                   <div className="absolute left-0 top-full mt-2 w-80 max-w-[85vw] bg-white border border-secondary-light/30 rounded-2xl shadow-xl z-50 overflow-hidden text-right">
+                     <div className="flex items-center justify-between px-4 py-3 border-b border-background">
+                       <h4 className="text-xs font-black text-primary">الإشعارات</h4>
+                       {notifications.some(n => !n.read_at) && (
+                         <button
+                           type="button"
+                           onClick={readAll}
+                           className="flex items-center gap-1 text-[10px] font-bold text-secondary hover:text-primary transition-colors"
+                         >
+                           <CheckCheck size={12} /> تعليم الكل كمقروء
+                         </button>
+                       )}
+                     </div>
+                     <div className="max-h-80 overflow-y-auto no-scrollbar">
+                       {loadingNotifications ? (
+                         <div className="flex items-center justify-center gap-2 py-8 text-primary-muted text-xs font-bold">
+                           <Loader2 size={14} className="animate-spin" /> جاري التحميل...
+                         </div>
+                       ) : notifications.length === 0 ? (
+                         <p className="py-8 text-center text-[11px] font-bold text-primary-muted">
+                           لا توجد إشعارات بعد
+                         </p>
+                       ) : (
+                         notifications.map(n => (
+                           <button
+                             key={n.id}
+                             type="button"
+                             onClick={() => openNotification(n)}
+                             className={`w-full text-right px-4 py-3 border-b border-background last:border-0 transition-colors hover:bg-background ${
+                               n.read_at ? 'bg-white' : 'bg-secondary/5'
+                             }`}
+                           >
+                             <div className="flex items-center gap-2">
+                               {!n.read_at && <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />}
+                               <p className="text-[11px] font-black text-primary flex-1">
+                                 {n.kind === 'new_participant' ? 'خاتمة جديدة مهتمة بطلبك' : 'رسالة جديدة'}
+                                 {n.need_title ? ` • ${n.need_title}` : ''}
+                               </p>
+                               <span className="text-[9px] text-primary-muted shrink-0">{timeAgo(n.created_at)}</span>
+                             </div>
+                             <p className="text-[10px] font-bold text-primary-muted mt-1 leading-relaxed">
+                               {n.sender_name ? `${n.sender_name}: ` : ''}{n.excerpt || ''}
+                             </p>
+                           </button>
+                         ))
+                       )}
+                     </div>
+                   </div>
+                 </>
+               )}
+             </div>
+           )}
            <div className="text-primary-muted hover:text-primary cursor-pointer p-2 rounded-xl bg-background hidden">
               <MessageSquare size={18} />
            </div>

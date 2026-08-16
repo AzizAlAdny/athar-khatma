@@ -29,6 +29,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'display_name' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:khatma,seeker',
@@ -41,6 +42,7 @@ class AuthController extends Controller
         return DB::transaction(function () use ($request) {
             $user = User::create([
                 'name' => $request->name,
+                'display_name' => $request->filled('display_name') ? strip_tags($request->display_name) : null,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
@@ -254,7 +256,7 @@ class AuthController extends Controller
         return response()->json([
             'id' => $user->id,
             'user' => [
-                'name' => $user->name,
+                'name' => $user->display_name ?: $user->name,
                 'bio' => $user->bio,
                 'city' => $user->city,
                 'role' => $user->role,
@@ -290,7 +292,8 @@ class AuthController extends Controller
         return response()->json([
             'id' => $user->id,
             'user' => [
-                'name' => $user->name,
+                // Public view: prefer the map display name (الاسم الظاهر على خريطة الأثر).
+                'name' => $user->display_name ?: $user->name,
                 'city' => $user->city,
             ],
             'completion_date' => $khatma?->completion_date,

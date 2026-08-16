@@ -50,7 +50,7 @@ class KhatmaService
             // Sanitize input data
             $sanitizedData = [
                 'completion_date' => $data['completion_date'],
-                'type' => strip_tags($data['type']),
+                'type' => strip_tags($data['type'] ?? 'فردية'),
                 'gift_ids' => array_map('intval', $data['gift_ids']),
             ];
 

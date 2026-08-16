@@ -25,18 +25,23 @@ class ValidationTest extends TestCase
         $response->assertJsonValidationErrors(['completion_date']);
     }
 
-    public function test_khatma_validation_requires_type()
+    public function test_khatma_type_is_optional_and_defaults_to_individual()
     {
+        // The UI no longer collects khatma type; omitting it must not fail.
         $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
+        $gift = Gift::factory()->create();
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),
-            'gift_ids' => [1],
+            'gift_ids' => [$gift->id],
         ]);
 
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['type']);
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('khatmas', [
+            'user_id' => $user->id,
+            'type' => 'فردية',
+        ]);
     }
 
     public function test_khatma_validation_requires_gift_ids()

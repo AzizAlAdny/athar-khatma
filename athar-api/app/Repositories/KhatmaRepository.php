@@ -63,7 +63,8 @@ class KhatmaRepository implements KhatmaRepositoryInterface
                 return [
                     'id' => $first->id,
                     'user_id' => $first->user_id,
-                    'user_name' => $first->user->name,
+                    // Show the preferred map display name when set (الاسم الظاهر على خريطة الأثر).
+                    'user_name' => $first->user->display_name ?: $first->user->name,
                     'city' => $first->user->city,
                     'location' => [
                         'lat' => (float) $first->user->latitude,

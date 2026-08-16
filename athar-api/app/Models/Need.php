@@ -29,4 +29,9 @@ class Need extends Model
     {
         return $this->belongsTo(Gift::class);
     }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
 }

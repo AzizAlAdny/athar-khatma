@@ -11,7 +11,7 @@ import AtharProfile from '../ui/AtharProfile';
 import { getMapPins, getPublicProfile, KhatmaPin } from '@/services/api';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { ChevronDown, MapPin, Filter, X } from 'lucide-react';
+import { ChevronDown, MapPin, Filter, X, Gift } from 'lucide-react';
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
@@ -294,19 +294,22 @@ const CustomMarker = ({ pin, onClick, getGlowColor, getGlowShadow }: any) => {
       position={position}
       onClick={onClick}
     >
-      <div
-        className={`marker glow-level-${pin.glow_level}`}
+            <div
+        className={`marker glow-level-${pin.glow_level} flex items-center justify-center`}
         style={{
-          width: '20px',
-          height: '20px',
+          width: '34px',
+          height: '34px',
           borderRadius: '50%',
           backgroundColor: getGlowColor(pin.glow_level),
           boxShadow: getGlowShadow(pin.glow_level),
           cursor: 'pointer',
           animation: pin.glow_level >= 2 ? 'pulse 2s infinite' : 'none',
-          border: '2px solid white'
+          border: '2px solid white',
+          color: '#ffffff'
         }}
-      />
+      >
+        <Gift size={18} strokeWidth={2.5} />
+      </div>
     </AdvancedMarker>
   );
 };
@@ -343,13 +346,19 @@ const OsmFallback = ({ pins, openProfile }: any) => {
     map.current.addControl(new maplibregl.NavigationControl());
 
     pins.forEach((pin: any) => {
-      const el = document.createElement('div');
-      el.style.width = '20px';
-      el.style.height = '20px';
+            const el = document.createElement('div');
+      el.style.width = '34px';
+      el.style.height = '34px';
       el.style.borderRadius = '50%';
       el.style.backgroundColor = '#154A32';
       el.style.border = '2px solid white';
       el.style.cursor = 'pointer';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.color = '#ffffff';
+      el.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5 4.8 8 0 0 1 4.5 5 4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>';
 
       const lat = typeof pin.location.lat === 'string' ? parseFloat(pin.location.lat) : pin.location.lat;
       const lng = typeof pin.location.lng === 'string' ? parseFloat(pin.location.lng) : pin.location.lng;

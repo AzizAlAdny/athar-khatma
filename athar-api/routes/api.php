@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GiftController;
 use App\Http\Controllers\Api\KhatmaController;
+use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NeedController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\AdminController;
@@ -79,6 +81,16 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/khatmas', [KhatmaController::class, 'index']);
+
+    // Chat between the need owner (طالب الخدمة) and the khatma user (الخاتمة).
+    Route::get('/needs/{id}/messages', [MessageController::class, 'index']);
+    Route::middleware('throttle:60,1')->post('/needs/{id}/messages', [MessageController::class, 'store']);
+
+    // In-app notifications for the header bell (database channel).
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
     // Write routes require a verified email + the role-based token ability.
     Route::middleware('role:khatma,admin', 'ability:khatma:create')->group(function () {

@@ -6,14 +6,13 @@ import Button from '@/components/ui/Button';
 import Hero from '@/components/ui/Hero';
 import Input from '@/components/ui/Input';
 import { getGifts, recordKhatma, Gift as GiftType } from '@/services/api';
-import { Calendar, Layers, Gift as GiftIcon, CheckCircle2, ChevronRight, BookOpen } from 'lucide-react';
+import { Calendar, Gift as GiftIcon, CheckCircle2, ChevronRight, BookOpen } from 'lucide-react';
 
 export default function RegisterKhatma() {
   const router = useRouter();
   const [gifts, setGifts] = useState<GiftType[]>([]);
   const [selectedGiftIds, setSelectedGiftIds] = useState<number[]>([]);
-  const [completionDate, setCompletionDate] = useState(new Date().toISOString().split('T')[0]);
-  const [khatmaType, setKhatmaType] = useState('فردية');
+    const [completionDate, setCompletionDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,9 +38,8 @@ export default function RegisterKhatma() {
     setIsSubmitting(true);
 
     try {
-      await recordKhatma({
+            await recordKhatma({
         completion_date: completionDate,
-        type: khatmaType,
         gift_ids: selectedGiftIds
       });
       router.push('/dashboard');
@@ -83,12 +81,13 @@ export default function RegisterKhatma() {
             </div>
             <div>
               <h2 className="text-2xl font-black text-primary">تفاصيل الختمة</h2>
-              <p className="text-sm text-primary-muted font-bold mt-1">حددي تاريخ الإكمال ونوع الختمة بدقة.</p>
+                            <p className="text-sm text-primary-muted font-bold mt-1">حددي تاريخ إكمال ختمتكِ بدقة.</p>
             </div>
           </div>
 
           <div className="grid gap-8 md:grid-cols-2">
-            <Input
+                        <Input
+              containerClassName="md:col-span-2"
               label="تاريخ الإكمال"
               type="date"
               value={completionDate}
@@ -96,17 +95,6 @@ export default function RegisterKhatma() {
               icon={Calendar}
               required
             />
-            <Input
-              as="select"
-              label="نوع الختمة"
-              value={khatmaType}
-              onChange={e => setKhatmaType(e.target.value)}
-              icon={Layers}
-              required
-            >
-              <option value="فردية">فردية</option>
-              <option value="جماعية">جماعية</option>
-            </Input>
           </div>
         </section>
 

@@ -58,7 +58,8 @@ class KhatmaController extends Controller
             ->get()
             ->map(fn ($service) => [
                 'gift_name' => $service->gift->name ?? null,
-                'user_name' => $service->khatma->user->name ?? null,
+                // Prefer the map display name when set (الاسم الظاهر على خريطة الأثر).
+                'user_name' => $service->khatma->user?->display_name ?: ($service->khatma->user?->name ?? null),
                 'city' => $service->khatma->user->city ?? null,
                 'created_at' => optional($service->created_at)->toIso8601String(),
             ])

@@ -95,7 +95,7 @@ const UserDashboard = () => {
                 <div className="space-y-6 relative flex-1">
                   <div className="absolute right-[17px] top-2 bottom-2 w-0.5 bg-secondary-light"></div>
                   {[
-                    { step: '1', title: 'اختاري ختمتك', detail: 'حددي نوع الختمة وأهدافها.', status: 'completed' },
+                                        { step: '1', title: 'اختاري ختمتك', detail: 'حددي تاريخ ختمتكِ وأهدافها.', status: 'completed' },
                     { step: '2', title: 'اضيفي هدية', detail: 'اكتملي بخيار هدية يرفع الأثر.', status: 'completed' },
                     { step: '3', title: 'تابعي مساهمتك', detail: 'رصد الأثر يصل إليك بوضوح.', status: 'completed' },
                   ].map((item, i) => (
@@ -191,7 +191,7 @@ const UserDashboard = () => {
               <div className="absolute -left-10 -bottom-10 opacity-10">
                 <Sparkles size={200} color="var(--color-secondary)" />
               </div>
-              <button className="bg-white text-primary py-4 rounded-2xl font-black text-xs z-10 w-full hover:bg-background transition-all mt-8 active:scale-95">اقرئي قصتها</button>
+                          <button className="bg-white text-primary py-4 rounded-2xl font-black text-xs z-10 w-full hover:bg-background transition-all mt-8 active:scale-95">ابدئي قصتك</button>
             </div>
           </section>
         </div>

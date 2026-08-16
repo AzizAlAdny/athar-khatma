@@ -8,7 +8,7 @@ import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getNeeds, deleteMyNeed, Need } from '@/services/api';
-import { Plus, MapPin, HelpCircle, Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, MapPin, HelpCircle, Trash2, AlertCircle, Loader2, MessageCircle } from 'lucide-react';
 
 export default function MyNeeds() {
   const { user } = useAuth();
@@ -126,7 +126,13 @@ export default function MyNeeds() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3">
+                      <Link href={`/needs/${need.id}/chat`} className="flex-none">
+                        <Button className="bg-secondary/5 hover:bg-secondary/10 text-primary rounded-2xl px-4 py-3 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                          <MessageCircle size={14} /> المحادثات
+                        </Button>
+                      </Link>
+
                       {confirmDeleteId === need.id ? (
                         <div className="flex items-center gap-2">
                           <Button

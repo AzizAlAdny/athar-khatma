@@ -37,6 +37,28 @@ export interface RecentGift {
   created_at?: string;
 }
 
+export interface ChatMessage {
+  id: number;
+  need_id: number;
+  participant_id: number;
+  sender_id: number;
+  sender_name?: string;
+  body: string;
+  created_at?: string;
+}
+
+export interface ApiNotification {
+  id: string;
+  kind: 'new_message' | 'new_participant';
+  sender_name?: string | null;
+  need_id?: number | null;
+  participant_id?: number | null;
+  need_title?: string | null;
+  excerpt?: string | null;
+  read_at: string | null;
+  created_at?: string;
+}
+
 export interface KhatmaProfile {
   id: number;
   user: { name: string; bio: string; city: string };
@@ -49,8 +71,10 @@ export interface KhatmaProfile {
 export interface User {
   id: number;
   name: string;
+  display_name?: string | null;
   email: string;
   role: 'khatma' | 'seeker' | 'admin';
+  neighborhood?: string;
   city?: string;
   bio?: string;
   latitude?: number;
@@ -157,6 +181,7 @@ export const login = (email: string, password: string) =>
 
 export const register = (payload: {
   name: string;
+  display_name?: string;
   email: string;
   password: string;
   password_confirmation: string;
@@ -236,6 +261,45 @@ export const deleteMyNeed = (id: number) =>
   fetchJson<{ message: string }>(`/needs/${id}`, {
     method: 'DELETE',
   });
+
+// Chat: a thread is keyed by (need_id, participant_id). The need owner loads a
+// thread for a specific participant; a khatma always sees only her own thread.
+export const getMessages = (needId: number, participantId?: number) => {
+  const qs = new URLSearchParams();
+  if (participantId) qs.set('participant', String(participantId));
+  const query = qs.toString();
+  return fetchJson<ChatMessage[]>(
+    `/needs/${needId}/messages${query ? `?${query}` : ''}`
+  );
+};
+
+export const sendMessage = (
+  needId: number,
+  body: string,
+  participantId?: number
+) =>
+  fetchJson<ChatMessage>(`/needs/${needId}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(
+      participantId ? { body, participant_id: participantId } : { body }
+    ),
+  });
+
+// In-app notifications (header bell). The bell polls the unread count while
+// the dropdown lists the latest notifications on open.
+export const getNotifications = () =>
+  fetchJson<ApiNotification[]>('/notifications');
+export const getUnreadNotificationCount = () =>
+  fetchJson<{ unread: number }>('/notifications/unread-count');
+export const markNotificationRead = (id: string) =>
+  fetchJson<{ status: string }>(`/notifications/${id}/read`, {
+    method: 'POST',
+  });
+export const markAllNotificationsRead = () =>
+  fetchJson<{ status: string }>('/notifications/read-all', {
+    method: 'POST',
+  });
 export const createUser = (payload: {
   name: string;
   email: string;
@@ -253,7 +317,7 @@ export const createUser = (payload: {
 
 export const recordKhatma = (payload: {
   completion_date: string;
-  type: string;
+  type?: string;
   gift_ids: number[];
 }) =>
   fetchJson<{ khatma: KhatmaProfile }>('/khatmas', {

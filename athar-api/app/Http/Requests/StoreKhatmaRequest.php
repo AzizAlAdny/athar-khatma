@@ -26,7 +26,9 @@ class StoreKhatmaRequest extends FormRequest
     {
         return [
             'completion_date' => 'required|date',
-            'type' => 'required|string|in:فردية,جماعية',
+            // Khatma type is no longer collected in the UI; it stays optional
+            // in the API and defaults to فردية in KhatmaService.
+            'type' => 'sometimes|string|in:فردية,جماعية',
             'gift_ids' => 'required|array|min:1',
             'gift_ids.*' => 'exists:gifts,id',
         ];

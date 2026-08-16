@@ -173,12 +173,14 @@ class AuthFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_email_verification_link_marks_email_verified()
+    public function test_email_verification_link_is_idempotent_for_already_verified_user()
     {
         Notification::fake();
         Event::fake([Registered::class]);
 
-        // Register a new user (triggers the verification notification)
+        // Registration auto-verifies the email (email verification is disabled),
+        // so the signed verification link is idempotent: it redirects without
+        // recording a duplicate email_verified event.
         $this->postJson('/api/register', [
             'name' => 'Verify User',
             'email' => 'verify@example.com',
@@ -188,9 +190,10 @@ class AuthFeatureTest extends TestCase
         ])->assertStatus(201);
 
         $user = User::where('email', 'verify@example.com')->firstOrFail();
-        $this->assertNull($user->email_verified_at);
+        // Because verification is disabled, the account is already verified.
+        $this->assertNotNull($user->email_verified_at);
 
-        // Hit the verification endpoint with a valid signed URL
+        // Hit the verification endpoint with a valid signed URL.
         $url = \Illuminate\Support\Facades\URL::signedRoute('api.verification.verify', [
             'id' => $user->id,
             'hash' => sha1($user->getEmailForVerification()),
@@ -199,8 +202,8 @@ class AuthFeatureTest extends TestCase
         $response = $this->get($url);
         $response->assertRedirect();
 
-        $this->assertNotNull($user->fresh()->email_verified_at);
-        $this->assertDatabaseHas('auth_events', [
+        // No duplicate event is recorded for an already-verified user.
+        $this->assertDatabaseMissing('auth_events', [
             'user_id' => $user->id,
             'event' => 'email_verified',
         ]);

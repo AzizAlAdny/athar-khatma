@@ -2,17 +2,18 @@
 
 import React, { useEffect, useState } from 'react';
 import AppShell from '@/components/ui/AppShell';
-import Button from '@/components/ui/Button';
 import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { getNeeds, Need } from '@/services/api';
-import { MapPin, HelpCircle, Gift, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
+import { MapPin, HelpCircle, MessageCircle, AlertCircle } from 'lucide-react';
 
 export default function BrowseNeeds() {
   const [needs, setNeeds] = useState<Need[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pledgedIds, setPledgedIds] = useState<Set<number>>(new Set());
+    const { user } = useAuth();
 
   useEffect(() => {
     getNeeds()
@@ -27,8 +28,6 @@ export default function BrowseNeeds() {
       });
   }, []);
 
-  // No fulfillment API exists yet; record the pledge intent locally for now.
-  const handlePledge = (id: number) => setPledgedIds(prev => new Set(prev).add(id));
 
   const needsHero = (
     <Hero
@@ -92,22 +91,13 @@ export default function BrowseNeeds() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {pledgedIds.has(need.id) ? (
-                        <div className="flex flex-col items-center gap-1">
-                          <span className="flex items-center gap-2 text-accent text-xs font-black bg-accent/5 rounded-2xl px-5 py-3.5">
-                            <CheckCircle2 size={16} /> سجل عطاؤكِ بنجاح
-                          </span>
-                          <span className="text-xs text-primary-muted font-bold">سيتم التواصل معكِ لاحقاً</span>
-                        </div>
-                      ) : (
-                        <Button
-                          className="flex-1 md:flex-none bg-accent hover:bg-[#0e3522] text-white rounded-2xl px-6 py-3.5 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
-                          onClick={() => handlePledge(need.id)}
-                        >
-                          <Gift size={14} /> تقديم العطاء
-                        </Button>
-                      )}
+                                        <div className="flex items-center gap-3">
+                      <Link
+                        href={user?.id ? `/needs/${need.id}/chat` : '/auth/login'}
+                        className="flex-1 md:flex-none bg-accent hover:bg-[#0e3522] text-white rounded-2xl px-6 py-3.5 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle size={14} /> مراسلة صاحبة الطلب
+                      </Link>
                     </div>
                   </div>
                 </div>
