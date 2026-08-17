@@ -17,9 +17,12 @@ use Illuminate\Support\Facades\Cache;
 Route::middleware('throttle:5,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/verify-code', [AuthController::class, 'verifyWithCode']);
+    Route::post('/forgot-password', [AuthController::class, 'requestPasswordReset']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
-// Email verification via signed link (clicked from the email) — public, validated by signature
+// Email verification via signed link (legacy, kept for backward compatibility)
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware('signed')
     ->name('api.verification.verify');
@@ -70,9 +73,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::put('/user/profile', [AuthController::class, 'updateProfile']);
 
-    // Protected routes that require authentication
-    Route::get('/khatmas/{id}', [KhatmaController::class, 'show']);
-    Route::get('/users/{id}/profile', [AuthController::class, 'profile']);
+    // Protected routes that require authentication and email verification
+    Route::middleware('verified')->group(function () {
+        Route::get('/khatmas/{id}', [KhatmaController::class, 'show']);
+        Route::get('/users/{id}/profile', [AuthController::class, 'profile']);
+    });
 
     // Role-protected routes
     Route::middleware('role:admin')->group(function () {
@@ -86,25 +91,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/khatmas', [KhatmaController::class, 'index']);
 
-    // Unified chat between users regarding an initiative (Need or Gift).
-    Route::get('/chat/threads', [MessageController::class, 'threads']);
-    Route::get('/chat/{type}/{id}/messages', [MessageController::class, 'index']);
-    Route::middleware('throttle:60,1')->post('/chat/{type}/{id}/messages', [MessageController::class, 'store']);
+    // Routes that require email verification
+    Route::middleware('verified')->group(function () {
+        Route::get('/chat/threads', [MessageController::class, 'threads']);
+        Route::get('/chat/{type}/{id}/messages', [MessageController::class, 'index']);
+        Route::middleware('throttle:60,1')->post('/chat/{type}/{id}/messages', [MessageController::class, 'store']);
 
-    // In-app notifications for the header bell (database channel).
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+        // In-app notifications for the header bell (database channel).
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
-    // Write routes require a verified email + the role-based token ability.
-    Route::middleware('role:khatma,admin', 'ability:khatma:create')->group(function () {
-        Route::post('/khatmas', [KhatmaController::class, 'store'])->middleware(['verified']);
-    });
+        // Write routes require a verified email + the role-based token ability.
+        Route::middleware('role:khatma,admin', 'ability:khatma:create')->group(function () {
+            Route::post('/khatmas', [KhatmaController::class, 'store']);
+        });
 
-    Route::middleware('role:seeker,admin', 'ability:need:create')->group(function () {
-        Route::post('/needs', [NeedController::class, 'store'])->middleware(['verified']);
-        // Seekers can delete their own needs (ownership checked in the controller).
-        Route::delete('/needs/{id}', [NeedController::class, 'destroy'])->middleware(['verified']);
+        Route::middleware('role:seeker,admin', 'ability:need:create')->group(function () {
+            Route::post('/needs', [NeedController::class, 'store']);
+            // Seekers can delete their own needs (ownership checked in the controller).
+            Route::delete('/needs/{id}', [NeedController::class, 'destroy']);
+        });
     });
 });

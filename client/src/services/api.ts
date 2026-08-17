@@ -92,7 +92,7 @@ export interface User {
   bio?: string;
   latitude?: number;
   longitude?: number;
-  email_verified?: boolean;
+  email_verified: boolean;
   created_at?: string;
 }
 
@@ -214,6 +214,36 @@ export const register = (payload: {
 
 export const resendEmailVerification = () =>
   fetchJson<{ message: string }>('/email/resend', { method: 'POST' });
+
+// Verify email with 6-digit code
+export const verifyWithCode = (email: string, code: string) =>
+  fetchJson<{ message: string; verified: boolean }>('/verify-code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, code }),
+  });
+
+// Request password reset
+export const requestPasswordReset = (email: string) =>
+  fetchJson<{ message: string }>('/forgot-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  });
+
+// Reset password with token
+export const resetPassword = (email: string, token: string, password: string, password_confirmation: string) =>
+  fetchJson<{ message: string }>('/reset-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, token, password, password_confirmation }),
+  });
 
 // Complete email verification from the signed link params carried on the
 // frontend verify page URL (id, hash, expires, signature).

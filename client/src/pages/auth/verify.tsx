@@ -2,21 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
-import { Mail, CheckCircle2, LogOut, RefreshCw } from 'lucide-react';
-import { resendEmailVerification, verifyEmailLink, fetchUser } from '@/services/api';
+import Input from '@/components/ui/Input';
+import { Mail, CheckCircle2, LogOut, RefreshCw, Key } from 'lucide-react';
+import { resendEmailVerification, verifyWithCode, fetchUser } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function VerifyEmail() {
   const router = useRouter();
   const { user, login, logout } = useAuth();
+  const [code, setCode] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [verifyingLink, setVerifyingLink] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
 
-  // When the user clicks the email link, the API verifies and redirects here
-  // with ?verified=1 — auto-refresh the user and proceed to the dashboard.
   useEffect(() => {
     if (router.query.verified === '1') {
       setMessage('تم التحقق من بريدكِ الإلكتروني بنجاح!');
@@ -34,75 +34,73 @@ export default function VerifyEmail() {
     }
   }, [router.query.verified]);
 
-  // Email links land here with the API's signed params
-  // (?id=..&hash=..&expires=..&signature=..). Forward them to the API to
-  // actually mark the email verified, then refresh the user.
+  // Countdown timer for code expiration
   useEffect(() => {
-    const { id, hash, expires, signature } = router.query;
-    if (!id || !hash || !expires || !signature || typeof id !== 'string') return;
-    if (verifyingLink) return;
-    setVerifyingLink(true);
-    setError(null);
+    if (timeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
 
-    (async () => {
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleVerify = async () => {
+    if (!code || code.length !== 6) {
+      setError('يرجى إدخال رمز التحقق المكون من 6 أرقام');
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setVerifying(true);
+
+    try {
+      await verifyWithCode(user?.email || '', code);
+      setMessage('تم التحقق من بريدكِ الإلكتروني بنجاح!');
       try {
-        await verifyEmailLink(id as string, hash as string, expires as string, signature as string);
-        setMessage('تم التحقق من بريدكِ الإلكتروني بنجاح!');
-        try {
-          const freshUser = await fetchUser();
-          login(freshUser);
-          router.push('/dashboard');
-        } catch {
-          // Verification succeeded, but this browser isn't signed in —
-          // keep the success message; the user can log in afterwards.
-        }
-      } catch (err: any) {
-        setError(
-          err.message ||
-            'رابط التحقق غير صالح أو منتهي الصلاحية. يرجى إعادة إرسال رابط التحقق.'
-        );
-      } finally {
-        setVerifyingLink(false);
+        const freshUser = await fetchUser();
+        login(freshUser);
+        router.push('/dashboard');
+      } catch {
+        // Verification succeeded, but this browser isn't signed in
+        // keep the success message; the user can log in afterwards.
       }
-    })();
-  }, [router.query]);
+    } catch (err: any) {
+      setError(err.message || 'رمز التحقق غير صحيح أو منتهي الصلاحية');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleResend = async () => {
     setError(null);
     setMessage(null);
     setResending(true);
+    setTimeLeft(15 * 60); // Reset timer
     try {
       const data = await resendEmailVerification();
-      setMessage(data.message || 'تم إرسال رابط التحقق إلى بريدكِ الإلكتروني.');
+      setMessage(data.message || 'تم إرسال رمز التحقق الجديد إلى بريدكِ الإلكتروني.');
     } catch (err: any) {
-      setError(err.message || 'تعذر إرسال رابط التحقق، يرجى المحاولة لاحقاً.');
+      setError(err.message || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً.');
     } finally {
       setResending(false);
     }
   };
 
-  const handleCheckVerified = async () => {
-    setError(null);
-    setChecking(true);
-    try {
-      const freshUser = await fetchUser();
-      login(freshUser);
-      if (freshUser.email_verified) {
-        router.push('/dashboard');
-      } else {
-        setError('لم يتم التحقق من البريد الإلكتروني بعد. يرجى الضغط على الرابط المرسل إلى بريدكِ.');
-      }
-    } catch (err: any) {
-      setError(err.message || 'تعذر التحقق من حالة البريد الإلكتروني.');
-    } finally {
-      setChecking(false);
-    }
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setCode(value);
   };
 
   return (
     <AuthLayout
       title="تحققي من بريدكِ الإلكتروني"
-      subtitle="أرسلنا رابط تحقق إلى بريدكِ لإتمام إنشاء الحساب"
+      subtitle="أرسلنا رمز تحقق مكون من 6 أرقام إلى بريدكِ الإلكتروني"
       footer={
         <button
           onClick={() => { logout(); }}
@@ -115,17 +113,42 @@ export default function VerifyEmail() {
       <div className="space-y-6 text-center">
         <div className="flex justify-center">
           <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center text-primary">
-            <Mail size={36} />
+            <Key size={36} />
           </div>
         </div>
 
         <p className="text-sm text-primary-muted font-medium leading-relaxed">
-          تم إنشاء حسابكِ بنجاح. لإكمال التسجيل والبدء في صناعة الأثر، يرجى الضغط على رابط التحقق الذي أرسلناه إلى:
+          تم إنشاء حسابكِ بنجاح. لإكمال التسجيل والبدء في صناعة الأثر، يرجى إدخال رمز التحقق المكون من 6 أرقام الذي أرسلناه إلى:
         </p>
 
         <p className="text-base font-black text-primary break-all" dir="ltr">
           {user?.email}
         </p>
+
+        <div className="max-w-xs mx-auto">
+          <Input
+            label="رمز التحقق"
+            type="text"
+            value={code}
+            onChange={handleCodeChange}
+            placeholder="123456"
+            maxLength={6}
+            className="text-center text-2xl tracking-widest"
+            error={error}
+          />
+        </div>
+
+        {timeLeft > 0 && (
+          <p className="text-xs text-primary-muted font-medium">
+            ينتهي الرمز خلال: <span className="font-bold">{formatTime(timeLeft)}</span>
+          </p>
+        )}
+
+        {timeLeft <= 0 && (
+          <p className="text-xs text-red-600 font-medium">
+            رمز التحقق منتهي الصلاحية. يرجى طلب رمز جديد.
+          </p>
+        )}
 
         {message && (
           <div className="bg-green-50 border border-green-100 text-green-700 text-xs font-bold p-4 rounded-2xl flex items-center justify-center gap-2">
@@ -142,16 +165,16 @@ export default function VerifyEmail() {
         <div className="space-y-3">
           <Button
             type="button"
-            disabled={checking}
-            onClick={handleCheckVerified}
+            disabled={verifying || timeLeft <= 0}
+            onClick={handleVerify}
             className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
           >
-            {checking ? (
+            {verifying ? (
               <span className="inline-flex items-center justify-center gap-2">
                 <RefreshCw size={18} className="animate-spin" /> جاري التحقق...
               </span>
             ) : (
-              'تأكيد التحقق والمتابعة'
+              'تحقق من الرمز'
             )}
           </Button>
 
@@ -161,7 +184,7 @@ export default function VerifyEmail() {
             onClick={handleResend}
             className="w-full py-3 rounded-[1.25rem] text-sm font-black text-primary bg-white border border-primary/20 hover:bg-primary/5 transition-all active:scale-95 disabled:opacity-60"
           >
-            {resending ? 'جاري الإرسال...' : 'إعادة إرسال رابط التحقق'}
+            {resending ? 'جاري الإرسال...' : 'إرسال رمز جديد'}
           </button>
         </div>
 

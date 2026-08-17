@@ -181,8 +181,8 @@ export default function Register() {
 
       const data = await register(payload as any);
       login(data.user, data.token);
-      // Email verification is disabled — go straight to the dashboard.
-      router.push('/dashboard');
+      // Redirect to verification page with email verification required
+      router.push('/auth/verify');
     } catch (err: any) {
       setErrors({ general: err.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً.' });
     } finally {

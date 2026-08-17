@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Mail\PasswordResetEmail;
+use App\Mail\VerificationCodeEmail;
 use App\Models\User;
 use App\Services\AuthAuditService;
 use App\Services\NotificationService;
@@ -12,7 +14,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -52,26 +57,29 @@ class AuthController extends Controller
                 'longitude' => $request->lng,
             ]);
 
-            // Email verification is currently disabled: users are
-            // considered verified immediately at registration.
-            // (email_verified_at is not mass-assignable, hence forceFill.)
-            $user->forceFill(['email_verified_at' => now()])->save();
+            // Generate 6-digit verification code
+            $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $user->verification_code = $verificationCode;
+            $user->verification_code_expires_at = now()->addMinutes(15);
+            $user->save();
 
-            // Issue a bearer token for the SPA (cross-domain session cookies are
-            // blocked by browsers, so the client authenticates via the
-            // Authorization header instead).
-            $token = $user->createToken('auth_token', $user->tokenAbilities())->plainTextToken;
+            // Send verification code email
+            try {
+                Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
+            } catch (\Throwable $e) {
+                Log::error('Verification code email failed', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             $this->auditService->record('register', $user, $request);
             $this->notificationService->notifyAdminNewUser($user);
 
-            // Email verification is disabled for now — users are marked
-            // verified at registration, so no verification email is sent.
-
             return response()->json([
-                'message' => 'تم التسجيل بنجاح.',
+                'message' => 'تم التسجيل بنجاح. تم إرسال رمز التحقق إلى بريدك الإلكتروني.',
                 'user' => new UserResource($user),
-                'token' => $token,
             ], 201);
         });
     }
@@ -175,7 +183,48 @@ class AuthController extends Controller
     }
 
     /**
-     * Resend the email verification notification.
+     * Verify email with 6-digit code.
+     */
+    public function verifyWithCode(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email',
+            'code' => 'required|string|size:6',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'المستخدم غير موجود.'], 404);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'البريد الإلكتروني مفعل بالفعل.'], 200);
+        }
+
+        if ($user->verification_code !== $request->code) {
+            return response()->json(['message' => 'رمز التحقق غير صحيح.'], 400);
+        }
+
+        if ($user->verification_code_expires_at && $user->verification_code_expires_at->isPast()) {
+            return response()->json(['message' => 'رمز التحقق منتهي الصلاحية.'], 400);
+        }
+
+        $user->markEmailAsVerified();
+        $user->verification_code = null;
+        $user->verification_code_expires_at = null;
+        $user->save();
+
+        $this->auditService->record('email_verified', $user, $request);
+
+        return response()->json([
+            'message' => 'تم تفعيل البريد الإلكتروني بنجاح.',
+            'verified' => true,
+        ]);
+    }
+
+    /**
+     * Resend the email verification code.
      */
     public function resendVerification(Request $request)
     {
@@ -185,21 +234,27 @@ class AuthController extends Controller
             return response()->json(['message' => 'البريد الإلكتروني مفعل بالفعل.'], 200);
         }
 
+        // Generate new 6-digit verification code
+        $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user->verification_code = $verificationCode;
+        $user->verification_code_expires_at = now()->addMinutes(15);
+        $user->save();
+
         try {
-            $user->sendEmailVerificationNotification();
+            Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
         } catch (\Throwable $e) {
-            Log::error('Verification email resend failed', [
+            Log::error('Verification code resend failed', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'error' => $e->getMessage(),
             ]);
 
             return response()->json([
-                'message' => 'Could not send the verification email right now. Please try again later.',
+                'message' => 'Could not send the verification code right now. Please try again later.',
             ], 502);
         }
 
-        return response()->json(['message' => 'تم إرسال رابط التفعيل.']);
+        return response()->json(['message' => 'تم إرسال رمز التحقق الجديد.']);
     }
 
     /**
@@ -334,6 +389,105 @@ class AuthController extends Controller
                     'date' => $service->created_at->format('Y-m-d'),
                 ];
             }) : [],
+        ]);
+    }
+
+    /**
+     * Request password reset - send reset link to email.
+     */
+    public function requestPasswordReset(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            // Don't reveal if user exists, but return success message
+            return response()->json([
+                'message' => 'إذا كان البريد الإلكتروني مسجلاً، تم إرسال رابط إعادة تعيين كلمة المرور.'
+            ]);
+        }
+
+        // Generate password reset token
+        $token = Str::random(60);
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->email,
+            'token' => Hash::make($token),
+            'created_at' => now(),
+        ]);
+
+        // Generate reset URL pointing to frontend
+        $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+        $resetUrl = $frontend . '/auth/reset-password?token=' . $token . '&email=' . urlencode($user->email);
+
+        try {
+            Mail::to($user->email)->send(new PasswordResetEmail($resetUrl, $user->name));
+        } catch (\Throwable $e) {
+            Log::error('Password reset email failed', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Could not send the password reset email right now. Please try again later.',
+            ], 502);
+        }
+
+        return response()->json([
+            'message' => 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.'
+        ]);
+    }
+
+    /**
+     * Reset password with token.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$resetRecord) {
+            return response()->json(['message' => 'رابط إعادة تعيين كلمة المرور غير صالح.'], 400);
+        }
+
+        // Check if token is expired (1 hour)
+        if ($resetRecord->created_at->lt(now()->subHour())) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return response()->json(['message' => 'رابط إعادة تعيين كلمة المرور منتهي الصلاحية.'], 400);
+        }
+
+        // Verify token
+        if (!Hash::check($request->token, $resetRecord->token)) {
+            return response()->json(['message' => 'رابط إعادة تعيين كلمة المرور غير صالح.'], 400);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'المستخدم غير موجود.'], 404);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // Delete the reset token
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        $this->auditService->record('password_reset', $user, $request);
+
+        return response()->json([
+            'message' => 'تم إعادة تعيين كلمة المرور بنجاح.'
         ]);
     }
 }

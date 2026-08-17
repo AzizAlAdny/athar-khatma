@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (userData: User, token?: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isVerified: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +32,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const storedUser = localStorage.getItem(authUserKey);
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
         }
       } catch (error) {
         console.error('Failed to load auth state:', error);
@@ -43,6 +45,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     loadStoredAuth();
   }, []);
+
+  // Redirect unverified users to verification page
+  useEffect(() => {
+    if (user && !user.email_verified && router.pathname !== '/auth/verify' && !router.pathname.startsWith('/auth/')) {
+      router.push('/auth/verify');
+    }
+  }, [user, router.pathname]);
 
   const login = (userData: User, token?: string) => {
     setUser(userData);
@@ -60,13 +69,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/auth/login');
   };
 
+  const isVerified = user?.email_verified || false;
+
   return (
     <AuthContext.Provider value={{
       user,
       loading,
       login,
       logout,
-      isAuthenticated: !!user
+      isAuthenticated: !!user,
+      isVerified
     }}>
       {children}
     </AuthContext.Provider>

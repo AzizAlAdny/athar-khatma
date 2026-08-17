@@ -83,7 +83,9 @@ export default function Login() {
               required
             />
             <div className="text-left px-1">
-              <span className="text-xs font-bold text-primary-muted">نسيتي كلمة المرور؟ تواصلي مع الدعم الفني</span>
+              <Link href="/auth/forgot-password" className="text-xs font-bold text-primary-muted hover:text-primary transition-colors">
+                نسيتي كلمة المرور؟
+              </Link>
             </div>
           </div>
         </div>

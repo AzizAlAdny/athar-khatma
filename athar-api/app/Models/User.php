@@ -49,6 +49,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'neighborhood',
         'latitude',
         'longitude',
+        'verification_code',
+        'verification_code_expires_at',
     ];
 
     /**
