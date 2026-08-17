@@ -87,7 +87,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
         setUnread(count => Math.max(0, count - 1));
       } catch { /* the badge resyncs on the next poll */ }
     }
-    if (n.need_id) router.push(`/needs/${n.need_id}/chat`);
+    if (n.type && n.item_id) {
+      router.push(`/chat/${n.type}/${n.item_id}`);
+    } else if (n.need_id) {
+      // Compatibility for older notifications
+      router.push(`/chat/need/${n.need_id}`);
+    }
   };
 
   const readAll = async () => {
@@ -229,7 +234,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                                {!n.read_at && <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />}
                                <p className="text-[11px] font-black text-primary flex-1">
                                  {n.kind === 'new_participant' ? 'خاتمة جديدة مهتمة بطلبك' : 'رسالة جديدة'}
-                                 {n.need_title ? ` • ${n.need_title}` : ''}
+                                 {(n.item_title || n.need_title) ? ` • ${n.item_title || n.need_title}` : ''}
                                </p>
                                <span className="text-[9px] text-primary-muted shrink-0">{timeAgo(n.created_at)}</span>
                              </div>

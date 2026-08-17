@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class Message extends Model
 {
     protected $fillable = [
-        'need_id',
+        'messageable_id',
+        'messageable_type',
         'participant_id',
         'sender_id',
         'body',
     ];
 
-    public function need()
+    public function messageable()
     {
-        return $this->belongsTo(Need::class);
+        return $this->morphTo();
     }
 
     public function sender()

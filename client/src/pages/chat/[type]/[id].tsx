@@ -7,7 +7,7 @@ import AppShell from '@/components/ui/AppShell';
 import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { getNeeds, getMessages, sendMessage, Need, ChatMessage } from '@/services/api';
+import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage } from '@/services/api';
 import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User } from 'lucide-react';
 
 const POLL_INTERVAL_MS = 4000;
@@ -33,14 +33,15 @@ const timeAgo = (value?: string): string => {
   return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
 };
 
-export default function NeedChat() {
+export default function UnifiedChat() {
   const router = useRouter();
-  const { id } = router.query;
+  const { type, id } = router.query;
   const { user } = useAuth();
-  const needId = Number(id);
+  const itemId = Number(id);
+  const chatType = type as 'need' | 'gift';
 
-  const [need, setNeed] = useState<Need | null>(null);
-  const [needsReady, setNeedsReady] = useState(false);
+  const [item, setItem] = useState<any | null>(null);
+  const [loadingItem, setLoadingItem] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [participants, setParticipants] = useState<{ id: number; name: string }[]>([]);
   const [activeParticipant, setActiveParticipant] = useState<number | null>(null);
@@ -50,21 +51,23 @@ export default function NeedChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!needId) return;
-    getNeeds()
-      .then(all => {
-        const found = (all || []).find(n => Number(n.id) === needId) || null;
-        setNeed(found);
-      })
-      .catch(() => setNeed(null))
-      .finally(() => setNeedsReady(true));
-  }, [needId]);
+    if (!itemId || !chatType) return;
 
-  const isOwner = !!(user && need && need.user_id === user.id);
+    const fetchItem = chatType === 'need' ? getNeed(itemId) : getGiftService(itemId);
+
+    fetchItem
+      .then(data => {
+        setItem(data);
+      })
+      .catch(() => setItem(null))
+      .finally(() => setLoadingItem(false));
+  }, [itemId, chatType]);
+
+  const isOwner = !!(user && item && (chatType === 'need' ? item.user_id === user.id : item.user_id === user.id));
 
   const loadMessages = () => {
-    if (!needId || !user?.id) return;
-    getMessages(needId)
+    if (!itemId || !user?.id || !chatType) return;
+    getMessages(chatType, itemId)
       .then(data => {
         setMessages(prev =>
           prev.length === data.length &&
@@ -80,12 +83,12 @@ export default function NeedChat() {
   };
 
   useEffect(() => {
-    if (!needId || !user?.id || !need) return;
+    if (!itemId || !user?.id || !item || !chatType) return;
     loadMessages();
     const timer = setInterval(loadMessages, POLL_INTERVAL_MS);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needId, user?.id, need]);
+  }, [itemId, user?.id, item, chatType]);
 
   // Owner: derive the conversation list and auto-select the latest participant.
   useEffect(() => {
@@ -126,7 +129,8 @@ export default function NeedChat() {
     setError(null);
     try {
       const msg = await sendMessage(
-        needId,
+        chatType,
+        itemId,
         text,
         isOwner ? activeParticipant ?? undefined : undefined
       );
@@ -143,20 +147,21 @@ export default function NeedChat() {
     <Hero
       title="المحادثة"
       subtitle={
-        need
-          ? `${need.gift?.name || 'طلب مساعدة'} • ${need.city || 'الرياض'}`
-          : 'جاري التحميل...'
+        item
+          ? `${chatType === 'need' ? (item.gift?.name || 'طلب مساعدة') : (item.gift_name || 'خدمة')} • ${item.city || 'الرياض'}`
+          : loadingItem ? 'جاري التحميل...' : 'الطلب غير موجود'
       }
-      variant={isOwner ? 'secondary' : 'accent'}
+      variant={chatType === 'need' ? 'accent' : 'secondary'}
       actions={
-        <Link href={isOwner ? '/needs' : '/needs/browse'}>
-          <button className="bg-white text-primary px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95 border border-secondary-light/30">
-            <ChevronRight size={16} /> العودة
-          </button>
-        </Link>
+        <button
+          onClick={() => router.back()}
+          className="bg-white text-primary px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95 border border-secondary-light/30"
+        >
+          <ChevronRight size={16} /> العودة
+        </button>
       }
       graphic={
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${isOwner ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${chatType === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
           <MessageCircle size={32} />
         </div>
       }
@@ -166,9 +171,9 @@ export default function NeedChat() {
   return (
     <ProtectedRoute>
       <AppShell hero={hero}>
-        {!need ? (
+        {!item && !loadingItem ? (
           <div className="py-12 text-center text-primary-muted font-bold">
-            {needsReady ? 'الطلب غير موجود.' : 'جاري تحميل المحادثة...'}
+            المورد المطلوب غير موجود.
           </div>
         ) : (
           <div
@@ -201,11 +206,13 @@ export default function NeedChat() {
               </div>
             ) : !isOwner ? (
                <div className="bg-background/30 px-8 py-5 border-b border-secondary-light/10 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${chatType === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
                     <User size={20} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-primary">مراسلة صاحبة الطلب</h3>
+                    <h3 className="text-sm font-black text-primary">
+                      {chatType === 'need' ? 'مراسلة صاحبة الطلب' : 'مراسلة مقدمة العطاء'}
+                    </h3>
                     <p className="text-[10px] text-primary-muted font-bold mt-0.5">استفسري عن تفاصيل تقديم الخدمة</p>
                   </div>
                </div>
@@ -213,13 +220,17 @@ export default function NeedChat() {
 
             {/* Message Area */}
             <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-gradient-to-b from-transparent to-background/20 no-scrollbar">
-              {visible.length === 0 ? (
+              {loadingItem ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 size={32} className="animate-spin text-primary-muted/20" />
+                </div>
+              ) : visible.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
                   <div className="w-16 h-16 rounded-3xl bg-secondary-light/20 flex items-center justify-center text-secondary">
                     <MessageCircle size={32} />
                   </div>
                   <p className="text-sm font-bold text-primary-muted max-w-[200px]">
-                    {isOwner ? 'ابدئي بالتواصل مع الخاتمات المهتمات بطلبكِ.' : 'اسألي صاحبة الطلب عن التفاصيل للبدء في الأثر.'}
+                    {isOwner ? 'ابدئي بالتواصل مع المهتمات بطلبكِ.' : 'اسألي عن التفاصيل للبدء في الأثر.'}
                   </p>
                 </div>
               ) : (

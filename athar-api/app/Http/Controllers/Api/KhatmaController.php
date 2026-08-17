@@ -41,6 +41,23 @@ class KhatmaController extends Controller
         return response()->json($data);
     }
 
+    public function showService($id)
+    {
+        $service = KhatmaServiceModel::with(['gift', 'khatma.user'])->find($id);
+
+        if (!$service) {
+            return response()->json(['message' => 'العطاء غير موجود'], 404);
+        }
+
+        return response()->json([
+            'id' => $service->id,
+            'user_id' => $service->khatma->user_id,
+            'gift_name' => $service->gift->name,
+            'user_name' => $service->khatma->user?->display_name ?: $service->khatma->user?->name,
+            'city' => $service->khatma->user->city,
+        ]);
+    }
+
     public function map()
     {
         return response()->json($this->khatmaService->getMapData());

@@ -26,6 +26,8 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 
 Route::get('/gifts', [GiftController::class, 'index']);
 Route::get('/needs', [NeedController::class, 'index']);
+Route::get('/needs/{id}', [NeedController::class, 'show']);
+Route::get('/gifts/{id}', [KhatmaController::class, 'showService']);
 Route::middleware('throttle:60,1')->get('/map', [KhatmaController::class, 'map']);
 Route::middleware('throttle:60,1')->get('/recent-khatmas', [KhatmaController::class, 'recent']);
 Route::get('/public-stats', [StatsController::class, 'publicStats']);
@@ -84,9 +86,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/khatmas', [KhatmaController::class, 'index']);
 
-    // Chat between the need owner (طالب الخدمة) and the khatma user (الخاتمة).
-    Route::get('/needs/{id}/messages', [MessageController::class, 'index']);
-    Route::middleware('throttle:60,1')->post('/needs/{id}/messages', [MessageController::class, 'store']);
+    // Chat between users regarding an initiative (Need or Gift).
+    Route::get('/chat/{type}/{id}/messages', [MessageController::class, 'index']);
+    Route::middleware('throttle:60,1')->post('/chat/{type}/{id}/messages', [MessageController::class, 'store']);
 
     // In-app notifications for the header bell (database channel).
     Route::get('/notifications', [NotificationController::class, 'index']);

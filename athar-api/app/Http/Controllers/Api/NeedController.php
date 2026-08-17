@@ -27,6 +27,17 @@ class NeedController extends Controller
         return response()->json($needs);
     }
 
+    public function show($id)
+    {
+        $need = Need::with(['user', 'gift'])->find($id);
+
+        if (!$need) {
+            return response()->json(['message' => 'الطلب غير موجود'], 404);
+        }
+
+        return response()->json($need);
+    }
+
     public function store(StoreNeedRequest $request)
     {
         // Fix mass assignment vulnerability by using only() instead of all()

@@ -5,39 +5,65 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Need;
+use App\Models\KhatmaService;
 use App\Models\User;
 use App\Notifications\NewChatMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Chat between a need owner (طالب الخدمة) and a khatma user (الخاتمة) so the
- * two parties can coordinate on the gift/service details. A thread is keyed
- * by (need_id, participant_id), where participant_id is the non-owner party.
+ * Unified chat between users regarding an initiative (Need or Gift).
+ * A thread is keyed by (messageable_id, messageable_type, participant_id),
+ * where participant_id is the non-owner party.
  */
 class MessageController extends Controller
 {
-    /**
-     * List messages for a need. The owner sees all threads (optionally
-     * filtered to one participant); anyone else sees only their own thread.
-     */
-    public function index(Request $request, $id)
+    private function getMessageable($type, $id)
     {
-        $need = Need::find($id);
+        if ($type === 'need') {
+            return Need::find($id);
+        } elseif ($type === 'gift') {
+            return KhatmaService::find($id);
+        }
+        return null;
+    }
 
-        if (!$need) {
-            return response()->json(['message' => 'الطلب غير موجود'], 404);
+    private function getOwnerId($messageable)
+    {
+        if ($messageable instanceof Need) {
+            return $messageable->user_id;
+        } elseif ($messageable instanceof KhatmaService) {
+            return $messageable->khatma->user_id;
+        }
+        return null;
+    }
+
+    private function getMessageableType($type)
+    {
+        return $type === 'need' ? Need::class : KhatmaService::class;
+    }
+
+    /**
+     * List messages for a need or gift.
+     */
+    public function index(Request $request, $type, $id)
+    {
+        $messageable = $this->getMessageable($type, $id);
+
+        if (!$messageable) {
+            return response()->json(['message' => 'المورد غير موجود'], 404);
         }
 
         $user = $request->user();
+        $ownerId = $this->getOwnerId($messageable);
 
-        if ($user->id === $need->user_id) {
-            $query = $need->messages()->with('sender');
+        if ($user->id === $ownerId) {
+            $query = $messageable->messages()->with('sender');
             if ($request->filled('participant')) {
                 $query->where('participant_id', (int) $request->query('participant'));
             }
         } else {
-            $query = $need->messages()->with('sender')
+            $query = $messageable->messages()->with('sender')
                 ->where('participant_id', $user->id);
         }
 
@@ -47,19 +73,19 @@ class MessageController extends Controller
     }
 
     /**
-     * Send a message. Non-owners always message the need's owner (their own
-     * thread); the owner must specify which participant thread they reply in.
+     * Send a message.
      */
-    public function store(Request $request, $id)
+    public function store(Request $request, $type, $id)
     {
-        $need = Need::find($id);
+        $messageable = $this->getMessageable($type, $id);
 
-        if (!$need) {
-            return response()->json(['message' => 'الطلب غير موجود'], 404);
+        if (!$messageable) {
+            return response()->json(['message' => 'المورد غير موجود'], 404);
         }
 
         $user = $request->user();
-        $isOwner = $user->id === $need->user_id;
+        $ownerId = $this->getOwnerId($messageable);
+        $isOwner = $user->id === $ownerId;
 
         $validated = $request->validate([
             'body' => 'required|string|max:1000',
@@ -73,26 +99,30 @@ class MessageController extends Controller
             'participant_id.exists' => 'المستخدم المحدد غير موجود',
         ]);
 
-        // First contact from a khatma user doubles as a "new participant on
-        // your need" signal for the owner's notifications bell.
+        $participantId = $isOwner ? (int) $validated['participant_id'] : $user->id;
+
+        // First contact check
         $isFirstContact = !$isOwner
-            && !Message::where('need_id', $need->id)
+            && !Message::where('messageable_id', $messageable->id)
+                ->where('messageable_type', get_class($messageable))
                 ->where('participant_id', $user->id)
                 ->exists();
 
         $message = Message::create([
-            'need_id' => $need->id,
-            'participant_id' => $isOwner ? (int) $validated['participant_id'] : $user->id,
+            'messageable_id' => $messageable->id,
+            'messageable_type' => get_class($messageable),
+            'participant_id' => $participantId,
             'sender_id' => $user->id,
             'body' => strip_tags($validated['body']),
         ]);
 
-        // Notify the other party in the thread (stored for the header bell).
-        $recipient = $isOwner ? User::find($message->participant_id) : $need->user;
+        // Notify the other party
+        $recipient = $isOwner ? User::find($message->participant_id) : User::find($ownerId);
         $recipient?->notify(new NewChatMessage($message, $isFirstContact));
 
         Log::info('Chat message sent', [
-            'need_id' => $need->id,
+            'type' => $type,
+            'id' => $id,
             'sender_id' => $user->id,
             'participant_id' => $message->participant_id,
         ]);
@@ -106,7 +136,8 @@ class MessageController extends Controller
 
         return [
             'id' => $message->id,
-            'need_id' => $message->need_id,
+            'messageable_id' => $message->messageable_id,
+            'messageable_type' => $message->messageable_type === Need::class ? 'need' : 'gift',
             'participant_id' => $message->participant_id,
             'sender_id' => $message->sender_id,
             'sender_name' => $sender?->display_name ?: $sender?->name,

@@ -43,7 +43,8 @@ export interface RecentGift {
 
 export interface ChatMessage {
   id: number;
-  need_id: number;
+  messageable_id: number;
+  messageable_type: 'need' | 'gift';
   participant_id: number;
   sender_id: number;
   sender_name?: string;
@@ -55,12 +56,13 @@ export interface ApiNotification {
   id: string;
   kind: 'new_message' | 'new_participant';
   sender_name?: string | null;
-  need_id?: number | null;
+  type?: 'need' | 'gift';
+  item_id?: number | null;
+  item_title?: string | null;
   participant_id?: number | null;
-  need_title?: string | null;
-  excerpt?: string | null;
   read_at: string | null;
   created_at?: string;
+  excerpt?: string | null;
 }
 
 export interface KhatmaProfile {
@@ -248,6 +250,8 @@ export const logoutAll = () =>
 
 export const getGifts = () => fetchJson<Gift[]>('/gifts');
 export const getNeeds = () => fetchJson<Need[]>('/needs');
+export const getNeed = (id: number) => fetchJson<Need>(`/needs/${id}`);
+export const getGiftService = (id: number) => fetchJson<any>(`/gifts/${id}`);
 export const getMapPins = () => fetchJson<KhatmaPin[]>('/map');
 export const getRecentGifts = () => fetchJson<RecentGift[]>('/recent-khatmas');
 export const getKhatmaProfile = (id: number) => fetchJson<KhatmaProfile>(`/users/${id}/profile`);
@@ -281,23 +285,24 @@ export const deleteMyNeed = (id: number) =>
     method: 'DELETE',
   });
 
-// Chat: a thread is keyed by (need_id, participant_id). The need owner loads a
-// thread for a specific participant; a khatma always sees only her own thread.
-export const getMessages = (needId: number, participantId?: number) => {
+// Chat: a thread is keyed by (id, type, participant_id). The owner loads a
+// thread for a specific participant; a respondent always sees only her own thread.
+export const getMessages = (type: 'need' | 'gift', id: number, participantId?: number) => {
   const qs = new URLSearchParams();
   if (participantId) qs.set('participant', String(participantId));
   const query = qs.toString();
   return fetchJson<ChatMessage[]>(
-    `/needs/${needId}/messages${query ? `?${query}` : ''}`
+    `/chat/${type}/${id}/messages${query ? `?${query}` : ''}`
   );
 };
 
 export const sendMessage = (
-  needId: number,
+  type: 'need' | 'gift',
+  id: number,
   body: string,
   participantId?: number
 ) =>
-  fetchJson<ChatMessage>(`/needs/${needId}/messages`, {
+  fetchJson<ChatMessage>(`/chat/${type}/${id}/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(
