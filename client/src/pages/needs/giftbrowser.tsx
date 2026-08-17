@@ -121,7 +121,7 @@ export default function GiftBrowser() {
                     <div className="flex-1 text-right mb-6">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-lg font-black text-primary leading-tight">{gift.gift_name}</h3>
-                        {gift.messages_count > 0 && (
+                        {(gift.messages_count ?? 0) > 0 && (
                           <div className="w-5 h-5 rounded-full bg-secondary/10 flex items-center justify-center text-secondary animate-pulse">
                             <MessageCircle size={10} />
                           </div>
@@ -129,12 +129,12 @@ export default function GiftBrowser() {
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-2 text-xs font-bold text-primary-muted">
-                           <UserRound size={12} className="text-secondary" />
-                           <span>بواسطة: {gift.user_name}</span>
+                          <UserRound size={12} className="text-secondary" />
+                          <span>بواسطة: {gift.user_name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs font-bold text-primary-muted">
-                           <MapPin size={12} className="text-secondary" />
-                           <span>{gift.city || 'المملكة'}</span>
+                          <MapPin size={12} className="text-secondary" />
+                          <span>{gift.city || 'المملكة'}</span>
                         </div>
                       </div>
                     </div>

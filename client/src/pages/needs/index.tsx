@@ -112,7 +112,7 @@ export default function MyNeeds() {
                       <div className="text-right">
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-black text-primary">{need.gift?.name || 'طلب مساعدة'}</h3>
-                          {need.messages_count > 0 && (
+                          {(need.messages_count ?? 0) > 0 && (
                             <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent animate-pulse">
                               <MessageCircle size={10} />
                             </div>
