@@ -59,6 +59,9 @@ export interface ApiNotification {
   type?: 'need' | 'gift';
   item_id?: number | null;
   item_title?: string | null;
+  // Legacy fields for compatibility
+  need_id?: number | null;
+  need_title?: string | null;
   participant_id?: number | null;
   read_at: string | null;
   created_at?: string;
