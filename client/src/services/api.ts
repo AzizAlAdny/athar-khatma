@@ -121,6 +121,7 @@ export interface AuthResponse {
   user: User;
   token?: string;
   message?: string;
+  email?: string;
 }
 
 // Token-based (Bearer) auth. Cross-domain cookie auth is not viable here:
