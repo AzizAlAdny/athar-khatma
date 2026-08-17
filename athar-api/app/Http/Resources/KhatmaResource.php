@@ -34,6 +34,7 @@ class KhatmaResource extends JsonResource
                         'category' => $service->gift->category,
                         'status' => $service->status,
                         'description' => $service->description,
+                        'messages_count' => $service->messages_count ?? 0,
                         'date' => $service->created_at->format('Y-m-d'),
                     ];
                 });

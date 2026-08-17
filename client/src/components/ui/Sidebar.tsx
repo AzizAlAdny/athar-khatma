@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   X,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -37,6 +38,7 @@ const guestNav: NavItem[] = [
 
 const seekerNav: NavItem[] = [
   { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'الرسائل', href: '/chat', activePath: '/chat', Icon: MessageCircle },
   { label: 'طلباتي', href: '/needs', activePath: '/needs', Icon: HelpCircle },
   { label: 'طلب احتياج', href: '/needs/register', activePath: '/needs/register', Icon: Plus },
   { label: 'تصفح العطايا', href: '/needs/giftbrowser', activePath: '/needs/giftbrowser', Icon: Gift },
@@ -44,6 +46,7 @@ const seekerNav: NavItem[] = [
 
 const khatmaNav: NavItem[] = [
   { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'الرسائل', href: '/chat', activePath: '/chat', Icon: MessageCircle },
   { label: 'تسجيل ختمة', href: '/khatma/register', activePath: '/khatma/register', Icon: Plus },
   { label: 'طلبات المحتاجين', href: '/needs/browse', activePath: '/needs/browse', Icon: HelpCircle },
   { label: 'هداياي', href: '/my-gifts', activePath: '/my-gifts', Icon: Gift },
@@ -51,6 +54,7 @@ const khatmaNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'الرسائل', href: '/chat', activePath: '/chat', Icon: MessageCircle },
   { label: 'تسجيل ختمة', href: '/khatma/register', activePath: '/khatma/register', Icon: Plus },
   { label: 'طلبات المحتاجين', href: '/needs/browse', activePath: '/needs/browse', Icon: HelpCircle },
   { label: 'هداياي', href: '/my-gifts', activePath: '/my-gifts', Icon: Gift },

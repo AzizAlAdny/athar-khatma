@@ -99,7 +99,12 @@ export default function MyGifts() {
                         <div className="mt-5 flex flex-wrap gap-2">
                           {(khatma.achievements || []).map((achievement: any, idx: number) => (
                             <div key={idx} className="flex items-center gap-2 bg-background px-4 py-2 rounded-xl border border-secondary-light/10">
-                              <Gift size={14} className="text-secondary" />
+                              <div className="relative">
+                                <Gift size={14} className="text-secondary" />
+                                {achievement.messages_count > 0 && (
+                                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border border-white"></div>
+                                )}
+                              </div>
                               <span className="text-xs font-black text-primary">{achievement.gift_name}</span>
                             </div>
                           ))}

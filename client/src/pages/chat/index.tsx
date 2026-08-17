@@ -78,24 +78,24 @@ export default function ChatInbox() {
       <AppShell hero={hero}>
         <div className="max-w-4xl mx-auto space-y-8 pb-20">
           {/* Tabs */}
-          <div className="flex bg-white p-2 rounded-[2rem] border border-secondary-light/20 shadow-sm overflow-x-auto no-scrollbar">
+          <div className="flex bg-white p-1.5 md:p-2 rounded-2xl md:rounded-[2rem] border border-secondary-light/20 shadow-sm overflow-x-auto no-scrollbar gap-1">
             <button
               onClick={() => setActiveTab('all')}
-              className={`flex-1 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${activeTab === 'all' ? 'bg-primary text-white shadow-md' : 'text-primary-muted hover:bg-background'
+              className={`flex-1 min-w-[80px] px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-[1.5rem] text-xs md:text-sm font-black transition-all ${activeTab === 'all' ? 'bg-primary text-white shadow-md' : 'text-primary-muted hover:bg-background'
                 }`}
             >
               الكل
             </button>
             <button
               onClick={() => setActiveTab('need')}
-              className={`flex-1 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${activeTab === 'need' ? 'bg-accent text-white shadow-md' : 'text-primary-muted hover:bg-background'
+              className={`flex-1 min-w-[80px] px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-[1.5rem] text-xs md:text-sm font-black transition-all ${activeTab === 'need' ? 'bg-accent text-white shadow-md' : 'text-primary-muted hover:bg-background'
                 }`}
             >
               الطلبات
             </button>
             <button
               onClick={() => setActiveTab('gift')}
-              className={`flex-1 px-6 py-3 rounded-[1.5rem] text-sm font-black transition-all ${activeTab === 'gift' ? 'bg-secondary text-white shadow-md' : 'text-primary-muted hover:bg-background'
+              className={`flex-1 min-w-[80px] px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-[1.5rem] text-xs md:text-sm font-black transition-all ${activeTab === 'gift' ? 'bg-secondary text-white shadow-md' : 'text-primary-muted hover:bg-background'
                 }`}
             >
               العطايا
@@ -109,54 +109,54 @@ export default function ChatInbox() {
               <p className="text-primary-muted font-bold">جاري تحميل المحادثات...</p>
             </div>
           ) : filteredThreads.length === 0 ? (
-            <div className="bg-white rounded-[3rem] p-16 text-center border-2 border-dashed border-secondary-light/30">
-              <div className="w-20 h-20 bg-background rounded-full flex items-center justify-center mx-auto mb-6 text-secondary-light">
-                <MessageCircle size={40} />
+            <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-12 md:p-16 text-center border-2 border-dashed border-secondary-light/30">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-background rounded-full flex items-center justify-center mx-auto mb-6 text-secondary-light">
+                <MessageCircle size={32} md:size={40} />
               </div>
               <p className="text-primary-muted font-bold text-lg">لا توجد محادثات نشطة حالياً</p>
               <p className="text-secondary-muted text-sm mt-1">ابدئي التواصل من خلال تصفح الطلبات أو العطايا.</p>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3 md:gap-4">
               {filteredThreads.map((thread, idx) => (
                 <Link
                   key={idx}
                   href={`/chat/${thread.type}/${thread.item_id}${thread.participant_id !== user?.id ? `?participant=${thread.participant_id}` : ''}`}
                 >
-                  <div className="group bg-white rounded-[2.5rem] p-5 md:p-6 border border-secondary-light/20 shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-5 flex-1 min-w-0">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
+                  <div className="group bg-white rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 border border-secondary-light/20 shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex items-center justify-between gap-3 md:gap-4">
+                    <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
+                      <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
                         }`}>
-                        {thread.type === 'gift' ? <Sparkles size={24} /> : <HelpCircle size={24} />}
+                        {thread.type === 'gift' ? <Sparkles size={18} md:size={24} /> : <HelpCircle size={18} md:size={24} />}
                       </div>
 
                       <div className="text-right flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-base font-black text-primary truncate">{thread.item_title}</h3>
-                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
+                        <div className="flex items-center gap-2 mb-0.5 md:mb-1">
+                          <h3 className="text-sm md:text-base font-black text-primary truncate">{thread.item_title}</h3>
+                          <span className={`text-[8px] md:text-[9px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
                             }`}>
                             {thread.type === 'gift' ? 'عطاء' : 'طلب'}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-primary-muted font-bold mb-2">
-                          <User size={12} className="text-secondary" />
-                          <span>{thread.other_name}</span>
+                        <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-primary-muted font-bold mb-1 md:mb-2">
+                          <User size={10} md:size={12} className="text-secondary" />
+                          <span className="truncate">{thread.other_name}</span>
                         </div>
 
-                        <p className="text-xs text-primary-muted/70 truncate leading-relaxed">
+                        <p className="text-[10px] md:text-xs text-primary-muted/70 truncate leading-relaxed">
                           {thread.last_message}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-3 shrink-0">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary-muted opacity-60">
-                        <Clock size={12} />
+                    <div className="flex flex-col items-end gap-2 md:gap-3 shrink-0">
+                      <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-bold text-primary-muted opacity-60">
+                        <Clock size={10} md:size={12} />
                         <span>{timeAgo(thread.updated_at)}</span>
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center text-primary-muted group-hover:bg-primary group-hover:text-white transition-all">
-                        <ChevronLeft size={18} />
+                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-background flex items-center justify-center text-primary-muted group-hover:bg-primary group-hover:text-white transition-all">
+                        <ChevronLeft size={14} md:size={18} />
                       </div>
                     </div>
                   </div>

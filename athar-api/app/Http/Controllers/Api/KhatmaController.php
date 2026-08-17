@@ -70,6 +70,7 @@ class KhatmaController extends Controller
     public function recent()
     {
         $gifts = KhatmaServiceModel::with(['gift', 'khatma.user'])
+            ->withCount('messages')
             ->latest()
             ->limit(12)
             ->get()
@@ -79,6 +80,7 @@ class KhatmaController extends Controller
                 'user_id' => $service->khatma->user_id,
                 'gift_name' => $service->gift->name ?? null,
                 'gift_icon' => $service->gift->icon ?? null,
+                'messages_count' => $service->messages_count,
                 // Prefer the map display name when set (الاسم الظاهر على خريطة الأثر).
                 'user_name' => $service->khatma->user?->display_name ?: ($service->khatma->user?->name ?? null),
                 'city' => $service->khatma->user->city ?? null,

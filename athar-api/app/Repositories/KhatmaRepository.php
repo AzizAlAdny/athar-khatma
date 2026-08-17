@@ -10,12 +10,16 @@ class KhatmaRepository implements KhatmaRepositoryInterface
 {
     public function findById($id): ?Khatma
     {
-        return Khatma::with(['user', 'services.gift'])->find($id);
+        return Khatma::with(['user', 'services' => function($q) {
+            $q->with('gift')->withCount('messages');
+        }])->find($id);
     }
 
     public function findByUserId($userId)
     {
-        return Khatma::with(['services.gift'])
+        return Khatma::with(['services' => function($q) {
+            $q->with('gift')->withCount('messages');
+        }])
             ->where('user_id', $userId)
             ->latest()
             ->get();

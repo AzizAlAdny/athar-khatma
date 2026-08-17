@@ -19,7 +19,7 @@ class NeedController extends Controller
     }
     public function index()
     {
-        $needs = Need::with(['user', 'gift'])->latest()->get()->map(function ($need) {
+        $needs = Need::with(['user', 'gift'])->withCount('messages')->latest()->get()->map(function ($need) {
             $need->created_at_human = $need->created_at?->diffForHumans();
             return $need;
         });
@@ -29,7 +29,7 @@ class NeedController extends Controller
 
     public function show($id)
     {
-        $need = Need::with(['user', 'gift'])->find($id);
+        $need = Need::with(['user', 'gift'])->withCount('messages')->find($id);
 
         if (!$need) {
             return response()->json(['message' => 'الطلب غير موجود'], 404);

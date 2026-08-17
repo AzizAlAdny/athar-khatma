@@ -48,6 +48,7 @@ const UserDashboard = () => {
       title="مرحباً بكِ في ختمة وأثر "
       subtitle="تابعي ختماتكِ، وأضيفي أثراً جديداً في مجتمعكِ اليوم."
       variant="primary"
+      centered={true}
       actions={
         <>
           <Link href="/khatma/register" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a1a2f] transition-all shadow-xl shadow-primary/10 active:scale-95">

@@ -122,13 +122,7 @@ export default function Home() {
       title={<>كل ختمة .. <span className="text-accent">تثمر أثراً</span></>}
       subtitle="حولِي ختمة القُرآن إلى هدية للمجتمع واصبحي جزءاً من صناعة الأثر."
       variant="primary"
-      graphic={
-        <img
-          src="/holy-quran-bgr.png"
-          alt="Quran"
-          className="object-cover w-full h-full drop-shadow-[-20px_4px_12px_rgba(94,32,59,0.15)] max-w-xs md:max-w-md lg:max-w-lg"
-        />
-      }
+      centered={true}
       actions={
         <>
           {primaryAction}

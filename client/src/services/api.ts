@@ -11,11 +11,14 @@ export interface Gift {
 
 export interface Need {
   id: number;
+  user_id: number;
+  gift_id: number;
   gift?: { name: string; icon?: string };
   description?: string;
   city?: string;
   neighborhood?: string;
   created_at_human?: string;
+  messages_count?: number;
   [key: string]: any;
 }
 
@@ -39,6 +42,7 @@ export interface RecentGift {
   user_name: string;
   city?: string;
   created_at?: string;
+  messages_count?: number;
 }
 
 export interface ChatMessage {

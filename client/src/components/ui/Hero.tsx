@@ -17,6 +17,7 @@ interface HeroProps {
   variant?: 'primary' | 'accent' | 'secondary' | 'simple';
   actions?: React.ReactNode;
   graphic?: React.ReactNode;
+  centered?: boolean;
 }
 
 export default function Hero({
@@ -24,7 +25,8 @@ export default function Hero({
   subtitle,
   variant = 'primary',
   actions,
-  graphic
+  graphic,
+  centered = false
 }: HeroProps) {
   const getVariantStyles = () => {
     switch (variant) {
@@ -71,9 +73,9 @@ export default function Hero({
       <div className={`absolute top-0 right-0 w-80 h-80 ${styles.blurPrimary} rounded-full -mr-40 -mt-40 blur-3xl -z-10 opacity-60`}></div>
       <div className={`absolute bottom-0 left-0 w-64 h-64 ${styles.blurSecondary} rounded-full -ml-32 -mb-32 blur-3xl -z-10 opacity-40`}></div>
 
-      <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-        <div className="space-y-4 md:space-y-6 text-right flex-1">
-          <h1 className={`text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight max-w-2xl ${styles.title}`}>
+      <div className={`flex flex-col ${centered ? 'items-center text-center' : 'md:flex-row items-center justify-between'} gap-8 relative z-10`}>
+        <div className={`space-y-4 md:space-y-6 ${centered ? 'text-center flex flex-col items-center' : 'text-right flex-1'}`}>
+          <h1 className={`text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight ${centered ? '' : 'max-w-2xl'} ${styles.title}`}>
             {title}
           </h1>
           <p className={`max-w-xl text-sm md:text-lg font-bold leading-relaxed ${styles.subtitle}`}>
@@ -81,13 +83,13 @@ export default function Hero({
           </p>
 
           {actions && (
-            <div className="flex flex-wrap gap-4 mt-8 md:mt-12">
+            <div className={`flex flex-wrap gap-4 mt-8 md:mt-12 ${centered ? 'justify-center' : ''}`}>
               {actions}
             </div>
           )}
         </div>
 
-        {graphic && (
+        {!centered && graphic && (
           <div className="hidden lg:block">
             {graphic}
           </div>

@@ -75,7 +75,14 @@ export default function BrowseNeeds() {
                         {need.gift?.icon === 'book-open' ? '📖' : <MapPin size={24} />}
                       </div>
                       <div className="text-right">
-                        <h3 className="text-lg font-black text-primary">{need.gift?.name || 'طلب مساعدة'}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-black text-primary">{need.gift?.name || 'طلب مساعدة'}</h3>
+                          {need.messages_count > 0 && (
+                            <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent animate-pulse">
+                              <MessageCircle size={10} />
+                            </div>
+                          )}
+                        </div>
                         <p className="text-primary-muted text-sm font-medium mt-1 leading-relaxed line-clamp-2">{need.description}</p>
                         <div className="flex items-center gap-2 text-xs text-primary-muted font-bold mt-3">
                           <MapPin size={12} className="text-secondary" />
