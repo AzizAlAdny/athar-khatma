@@ -86,7 +86,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/khatmas', [KhatmaController::class, 'index']);
 
-    // Chat between users regarding an initiative (Need or Gift).
+    // Unified chat between users regarding an initiative (Need or Gift).
+    Route::get('/chat/threads', [MessageController::class, 'threads']);
     Route::get('/chat/{type}/{id}/messages', [MessageController::class, 'index']);
     Route::middleware('throttle:60,1')->post('/chat/{type}/{id}/messages', [MessageController::class, 'store']);
 

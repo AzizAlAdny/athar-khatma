@@ -290,6 +290,8 @@ export const deleteMyNeed = (id: number) =>
 
 // Chat: a thread is keyed by (id, type, participant_id). The owner loads a
 // thread for a specific participant; a respondent always sees only her own thread.
+export const getChatThreads = () => fetchJson<any[]>('/chat/threads');
+
 export const getMessages = (type: 'need' | 'gift', id: number, participantId?: number) => {
   const qs = new URLSearchParams();
   if (participantId) qs.set('participant', String(participantId));

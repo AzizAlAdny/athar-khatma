@@ -63,7 +63,14 @@ export default function UnifiedChat() {
       .finally(() => setLoadingItem(false));
   }, [itemId, chatType]);
 
-  const isOwner = !!(user && item && (chatType === 'need' ? item.user_id === user.id : item.user_id === user.id));
+  useEffect(() => {
+    const { participant } = router.query;
+    if (participant) {
+      setActiveParticipant(Number(participant));
+    }
+  }, [router.query]);
+
+  const isOwner = !!(user && item && item.user_id === user.id);
 
   const loadMessages = () => {
     if (!itemId || !user?.id || !chatType) return;

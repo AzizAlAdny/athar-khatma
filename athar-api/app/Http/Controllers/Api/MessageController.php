@@ -38,6 +38,16 @@ class MessageController extends Controller
         return null;
     }
 
+    private function getOwner($messageable)
+    {
+        if ($messageable instanceof Need) {
+            return $messageable->user;
+        } elseif ($messageable instanceof KhatmaService) {
+            return $messageable->khatma?->user;
+        }
+        return null;
+    }
+
     private function getMessageableType($type)
     {
         return $type === 'need' ? Need::class : KhatmaService::class;
@@ -128,6 +138,65 @@ class MessageController extends Controller
         ]);
 
         return response()->json($this->shape($message->load('sender')), 201);
+    }
+
+    /**
+     * Get all unique conversation threads for the user.
+     */
+    public function threads(Request $request)
+    {
+        $user = $request->user();
+
+        // Get all messages involving the user
+        $messages = Message::with(['sender', 'messageable.gift'])
+            ->where(function($q) use ($user) {
+                $q->where('sender_id', $user->id)
+                  ->orWhere('participant_id', $user->id)
+                  ->orWhereHasMorph('messageable', [Need::class], function($q) use ($user) {
+                      $q->where('user_id', $user->id);
+                  })
+                  ->orWhereHasMorph('messageable', [KhatmaService::class], function($q) use ($user) {
+                      $q->whereHas('khatma', function($q) use ($user) {
+                          $q->where('user_id', $user->id);
+                      });
+                  });
+            })
+            ->latest()
+            ->get();
+
+        // Group by (messageable_type, messageable_id, participant_id)
+        $threads = $messages->groupBy(function($m) {
+            return $m->messageable_type . ':' . $m->messageable_id . ':' . $m->participant_id;
+        })->map(function($msgs) use ($user) {
+            $last = $msgs->first();
+            $messageable = $last->messageable;
+
+            if (!$messageable) return null;
+
+            $ownerId = $this->getOwnerId($messageable);
+            $isOwner = $ownerId === $user->id;
+
+            $otherName = 'مستخدم';
+            if ($isOwner) {
+                $other = User::find($last->participant_id);
+                $otherName = $other?->display_name ?: $other?->name ?: 'مشاركة';
+            } else {
+                $owner = $this->getOwner($messageable);
+                $otherName = $owner?->display_name ?: $owner?->name ?: 'صاحبة الطلب';
+            }
+
+            return [
+                'type' => $last->messageable_type === Need::class ? 'need' : 'gift',
+                'item_id' => $last->messageable_id,
+                'participant_id' => $last->participant_id,
+                'item_title' => $messageable->gift?->name ?: (isset($messageable->description) ? mb_strimwidth($messageable->description, 0, 30, '...') : 'مبادرة'),
+                'other_name' => $otherName,
+                'last_message' => mb_strimwidth($last->body, 0, 60, '...'),
+                'updated_at' => $last->created_at->toIso8601String(),
+            ];
+        })->filter()->values();
+
+        return response()->json($threads);
     }
 
     private function shape(Message $message): array

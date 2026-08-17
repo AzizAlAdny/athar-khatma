@@ -127,7 +127,7 @@ export default function MyNeeds() {
                       </div>
                     </div>
                                         <div className="flex items-center gap-3">
-                      <Link href={`/needs/${need.id}/chat`} className="flex-none">
+                      <Link href={`/chat/need/${need.id}`} className="flex-none">
                         <Button className="bg-secondary/5 hover:bg-secondary/10 text-primary rounded-2xl px-4 py-3 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5">
                           <MessageCircle size={14} /> المحادثات
                         </Button>
