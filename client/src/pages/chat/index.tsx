@@ -111,7 +111,7 @@ export default function ChatInbox() {
           ) : filteredThreads.length === 0 ? (
             <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-12 md:p-16 text-center border-2 border-dashed border-secondary-light/30">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-background rounded-full flex items-center justify-center mx-auto mb-6 text-secondary-light">
-                <MessageCircle size={32} md:size={40} />
+                <MessageCircle size={32} />
               </div>
               <p className="text-primary-muted font-bold text-lg">لا توجد محادثات نشطة حالياً</p>
               <p className="text-secondary-muted text-sm mt-1">ابدئي التواصل من خلال تصفح الطلبات أو العطايا.</p>
@@ -127,7 +127,7 @@ export default function ChatInbox() {
                     <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
                       <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
                         }`}>
-                        {thread.type === 'gift' ? <Sparkles size={18} md:size={24} /> : <HelpCircle size={18} md:size={24} />}
+                        {thread.type === 'gift' ? <Sparkles size={18} /> : <HelpCircle size={18} />}
                       </div>
 
                       <div className="text-right flex-1 min-w-0">
@@ -140,7 +140,7 @@ export default function ChatInbox() {
                         </div>
 
                         <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-primary-muted font-bold mb-1 md:mb-2">
-                          <User size={10} md:size={12} className="text-secondary" />
+                          <User size={10} className="text-secondary" />
                           <span className="truncate">{thread.other_name}</span>
                         </div>
 
@@ -152,11 +152,11 @@ export default function ChatInbox() {
 
                     <div className="flex flex-col items-end gap-2 md:gap-3 shrink-0">
                       <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-bold text-primary-muted opacity-60">
-                        <Clock size={10} md:size={12} />
+                        <Clock size={10} />
                         <span>{timeAgo(thread.updated_at)}</span>
                       </div>
                       <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-background flex items-center justify-center text-primary-muted group-hover:bg-primary group-hover:text-white transition-all">
-                        <ChevronLeft size={14} md:size={18} />
+                        <ChevronLeft size={14} />
                       </div>
                     </div>
                   </div>

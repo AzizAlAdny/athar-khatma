@@ -59,7 +59,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
     const load = () =>
       getUnreadNotificationCount()
         .then(r => { if (mounted) setUnread(r.unread); })
-        .catch(() => {});
+        .catch(() => { });
     load();
     const timer = setInterval(load, 15000);
     return () => { mounted = false; clearInterval(timer); };
@@ -114,16 +114,16 @@ export default function Header({ onMenuClick }: HeaderProps) {
           className="xl:hidden p-1.5 text-primary hover:bg-background rounded-xl ml-0.5"
           onClick={onMenuClick}
         >
-          <Menu size={20} md:size={24} />
+          <Menu size={20} className="md:h-6 md:w-6" />
         </button>
 
-         <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white p-0.5 md:p-1 shadow-sm overflow-hidden flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-         </div>
-         <div className="text-right">
-           <h1 className="text-xs md:text-xl font-black text-primary tracking-tight">ختمة و أثر</h1>
-           <p className="text-[7px] md:text-[9px] text-secondary font-bold">كل ختمة.. <span className="text-accent">تثمر أثراً</span></p>
-         </div>
+        <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white p-0.5 md:p-1 shadow-sm overflow-hidden flex items-center justify-center">
+          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+        </div>
+        <div className="text-right">
+          <h1 className="text-xs md:text-xl font-black text-primary tracking-tight">ختمة و أثر</h1>
+          <p className="text-[7px] md:text-[9px] text-secondary font-bold">كل ختمة.. <span className="text-accent">تثمر أثراً</span></p>
+        </div>
       </div>
 
       {/* Center: Search Bar */}
@@ -162,111 +162,111 @@ export default function Header({ onMenuClick }: HeaderProps) {
               href="/auth/login"
               className="flex items-center gap-1 text-primary border border-secondary-light/40 px-2 md:px-5 py-1.5 md:py-2.5 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black hover:bg-background transition-colors active:scale-95"
             >
-              <LogIn size={12} md:size={14} /> دخول
+              <LogIn size={12} /> دخول
             </Link>
             <Link
               href="/auth/register"
               className="flex items-center gap-1 bg-primary text-white px-2 md:px-5 py-1.5 md:py-2.5 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black hover:bg-[#4a1a2f] transition-colors shadow-md shadow-primary/10 active:scale-95"
             >
-              <UserPlus size={12} md:size={14} /> تسجيل
+              <UserPlus size={12} /> تسجيل
             </Link>
           </div>
         )}
 
         <div className="flex gap-1.5 md:gap-3 pr-1.5 md:pr-4 border-r border-secondary-light/30 items-center">
-           {isAuthenticated && (
-             <div className="flex items-center gap-1.5 md:gap-3">
-               <Link
-                 href="/chat"
-                 aria-label="الرسائل"
-                 className="text-primary-muted hover:text-primary p-1.5 md:p-2 rounded-xl bg-background transition-colors"
-               >
-                 <MessageCircle size={16} md:size={18} />
-               </Link>
+          {isAuthenticated && (
+            <div className="flex items-center gap-1.5 md:gap-3">
+              <Link
+                href="/chat"
+                aria-label="الرسائل"
+                className="text-primary-muted hover:text-primary p-1.5 md:p-2 rounded-xl bg-background transition-colors"
+              >
+                <MessageSquare size={16} />
+              </Link>
 
-               <div className="relative">
-                 <button
-                   type="button"
-                   onClick={toggleBell}
-                   aria-label="الإشعارات"
-                   className="relative text-primary-muted hover:text-primary cursor-pointer p-1.5 md:p-2 rounded-xl bg-background transition-colors"
-                 >
-                   <Bell size={16} md:size={18} />
-                   {unread > 0 && (
-                     <span className="absolute -top-1 -left-1 min-w-[16px] md:min-w-[18px] h-[16px] md:h-[18px] px-1 bg-red-500 text-white text-[8px] md:text-[10px] font-black rounded-full border-2 border-white flex items-center justify-center">
-                       {unread > 9 ? '9+' : unread}
-                     </span>
-                   )}
-                 </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={toggleBell}
+                  aria-label="الإشعارات"
+                  className="relative text-primary-muted hover:text-primary cursor-pointer p-1.5 md:p-2 rounded-xl bg-background transition-colors"
+                >
+                  <Bell size={16} />
+                  {unread > 0 && (
+                    <span className="absolute -top-1 -left-1 min-w-[16px] md:min-w-[18px] h-[16px] md:h-[18px] px-1 bg-red-500 text-white text-[8px] md:text-[10px] font-black rounded-full border-2 border-white flex items-center justify-center">
+                      {unread > 9 ? '9+' : unread}
+                    </span>
+                  )}
+                </button>
 
-               {bellOpen && (
-                 <>
-                   <button
-                     type="button"
-                     aria-label="إغلاق الإشعارات"
-                     className="fixed inset-0 z-40 cursor-default bg-transparent"
-                     onClick={() => setBellOpen(false)}
-                   />
-                   <div className="absolute left-0 top-full mt-2 w-80 max-w-[85vw] bg-white border border-secondary-light/30 rounded-2xl shadow-xl z-50 overflow-hidden text-right">
-                     <div className="flex items-center justify-between px-4 py-3 border-b border-background">
-                       <h4 className="text-xs font-black text-primary">الإشعارات</h4>
-                       {notifications.some(n => !n.read_at) && (
-                         <button
-                           type="button"
-                           onClick={readAll}
-                           className="flex items-center gap-1 text-[10px] font-bold text-secondary hover:text-primary transition-colors"
-                         >
-                           <CheckCheck size={12} /> تعليم الكل كمقروء
-                         </button>
-                       )}
-                     </div>
-                     <div className="max-h-80 overflow-y-auto no-scrollbar">
-                       {loadingNotifications ? (
-                         <div className="flex items-center justify-center gap-2 py-8 text-primary-muted text-xs font-bold">
-                           <Loader2 size={14} className="animate-spin" /> جاري التحميل...
-                         </div>
-                       ) : notifications.length === 0 ? (
-                         <p className="py-8 text-center text-[11px] font-bold text-primary-muted">
-                           لا توجد إشعارات بعد
-                         </p>
-                       ) : (
-                         notifications.map(n => (
-                           <button
-                             key={n.id}
-                             type="button"
-                             onClick={() => openNotification(n)}
-                             className={`w-full text-right px-4 py-3 border-b border-background last:border-0 transition-colors hover:bg-background ${
-                               n.read_at ? 'bg-white' : 'bg-secondary/5'
-                             }`}
-                           >
-                             <div className="flex items-center gap-2">
-                               {!n.read_at && <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />}
-                               <p className="text-[11px] font-black text-primary flex-1">
-                                 {n.kind === 'new_participant' ? 'خاتمة جديدة مهتمة بطلبك' : 'رسالة جديدة'}
-                                 {(n.item_title || n.need_title) ? ` • ${n.item_title || n.need_title}` : ''}
-                               </p>
-                               <span className="text-[9px] text-primary-muted shrink-0">{timeAgo(n.created_at)}</span>
-                             </div>
-                             <p className="text-[10px] font-bold text-primary-muted mt-1 leading-relaxed">
-                               {n.sender_name ? `${n.sender_name}: ` : ''}{n.excerpt || ''}
-                             </p>
-                           </button>
-                         ))
-                       )}
-                     </div>
-                   </div>
-                 </>
-               )}
-             </div>
-           )}
-           <div className="text-primary-muted hover:text-primary cursor-pointer p-2 rounded-xl bg-background hidden">
-              <MessageSquare size={18} />
-           </div>
-           <img
-             src="/gaith.jpeg"
-             alt="غيث"
-             className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl object-cover shadow-sm shrink-0"
-           />
+                {bellOpen && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="إغلاق الإشعارات"
+                      className="fixed inset-0 z-40 cursor-default bg-transparent"
+                      onClick={() => setBellOpen(false)}
+                    />
+                    <div className="absolute left-0 top-full mt-2 w-80 max-w-[85vw] bg-white border border-secondary-light/30 rounded-2xl shadow-xl z-50 overflow-hidden text-right">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-background">
+                        <h4 className="text-xs font-black text-primary">الإشعارات</h4>
+                        {notifications.some(n => !n.read_at) && (
+                          <button
+                            type="button"
+                            onClick={readAll}
+                            className="flex items-center gap-1 text-[10px] font-bold text-secondary hover:text-primary transition-colors"
+                          >
+                            <CheckCheck size={12} /> تعليم الكل كمقروء
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-80 overflow-y-auto no-scrollbar">
+                        {loadingNotifications ? (
+                          <div className="flex items-center justify-center gap-2 py-8 text-primary-muted text-xs font-bold">
+                            <Loader2 size={14} className="animate-spin" /> جاري التحميل...
+                          </div>
+                        ) : notifications.length === 0 ? (
+                          <p className="py-8 text-center text-[11px] font-bold text-primary-muted">
+                            لا توجد إشعارات بعد
+                          </p>
+                        ) : (
+                          notifications.map(n => (
+                            <button
+                              key={n.id}
+                              type="button"
+                              onClick={() => openNotification(n)}
+                              className={`w-full text-right px-4 py-3 border-b border-background last:border-0 transition-colors hover:bg-background ${n.read_at ? 'bg-white' : 'bg-secondary/5'}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {!n.read_at && <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />}
+                                <p className="text-[11px] font-black text-primary flex-1">
+                                  {n.kind === 'new_participant' ? 'خاتمة جديدة مهتمة بطلبك' : 'رسالة جديدة'}
+                                  {(n.item_title || n.need_title) ? ` • ${n.item_title || n.need_title}` : ''}
+                                </p>
+                                <span className="text-[9px] text-primary-muted shrink-0">{timeAgo(n.created_at)}</span>
+                              </div>
+                              <p className="text-[10px] font-bold text-primary-muted mt-1 leading-relaxed">
+                                {n.sender_name ? `${n.sender_name}: ` : ''}{n.excerpt || ''}
+                              </p>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="text-primary-muted hover:text-primary cursor-pointer p-2 rounded-xl bg-background hidden">
+            <MessageSquare size={18} />
+          </div>
+          <img
+            src="/gaith.jpeg"
+            alt="غيث"
+            className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl object-cover shadow-sm shrink-0"
+          />
         </div>
       </div>
     </header>
