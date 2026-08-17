@@ -71,6 +71,7 @@ class AuthController extends Controller
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
 
@@ -262,11 +263,8 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-
-            return response()->json([
-                'message' => 'Could not send the verification code right now. Please try again later.',
-            ], 502);
         }
 
         return response()->json(['message' => 'تم إرسال رمز التحقق الجديد.']);
@@ -296,11 +294,8 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-
-            return response()->json([
-                'message' => 'Could not send the verification code right now. Please try again later.',
-            ], 502);
         }
 
         return response()->json(['message' => 'تم إرسال رمز التحقق الجديد.']);
@@ -479,11 +474,8 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-
-            return response()->json([
-                'message' => 'Could not send the password reset email right now. Please try again later.',
-            ], 502);
         }
 
         return response()->json([
