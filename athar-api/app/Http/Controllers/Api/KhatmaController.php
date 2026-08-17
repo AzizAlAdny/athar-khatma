@@ -54,10 +54,14 @@ class KhatmaController extends Controller
     {
         $gifts = KhatmaServiceModel::with(['gift', 'khatma.user'])
             ->latest()
-            ->limit(6)
+            ->limit(12)
             ->get()
             ->map(fn ($service) => [
+                'id' => $service->id,
+                'khatma_id' => $service->khatma_id,
+                'user_id' => $service->khatma->user_id,
                 'gift_name' => $service->gift->name ?? null,
+                'gift_icon' => $service->gift->icon ?? null,
                 // Prefer the map display name when set (الاسم الظاهر على خريطة الأثر).
                 'user_name' => $service->khatma->user?->display_name ?: ($service->khatma->user?->name ?? null),
                 'city' => $service->khatma->user->city ?? null,

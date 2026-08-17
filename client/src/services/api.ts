@@ -31,7 +31,11 @@ export interface KhatmaPin {
 }
 
 export interface RecentGift {
+  id: number;
+  khatma_id: number;
+  user_id: number;
   gift_name: string;
+  gift_icon?: string;
   user_name: string;
   city?: string;
   created_at?: string;

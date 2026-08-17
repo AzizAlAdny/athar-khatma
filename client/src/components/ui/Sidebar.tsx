@@ -39,7 +39,7 @@ const seekerNav: NavItem[] = [
   { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
   { label: 'طلباتي', href: '/needs', activePath: '/needs', Icon: HelpCircle },
   { label: 'طلب احتياج', href: '/needs/register', activePath: '/needs/register', Icon: Plus },
-  { label: 'هداياي', href: '/my-gifts', activePath: '/my-gifts', Icon: Gift },
+  { label: 'تصفح العطايا', href: '/needs/giftbrowser', activePath: '/needs/giftbrowser', Icon: Gift },
 ];
 
 const khatmaNav: NavItem[] = [
