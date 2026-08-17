@@ -217,12 +217,22 @@ export const resendEmailVerification = () =>
 
 // Verify email with 6-digit code
 export const verifyWithCode = (email: string, code: string) =>
-  fetchJson<{ message: string; verified: boolean }>('/verify-code', {
+  fetchJson<{ message: string; verified: boolean; user?: User; token?: string }>('/verify-code', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ email, code }),
+  });
+
+// Resend verification code for unauthenticated users
+export const resendVerificationCodePublic = (email: string) =>
+  fetchJson<{ message: string }>('/resend-verification-code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
   });
 
 // Request password reset

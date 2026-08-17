@@ -180,7 +180,10 @@ export default function Register() {
       };
 
       const data = await register(payload as any);
-      login(data.user, data.token);
+      // Store email for verification page (user not fully authenticated yet)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pending_verification_email', data.email || data.user.email);
+      }
       // Redirect to verification page with email verification required
       router.push('/auth/verify');
     } catch (err: any) {

@@ -77,9 +77,11 @@ class AuthController extends Controller
             $this->auditService->record('register', $user, $request);
             $this->notificationService->notifyAdminNewUser($user);
 
+            // Return user data for the verify page, but no token until verified
             return response()->json([
                 'message' => 'تم التسجيل بنجاح. تم إرسال رمز التحقق إلى بريدك الإلكتروني.',
                 'user' => new UserResource($user),
+                'email' => $user->email, // Include email for verify page
             ], 201);
         });
     }
@@ -217,10 +219,57 @@ class AuthController extends Controller
 
         $this->auditService->record('email_verified', $user, $request);
 
+        // Issue a token after successful verification
+        $token = $user->createToken('auth_token', $user->tokenAbilities())->plainTextToken;
+
         return response()->json([
             'message' => 'تم تفعيل البريد الإلكتروني بنجاح.',
             'verified' => true,
+            'user' => new UserResource($user),
+            'token' => $token,
         ]);
+    }
+
+    /**
+     * Resend verification code for unauthenticated users (public endpoint).
+     */
+    public function resendVerificationCodePublic(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'المستخدم غير موجود.'], 404);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'البريد الإلكتروني مفعل بالفعل.'], 200);
+        }
+
+        // Generate new 6-digit verification code
+        $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user->verification_code = $verificationCode;
+        $user->verification_code_expires_at = now()->addMinutes(15);
+        $user->save();
+
+        try {
+            Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
+        } catch (\Throwable $e) {
+            Log::error('Verification code resend failed', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Could not send the verification code right now. Please try again later.',
+            ], 502);
+        }
+
+        return response()->json(['message' => 'تم إرسال رمز التحقق الجديد.']);
     }
 
     /**

@@ -4,13 +4,14 @@ import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
 import { Mail, CheckCircle2, LogOut, RefreshCw, Key } from 'lucide-react';
-import { resendEmailVerification, verifyWithCode, fetchUser } from '@/services/api';
+import { resendEmailVerification, verifyWithCode, fetchUser, saveAuthToken, resendVerificationCodePublic } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function VerifyEmail() {
   const router = useRouter();
   const { user, login, logout } = useAuth();
   const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
@@ -18,6 +19,16 @@ export default function VerifyEmail() {
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
 
   useEffect(() => {
+    // Get email from localStorage if user is not authenticated
+    if (!user && typeof window !== 'undefined') {
+      const pendingEmail = localStorage.getItem('pending_verification_email');
+      if (pendingEmail) {
+        setEmail(pendingEmail);
+      }
+    } else if (user) {
+      setEmail(user.email);
+    }
+
     if (router.query.verified === '1') {
       setMessage('تم التحقق من بريدكِ الإلكتروني بنجاح!');
       (async () => {
@@ -32,7 +43,7 @@ export default function VerifyEmail() {
         }
       })();
     }
-  }, [router.query.verified]);
+  }, [router.query.verified, user]);
 
   // Countdown timer for code expiration
   useEffect(() => {
@@ -55,20 +66,34 @@ export default function VerifyEmail() {
       return;
     }
 
+    if (!email) {
+      setError('عنوان البريد الإلكتروني غير متوفر');
+      return;
+    }
+
     setError(null);
     setMessage(null);
     setVerifying(true);
 
     try {
-      await verifyWithCode(user?.email || '', code);
+      const data = await verifyWithCode(email, code);
       setMessage('تم التحقق من بريدكِ الإلكتروني بنجاح!');
-      try {
-        const freshUser = await fetchUser();
-        login(freshUser);
-        router.push('/dashboard');
-      } catch {
-        // Verification succeeded, but this browser isn't signed in
-        // keep the success message; the user can log in afterwards.
+      
+      // Save the token and user data from the response
+      if (data.token) {
+        saveAuthToken(data.token);
+      }
+      if (data.user) {
+        login(data.user, data.token);
+        // Clear the pending email from localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('pending_verification_email');
+        }
+        
+        // Redirect to dashboard after successful verification
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500);
       }
     } catch (err: any) {
       setError(err.message || 'رمز التحقق غير صحيح أو منتهي الصلاحية');
@@ -78,12 +103,24 @@ export default function VerifyEmail() {
   };
 
   const handleResend = async () => {
+    if (!email) {
+      setError('عنوان البريد الإلكتروني غير متوفر');
+      return;
+    }
+
     setError(null);
     setMessage(null);
     setResending(true);
     setTimeLeft(15 * 60); // Reset timer
     try {
-      const data = await resendEmailVerification();
+      let data;
+      if (user) {
+        // User is authenticated, use the protected endpoint
+        data = await resendEmailVerification();
+      } else {
+        // User is not authenticated, use the public endpoint
+        data = await resendVerificationCodePublic(email);
+      }
       setMessage(data.message || 'تم إرسال رمز التحقق الجديد إلى بريدكِ الإلكتروني.');
     } catch (err: any) {
       setError(err.message || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً.');

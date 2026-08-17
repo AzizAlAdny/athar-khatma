@@ -18,6 +18,7 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/verify-code', [AuthController::class, 'verifyWithCode']);
+    Route::post('/resend-verification-code', [AuthController::class, 'resendVerificationCodePublic']);
     Route::post('/forgot-password', [AuthController::class, 'requestPasswordReset']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
