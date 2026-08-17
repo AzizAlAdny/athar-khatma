@@ -169,7 +169,6 @@ class DemoDataSeeder extends Seeder
             foreach ($khatmas as $khatmaData) {
                 $khatma = $user->khatmas()->create([
                     'completion_date' => $khatmaData['completion_date'],
-                    'type' => $khatmaData['type'],
                     'impact_score' => $khatmaData['impact_score'],
                     'status' => 'active',
                 ]);
