@@ -42,6 +42,7 @@ class AuthController extends Controller
             'neighborhood' => 'nullable|string|max:255',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
+            'pledge_accepted' => 'required|accepted',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -55,6 +56,7 @@ class AuthController extends Controller
                 'neighborhood' => $request->neighborhood,
                 'latitude' => $request->lat,
                 'longitude' => $request->lng,
+                'pledge_accepted' => (bool) $request->pledge_accepted,
             ]);
 
             // Generate 6-digit verification code
@@ -70,14 +72,15 @@ class AuthController extends Controller
                     'mailer' => config('mail.default')
                 ]);
                 Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
-                Log::info('Mail::send command finished');
+                Log::info('Verification code email sent successfully');
             } catch (\Throwable $e) {
-                Log::error('Verification code email failed', [
+                Log::error('Verification code email failed at register', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
+                // We still let registration finish, but logs will show why mail failed
             }
 
             $this->auditService->record('register', $user, $request);
@@ -262,9 +265,11 @@ class AuthController extends Controller
         $user->save();
 
         try {
+            Log::info('Resending verification code email (public)', ['email' => $user->email]);
             Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
+            Log::info('Verification code resend successful (public)');
         } catch (\Throwable $e) {
-            Log::error('Verification code resend failed', [
+            Log::error('Verification code resend failed (public)', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'error' => $e->getMessage(),
@@ -293,7 +298,9 @@ class AuthController extends Controller
         $user->save();
 
         try {
+            Log::info('Resending verification code email', ['email' => $user->email]);
             Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
+            Log::info('Verification code resend successful');
         } catch (\Throwable $e) {
             Log::error('Verification code resend failed', [
                 'user_id' => $user->id,
@@ -473,7 +480,9 @@ class AuthController extends Controller
         $resetUrl = $frontend . '/auth/reset-password?token=' . $token . '&email=' . urlencode($user->email);
 
         try {
+            Log::info('Attempting to send password reset email', ['email' => $user->email]);
             Mail::to($user->email)->send(new PasswordResetEmail($resetUrl, $user->name));
+            Log::info('Password reset email sent successfully');
         } catch (\Throwable $e) {
             Log::error('Password reset email failed', [
                 'user_id' => $user->id,

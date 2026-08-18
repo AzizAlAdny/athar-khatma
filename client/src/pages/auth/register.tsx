@@ -123,6 +123,7 @@ export default function Register() {
   const [role, setRole] = useState('khatma');
   const [city, setCity] = useState('الرياض');
   const [neighborhood, setNeighborhood] = useState('');
+  const [pledge, setPledge] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
@@ -130,6 +131,7 @@ export default function Register() {
     passwordConfirm?: string;
     city?: string;
     neighborhood?: string;
+    pledge?: string;
     general?: string
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,6 +153,7 @@ export default function Register() {
 
     if (!city) newErrors.city = 'الرجاء اختيار المدينة';
     if (!neighborhood) newErrors.neighborhood = 'الرجاء اختيار الحي السكني';
+    if (!pledge) newErrors.pledge = 'يجب الموافقة على التعهد للمتابعة';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -176,7 +179,8 @@ export default function Register() {
         city,
         neighborhood,
         lat: selectedNeighborhood?.lat,
-        lng: selectedNeighborhood?.lng
+        lng: selectedNeighborhood?.lng,
+        pledge_accepted: pledge
       };
 
       const data = await register(payload as any);
@@ -216,7 +220,7 @@ export default function Register() {
             value={name}
             onChange={e => setName(e.target.value)}
             icon={User}
-                        placeholder="ادخلي اسمكِ الكامل"
+            placeholder="ادخلي اسمكِ الكامل"
             error={errors.name}
             required
           />
@@ -307,6 +311,38 @@ export default function Register() {
             error={errors.passwordConfirm}
             required
           />
+
+          <div className="md:col-span-2 space-y-4 bg-primary/5 p-5 rounded-[1.25rem] border border-primary/10">
+            <div className="flex items-start gap-3">
+              <div className="mt-1">
+                <Sparkles className="text-primary" size={18} />
+              </div>
+              <p className="text-xs font-bold text-primary-muted leading-relaxed whitespace-pre-line">
+                عزيزتي :
+                الإخلاص ومراقبة الله عزوجل قبل كل شيء وسلامة النطق وخلو التلاوة من اللحون الجلية والمحافظة على خصوصية المستفيدين وكرامتهم
+                وتقديم الأثر النافع لهم
+                واستخدام المنصة فيما خُصصت له فقط
+              </p>
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center">
+                <input
+                  type="checkbox"
+                  checked={pledge}
+                  onChange={e => setPledge(e.target.checked)}
+                  className="peer appearance-none w-6 h-6 rounded-lg border-2 border-primary/20 checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                />
+                <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              </div>
+              <span className="text-sm font-black text-primary group-hover:opacity-80 transition-opacity select-none">
+                أتعهد بالالتزام بذلك
+              </span>
+            </label>
+            {errors.pledge && <p className="text-[11px] text-red-500 font-black pr-1">{errors.pledge}</p>}
+          </div>
         </div>
 
         {errors.general && (

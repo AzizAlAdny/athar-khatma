@@ -17,7 +17,7 @@ type SelectProps = BaseProps & SelectHTMLAttributes<HTMLSelectElement> & { as: '
 type ComponentProps = InputProps | SelectProps;
 
 export default function Input(props: ComponentProps) {
-  const { label, icon: Icon, error, containerClassName = '', as = 'input', ...rest } = props;
+  const { label, icon: Icon, error, containerClassName = '', as = 'input', className = '', ...rest } = props;
 
   const baseClasses = `w-full px-5 py-3.5 rounded-2xl border outline-none transition-all duration-200 text-primary font-semibold placeholder:text-primary-muted placeholder:font-normal bg-background/50 hover:bg-background focus:bg-white ${
     Icon ? 'pr-12' : ''
@@ -27,7 +27,7 @@ export default function Input(props: ComponentProps) {
       : error
       ? 'border-red-500 focus:ring-4 focus:ring-red-500/10'
       : 'border-secondary-light/30 focus:ring-4 focus:ring-primary/5 focus:border-primary'
-  }`;
+  } ${className}`;
 
   const renderField = () => {
     if (as === 'select') {

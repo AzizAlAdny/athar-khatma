@@ -54,7 +54,7 @@ class BrevoTransport extends AbstractTransport
             $payload = $this->getPayload($email);
 
             Log::info('Brevo API Sending Request', [
-                'to' => $payload['to'][0]['email'] ?? 'unknown',
+                'to' => array_column($payload['to'], 'email'),
                 'sender' => $payload['sender']['email'] ?? 'unknown',
                 'subject' => $payload['subject'] ?? 'no subject',
             ]);
@@ -73,9 +73,14 @@ class BrevoTransport extends AbstractTransport
                 'body' => (string) $response->getBody(),
             ]);
         } catch (GuzzleException $e) {
+            $errorResponse = 'No response body';
+            if (method_exists($e, 'hasResponse') && $e->hasResponse()) {
+                $errorResponse = (string) $e->getResponse()->getBody();
+            }
+
             Log::error('Brevo API Error', [
                 'message' => $e->getMessage(),
-                'response' => $e->hasResponse() ? (string) $e->getResponse()->getBody() : 'No response',
+                'response' => $errorResponse,
             ]);
             throw $e;
         }
@@ -89,12 +94,12 @@ class BrevoTransport extends AbstractTransport
      */
     protected function getPayload(Email $email): array
     {
-        $sender = $email->getFrom()[0] ?? new Address(config('mail.from.address'), config('mail.from.name'));
+        $from = $email->getFrom()[0] ?? new Address(config('mail.from.address'), config('mail.from.name'));
 
         $payload = [
             'sender' => [
-                'name' => $sender->getName() ?: config('mail.from.name'),
-                'email' => $sender->getAddress(),
+                'name' => $from->getName() ?: config('mail.from.name'),
+                'email' => $from->getAddress(),
             ],
             'to' => $this->mapAddresses($email->getTo()),
             'subject' => $email->getSubject(),
@@ -120,6 +125,17 @@ class BrevoTransport extends AbstractTransport
             $payload['replyTo'] = $this->mapAddresses($replyTo)[0] ?? null;
         }
 
+        // Attachments
+        if ($attachments = $email->getAttachments()) {
+            $payload['attachment'] = [];
+            foreach ($attachments as $attachment) {
+                $payload['attachment'][] = [
+                    'name' => $attachment->getPreparedHeaders()->getHeaderParameter('Content-Disposition', 'filename') ?: 'attachment',
+                    'content' => base64_encode($attachment->getBody()),
+                ];
+            }
+        }
+
         return $payload;
     }
 
@@ -131,12 +147,12 @@ class BrevoTransport extends AbstractTransport
      */
     protected function mapAddresses(array $addresses): array
     {
-        return collect($addresses)->map(function (Address $address) {
+        return array_map(function (Address $address) {
             return array_filter([
                 'name' => $address->getName() ?: null,
                 'email' => $address->getAddress(),
             ]);
-        })->values()->toArray();
+        }, $addresses);
     }
 
     /**

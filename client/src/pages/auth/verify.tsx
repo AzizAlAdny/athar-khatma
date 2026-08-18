@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
-import { Mail, CheckCircle2, LogOut, RefreshCw, Key } from 'lucide-react';
+import { Mail, CheckCircle2, LogOut, RefreshCw, ShieldCheck, MailWarning, ArrowRight } from 'lucide-react';
 import { resendEmailVerification, verifyWithCode, fetchUser, saveAuthToken, resendVerificationCodePublic } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -136,98 +136,108 @@ export default function VerifyEmail() {
 
   return (
     <AuthLayout
-      title="تحققي من بريدكِ الإلكتروني"
-      subtitle="أرسلنا رمز تحقق مكون من 6 أرقام إلى بريدكِ الإلكتروني"
+      title="تأكيد الهوية"
+      subtitle="خطوة أخيرة للبدء في صناعة الأثر"
       footer={
-        <button
-          onClick={() => { logout(); }}
-          className="text-primary-muted font-medium hover:text-primary transition-colors inline-flex items-center gap-1"
-        >
-          <LogOut size={14} /> تسجيل الخروج
-        </button>
-      }
-    >
-      <div className="space-y-6 text-center">
-        <div className="flex justify-center">
-          <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center text-primary">
-            <Key size={36} />
-          </div>
-        </div>
-
-        <p className="text-sm text-primary-muted font-medium leading-relaxed">
-          تم إنشاء حسابكِ بنجاح. لإكمال التسجيل والبدء في صناعة الأثر، يرجى إدخال رمز التحقق المكون من 6 أرقام الذي أرسلناه إلى:
-        </p>
-
-        <p className="text-base font-black text-primary break-all" dir="ltr">
-          {user?.email}
-        </p>
-
-        <div className="max-w-xs mx-auto">
-          <Input
-            label="رمز التحقق"
-            type="text"
-            value={code}
-            onChange={handleCodeChange}
-            placeholder="123456"
-            maxLength={6}
-            className="text-center text-2xl tracking-widest"
-            error={error}
-          />
-        </div>
-
-        {timeLeft > 0 && (
-          <p className="text-xs text-primary-muted font-medium">
-            ينتهي الرمز خلال: <span className="font-bold">{formatTime(timeLeft)}</span>
-          </p>
-        )}
-
-        {timeLeft <= 0 && (
-          <p className="text-xs text-red-600 font-medium">
-            رمز التحقق منتهي الصلاحية. يرجى طلب رمز جديد.
-          </p>
-        )}
-
-        {message && (
-          <div className="bg-green-50 border border-green-100 text-green-700 text-xs font-bold p-4 rounded-2xl flex items-center justify-center gap-2">
-            <CheckCircle2 size={16} /> {message}
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-100 text-red-600 text-xs font-bold p-4 rounded-2xl">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <Button
-            type="button"
-            disabled={verifying || timeLeft <= 0}
-            onClick={handleVerify}
-            className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
-          >
-            {verifying ? (
-              <span className="inline-flex items-center justify-center gap-2">
-                <RefreshCw size={18} className="animate-spin" /> جاري التحقق...
-              </span>
-            ) : (
-              'تحقق من الرمز'
-            )}
-          </Button>
-
+        <div className="flex flex-col gap-4">
           <button
-            type="button"
-            disabled={resending}
-            onClick={handleResend}
-            className="w-full py-3 rounded-[1.25rem] text-sm font-black text-primary bg-white border border-primary/20 hover:bg-primary/5 transition-all active:scale-95 disabled:opacity-60"
+            onClick={() => { logout(); }}
+            className="text-primary-muted font-bold hover:text-primary transition-colors inline-flex items-center justify-center gap-1 text-sm"
           >
-            {resending ? 'جاري الإرسال...' : 'إرسال رمز جديد'}
+            <LogOut size={16} /> تسجيل الخروج والعودة
           </button>
         </div>
+      }
+    >
+      <div className="space-y-8">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6 animate-pulse">
+            <ShieldCheck size={32} />
+          </div>
 
-        <p className="text-xs text-primary-muted font-medium pt-2">
-          لم تصلي الرسالة؟ تحققي من مجلد الرسائل غير المرغوب فيها (Spam).
-        </p>
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-primary-muted">لقد أرسلنا رمز التحقق إلى بريدكِ الإلكتروني:</p>
+            <div className="bg-primary/5 px-4 py-2 rounded-xl border border-primary/10 inline-block">
+              <span className="text-lg font-black text-primary select-all break-all" dir="ltr">
+                {email || user?.email || '...'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="max-w-[280px] mx-auto">
+            <Input
+              label="رمز التحقق (6 أرقام)"
+              type="text"
+              value={code}
+              onChange={handleCodeChange}
+              placeholder="0 0 0 0 0 0"
+              maxLength={6}
+              autoFocus
+              autoComplete="one-time-code"
+              containerClassName="text-center"
+              className="text-center text-3xl font-black tracking-[0.5em] h-16 rounded-[1.25rem] border-2 focus:border-primary transition-all duration-300 placeholder:opacity-30"
+              error={error}
+            />
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+            {timeLeft > 0 ? (
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary-light/20 text-primary text-xs font-black border border-secondary-light/10">
+                <RefreshCw size={12} className="animate-spin" />
+                صلاحية الرمز تنتهي خلال: {formatTime(timeLeft)}
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-black border border-red-100">
+                <MailWarning size={12} />
+                انتهت صلاحية الرمز
+              </div>
+            )}
+          </div>
+
+          {message && (
+            <div className="bg-green-50 border border-green-100 text-green-700 text-xs font-bold p-4 rounded-2xl flex items-center justify-center gap-2 animate-in fade-in zoom-in-95">
+              <CheckCircle2 size={16} /> {message}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <Button
+              type="button"
+              disabled={verifying || timeLeft <= 0}
+              onClick={handleVerify}
+              className="w-full py-5 rounded-[1.25rem] text-lg font-black shadow-xl shadow-primary/10 active:scale-[0.98]"
+            >
+              {verifying ? (
+                <span className="flex items-center justify-center gap-2">
+                  <RefreshCw size={20} className="animate-spin" /> جاري التحقق...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  تأكيد الرمز وبدء الأثر <ArrowRight size={20} />
+                </span>
+              )}
+            </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                disabled={resending}
+                onClick={handleResend}
+                className="text-sm font-black text-primary-muted hover:text-primary transition-colors disabled:opacity-50 underline underline-offset-4 decoration-primary/30"
+              >
+                {resending ? 'جاري إرسال رمز جديد...' : 'لم يصلكِ الرمز؟ أرسلي مرة أخرى'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-secondary-light/10 rounded-2xl border border-secondary-light/10">
+          <p className="text-[11px] text-primary-muted font-bold leading-relaxed text-center">
+            تأكدي من مراجعة مجلد الرسائل غير المرغوب فيها (Spam) إذا لم تجدي الرسالة في صندوق الوارد الرئيسي.
+          </p>
+        </div>
       </div>
     </AuthLayout>
   );

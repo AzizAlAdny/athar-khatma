@@ -51,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'longitude',
         'verification_code',
         'verification_code_expires_at',
+        'pledge_accepted',
     ];
 
     /**
@@ -73,6 +74,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'pledge_accepted' => 'boolean',
         ];
     }
 
