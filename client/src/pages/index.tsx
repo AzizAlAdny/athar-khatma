@@ -80,7 +80,7 @@ export default function Home() {
   // Real gifts feed: prefer the chronological API; fall back to map-pin services.
   const giftsFeed = (recentGifts.length > 0
     ? recentGifts.map(g => ({ name: g.gift_name, by: g.user_name, meta: timeAgo(g.created_at) }))
-    : pins.flatMap(p => (p.services || []).map(service => ({ name: service, by: p.user_name, meta: p.city || '' })))
+    : pins.flatMap(p => (p.gifts || []).map((gift: string) => ({ name: gift, by: p.user_name, meta: p.city || '' })))
   ).slice(0, 3);
 
   // Real top contributor, taken from the public impact-map pins.
@@ -325,7 +325,7 @@ export default function Home() {
                 </div>
                 <p className="text-sm text-primary-muted font-bold leading-relaxed">
                   من الخاتمات المؤثرات في مجتمعنا <br />
-                  قدمت {(topContributor.services || []).length} {(topContributor.services || []).length === 1 ? 'مبادرة' : 'مبادرات'}{(topContributor.total_impact || 0) > 0 ? ` • ${topContributor.total_impact} نقطة أثر` : ''}
+                  قدمت {(topContributor.gifts || []).length} {(topContributor.gifts || []).length === 1 ? 'مبادرة' : 'مبادرات'}{(topContributor.total_impact || 0) > 0 ? ` • ${topContributor.total_impact} نقطة أثر` : ''}
                 </p>
               </div>
               <div className="h-48 md:h-full flex items-center justify-center">

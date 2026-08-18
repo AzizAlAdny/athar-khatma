@@ -216,11 +216,11 @@ const ImpactMap = () => {
                     </p>
 
                     <div className="flex flex-wrap gap-1 justify-end mb-4">
-                      {infoWindowData.services.slice(0, 3).map(s => (
+                      {infoWindowData.gifts.slice(0, 3).map((s: string) => (
                         <span key={s} className="px-2 py-0.5 bg-background border border-secondary-light/10 rounded-lg text-[9px] font-bold text-primary-muted">{s}</span>
                       ))}
-                      {infoWindowData.services.length > 3 && (
-                        <span className="px-2 py-0.5 bg-background border border-secondary-light/10 rounded-lg text-[9px] font-bold text-primary-muted">+{infoWindowData.services.length - 3}</span>
+                      {infoWindowData.gifts.length > 3 && (
+                        <span className="px-2 py-0.5 bg-background border border-secondary-light/10 rounded-lg text-[9px] font-bold text-primary-muted">+{infoWindowData.gifts.length - 3}</span>
                       )}
                     </div>
 
