@@ -98,6 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Delivery tracking
         Route::post('/khatma-gifts/{id}/delivered', [KhatmaGiftController::class, 'markDelivered']);
         Route::post('/seeker-needs/{id}/fulfilled', [SeekerNeedController::class, 'markFulfilled']);
+        Route::post('/seeker-needs/{id}/in-progress', [SeekerNeedController::class, 'markInProgress']);
 
         // Reviews
         Route::post('/reviews', [ReviewController::class, 'store']);

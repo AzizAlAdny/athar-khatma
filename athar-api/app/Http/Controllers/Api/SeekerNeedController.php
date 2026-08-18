@@ -18,9 +18,21 @@ class SeekerNeedController extends Controller
         $this->notificationService = $notificationService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $needs = SeekerNeed::with(['user', 'gift'])->withCount('messages')->latest()->get()->map(function ($need) {
+        $user = $request->user();
+        $query = SeekerNeed::with(['user', 'gift'])->withCount('messages');
+
+        // Enforcement of visibility rules
+        if ($user && $user->role !== 'admin') {
+            $query->where(function($q) use ($user) {
+                $q->where('status', 'open')
+                  ->orWhere('user_id', $user->id)
+                  ->orWhere('fulfilled_by_id', $user->id);
+            });
+        }
+
+        $needs = $query->latest()->get()->map(function ($need) {
             $need->created_at_human = $need->created_at?->diffForHumans();
             return $need;
         });
@@ -110,6 +122,39 @@ class SeekerNeedController extends Controller
         return response()->json([
             'message' => 'تم تحديد الطلب كمكتمل بنجاح',
             'need' => $need
+        ]);
+    }
+
+    public function markInProgress(Request $request, $id)
+    {
+        $need = SeekerNeed::find($id);
+
+        if (!$need) {
+            return response()->json(['message' => 'الطلب غير موجود'], 404);
+        }
+
+        if ($need->status !== 'open') {
+            return response()->json(['message' => 'الطلب تم استلامه مسبقاً أو غير متاح.'], 400);
+        }
+
+        // Only users with khatma role (or admin) can claim a need
+        if ($request->user()->role !== 'khatma' && $request->user()->role !== 'admin') {
+            return response()->json(['message' => 'فقط صانعات الأثر يمكنهن استلام الطلبات.'], 403);
+        }
+
+        $need->update([
+            'status' => 'in_progress',
+            'fulfilled_by_id' => $request->user()->id,
+        ]);
+
+        Log::info('Need marked as in_progress', [
+            'need_id' => $need->id,
+            'helper_id' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'message' => 'تم استلام الطلب بنجاح، يمكنك الآن البدء في التنسيق.',
+            'need' => $need->load(['user', 'gift'])
         ]);
     }
 }

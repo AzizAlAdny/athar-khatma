@@ -461,6 +461,11 @@ export const markNeedFulfilled = (id: number, fulfilledById: number) =>
     body: JSON.stringify({ fulfilled_by_id: fulfilledById }),
   });
 
+export const markNeedInProgress = (id: number) =>
+  fetchJson<{ message: string; need: SeekerNeed }>(`/seeker-needs/${id}/in-progress`, {
+    method: 'POST',
+  });
+
 export const submitReview = (payload: {
   reviewable_id: number;
   reviewable_type: 'gift' | 'need';

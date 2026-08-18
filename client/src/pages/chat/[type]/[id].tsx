@@ -7,7 +7,7 @@ import AppShell from '@/components/ui/AppShell';
 import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled } from '@/services/api';
+import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled, markNeedInProgress } from '@/services/api';
 import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star } from 'lucide-react';
 import ReviewForm from '@/components/ui/ReviewForm';
 
@@ -172,6 +172,20 @@ export default function UnifiedChat() {
     }
   };
 
+  const handleClaim = async () => {
+    if (!itemId || chatType !== 'need') return;
+    setMarking(true);
+    setError(null);
+    try {
+      const res = await markNeedInProgress(itemId);
+      setItem(res.need);
+    } catch (err: any) {
+      setError(err.message || 'تعذر استلام الطلب.');
+    } finally {
+      setMarking(false);
+    }
+  };
+
   const hero = (
     <Hero
       title="المحادثة"
@@ -251,7 +265,7 @@ export default function UnifiedChat() {
                            </button>
                         )}
                       </div>
-                    ) : (
+                    ) : item.status === 'in_progress' ? (
                       <button
                         onClick={handleMarkComplete}
                         disabled={marking}
@@ -266,7 +280,15 @@ export default function UnifiedChat() {
                           </>
                         )}
                       </button>
-                    )}
+                    ) : chatType === 'gift' ? (
+                      <button
+                        onClick={handleMarkComplete}
+                        disabled={marking}
+                        className="w-full md:w-auto bg-accent text-white px-6 py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 hover:bg-[#0e3522] transition-all shadow-md active:scale-95 disabled:opacity-50"
+                      >
+                         {marking ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> تأكيد التسليم</>}
+                      </button>
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -284,19 +306,38 @@ export default function UnifiedChat() {
                     </div>
                   </div>
 
-                  {/* Review Action for Recipient */}
-                  {item && (item.status === 'delivered' || item.status === 'fulfilled') && (
+                  {/* Claim/Review Actions for Recipient/Helper */}
+                  {item && (
                     <div className="shrink-0">
-                      {showReview ? (
-                        <span className="text-[10px] font-black text-primary-muted bg-white px-3 py-1 rounded-full">جاري التقييم...</span>
-                      ) : (
-                        <button
-                          onClick={() => setShowReview(true)}
-                          className="bg-yellow-400 hover:bg-yellow-500 text-primary-dark px-5 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-sm active:scale-95"
-                        >
-                          <Star size={14} /> تقييم التجربة
-                        </button>
-                      )}
+                       {item.status === 'open' && chatType === 'need' && user?.role === 'khatma' && (
+                         <button
+                           onClick={handleClaim}
+                           disabled={marking}
+                           className="bg-accent text-white px-6 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 hover:bg-[#0e3522] transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                         >
+                           {marking ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> استلام الطلب</>}
+                         </button>
+                       )}
+
+                       {(item.status === 'delivered' || item.status === 'fulfilled') && (
+                         showReview ? (
+                           <span className="text-[10px] font-black text-primary-muted bg-white px-3 py-1 rounded-full">جاري التقييم...</span>
+                         ) : (
+                           <button
+                             onClick={() => setShowReview(true)}
+                             className="bg-yellow-400 hover:bg-yellow-500 text-primary-dark px-5 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                           >
+                             <Star size={14} /> تقييم التجربة
+                           </button>
+                         )
+                       )}
+
+                       {item.status === 'in_progress' && chatType === 'need' && (
+                         <div className="bg-secondary/10 text-secondary px-4 py-2 rounded-xl border border-secondary/20 flex items-center gap-2">
+                            <Clock size={14} />
+                            <span className="text-[10px] font-black">قيد التنفيذ</span>
+                         </div>
+                       )}
                     </div>
                   )}
                </div>
@@ -367,56 +408,58 @@ export default function UnifiedChat() {
             </div>
 
             {/* Input Area */}
-            <div className="p-6 bg-white border-t border-secondary-light/10">
-              {error && (
-                <div className="mb-4 bg-red-50 border border-red-100 text-red-600 text-[10px] font-black p-3 rounded-2xl flex items-center gap-2 animate-in slide-in-from-top-2">
-                  <AlertCircle size={14} />
-                  {error}
-                </div>
-              )}
-
-              <form
-                onSubmit={handleSend}
-                className="relative flex items-end gap-3"
-              >
-                <div className="flex-1 relative group">
-                  <textarea
-                    value={body}
-                    onChange={e => setBody(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
-                      }
-                    }}
-                    rows={1}
-                    placeholder="اكتبي رسالتكِ هنا..."
-                    className="w-full min-h-[56px] max-h-[120px] resize-none bg-background/50 border border-secondary-light/30 rounded-[1.5rem] pr-6 pl-14 py-4 text-sm font-semibold text-primary placeholder:text-primary-muted/50 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all"
-                  />
-                  <div className="absolute left-3 bottom-3">
-                    <button
-                      type="submit"
-                      disabled={sending || !body.trim()}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                        body.trim()
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-100 hover:scale-105 active:scale-95'
-                        : 'bg-background text-primary-muted scale-90 opacity-50'
-                      }`}
-                      aria-label="إرسال"
-                    >
-                      {sending ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        <Send size={18} className="mr-0.5" />
-                      )}
-                    </button>
+            {!(item?.status === 'fulfilled' || item?.status === 'delivered') && (
+              <div className="p-6 bg-white border-t border-secondary-light/10">
+                {error && (
+                  <div className="mb-4 bg-red-50 border border-red-100 text-red-600 text-[10px] font-black p-3 rounded-2xl flex items-center gap-2 animate-in slide-in-from-top-2">
+                    <AlertCircle size={14} />
+                    {error}
                   </div>
-                </div>
-              </form>
-              <p className="mt-3 text-[9px] text-center text-primary-muted font-bold opacity-60">
-                اضغطي Enter للإرسال، و Shift + Enter للسطر الجديد
-              </p>
-            </div>
+                )}
+
+                <form
+                  onSubmit={handleSend}
+                  className="relative flex items-end gap-3"
+                >
+                  <div className="flex-1 relative group">
+                    <textarea
+                      value={body}
+                      onChange={e => setBody(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
+                        }
+                      }}
+                      rows={1}
+                      placeholder="اكتبي رسالتكِ هنا..."
+                      className="w-full min-h-[56px] max-h-[120px] resize-none bg-background/50 border border-secondary-light/30 rounded-[1.5rem] pr-6 pl-14 py-4 text-sm font-semibold text-primary placeholder:text-primary-muted/50 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all"
+                    />
+                    <div className="absolute left-3 bottom-3">
+                      <button
+                        type="submit"
+                        disabled={sending || !body.trim()}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                          body.trim()
+                          ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-100 hover:scale-105 active:scale-95'
+                          : 'bg-background text-primary-muted scale-90 opacity-50'
+                        }`}
+                        aria-label="إرسال"
+                      >
+                        {sending ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <Send size={18} className="mr-0.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+                <p className="mt-3 text-[9px] text-center text-primary-muted font-bold opacity-60">
+                  اضغطي Enter للإرسال، و Shift + Enter للسطر الجديد
+                </p>
+              </div>
+            )}
           </div>
         )}
       </AppShell>
