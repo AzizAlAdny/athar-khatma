@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreKhatmaRequest;
 use App\Http\Resources\KhatmaResource;
 use App\Models\Khatma;
-use App\Models\KhatmaService as KhatmaServiceModel;
+use App\Models\KhatmaGift;
 use App\Services\KhatmaService;
 use App\Repositories\Contracts\KhatmaRepositoryInterface;
 use Illuminate\Http\Request;
@@ -41,55 +41,9 @@ class KhatmaController extends Controller
         return response()->json($data);
     }
 
-    public function showService($id)
-    {
-        $service = KhatmaServiceModel::with(['gift', 'khatma.user'])->find($id);
-
-        if (!$service) {
-            return response()->json(['message' => 'العطاء غير موجود'], 404);
-        }
-
-        return response()->json([
-            'id' => $service->id,
-            'user_id' => $service->khatma->user_id,
-            'gift_name' => $service->gift->name,
-            'user_name' => $service->khatma->user?->display_name ?: $service->khatma->user?->name,
-            'city' => $service->khatma->user->city,
-        ]);
-    }
-
     public function map()
     {
         return response()->json($this->khatmaService->getMapData());
-    }
-
-    /**
-     * Public feed of the most recently given gifts (khatma services),
-     * with provider name only — no sensitive user data.
-     */
-    public function recent()
-    {
-        $gifts = KhatmaServiceModel::with(['gift', 'khatma.user'])
-            ->withCount('messages')
-            ->latest()
-            ->limit(12)
-            ->get()
-            ->map(fn ($service) => [
-                'id' => $service->id,
-                'khatma_id' => $service->khatma_id,
-                'user_id' => $service->khatma->user_id,
-                'gift_name' => $service->gift->name ?? null,
-                'gift_icon' => $service->gift->icon ?? null,
-                'messages_count' => $service->messages_count,
-                // Prefer the map display name when set (الاسم الظاهر على خريطة الأثر).
-                'user_name' => $service->khatma->user?->display_name ?: ($service->khatma->user?->name ?? null),
-                'city' => $service->khatma->user->city ?? null,
-                'created_at' => optional($service->created_at)->toIso8601String(),
-            ])
-            ->filter(fn ($item) => $item['gift_name'] && $item['user_name'])
-            ->values();
-
-        return response()->json($gifts);
     }
 
     public function show(Request $request, $id)

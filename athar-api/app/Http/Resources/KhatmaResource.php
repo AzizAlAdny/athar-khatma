@@ -27,15 +27,15 @@ class KhatmaResource extends JsonResource
                 'bio' => $this->user->bio,
                 'city' => $this->user->city,
             ],
-            'achievements' => $this->whenLoaded('services', function () {
-                return $this->services->map(function ($service) {
+            'achievements' => $this->whenLoaded('khatmaGifts', function () {
+                return $this->khatmaGifts->map(function ($gift) {
                     return [
-                        'gift_name' => $service->gift->name,
-                        'category' => $service->gift->category,
-                        'status' => $service->status,
-                        'description' => $service->description,
-                        'messages_count' => $service->messages_count ?? 0,
-                        'date' => $service->created_at->format('Y-m-d'),
+                        'gift_name' => $gift->gift->name,
+                        'category' => $gift->gift->category,
+                        'status' => $gift->status,
+                        'description' => $gift->description,
+                        'messages_count' => $gift->messages_count ?? 0,
+                        'date' => $gift->created_at->format('Y-m-d'),
                     ];
                 });
             }),

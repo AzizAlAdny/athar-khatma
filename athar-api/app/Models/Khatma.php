@@ -23,8 +23,8 @@ class Khatma extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function services()
+    public function khatmaGifts()
     {
-        return $this->hasMany(KhatmaService::class);
+        return $this->hasMany(KhatmaGift::class);
     }
 }

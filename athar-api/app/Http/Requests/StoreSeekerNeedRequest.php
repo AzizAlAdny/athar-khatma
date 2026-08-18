@@ -5,14 +5,13 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-class StoreNeedRequest extends FormRequest
+class StoreSeekerNeedRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        // This is handled by the middleware in routes, so we return true here
         return true;
     }
 

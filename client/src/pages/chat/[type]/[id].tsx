@@ -7,8 +7,9 @@ import AppShell from '@/components/ui/AppShell';
 import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage } from '@/services/api';
-import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User } from 'lucide-react';
+import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled } from '@/services/api';
+import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star } from 'lucide-react';
+import ReviewForm from '@/components/ui/ReviewForm';
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -47,6 +48,8 @@ export default function UnifiedChat() {
   const [activeParticipant, setActiveParticipant] = useState<number | null>(null);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
+  const [marking, setMarking] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -150,6 +153,25 @@ export default function UnifiedChat() {
     }
   };
 
+  const handleMarkComplete = async () => {
+    if (!itemId || !chatType || !activeParticipant) return;
+    setMarking(true);
+    setError(null);
+    try {
+      if (chatType === 'gift') {
+        const res = await markGiftDelivered(itemId, activeParticipant);
+        setItem(res.gift);
+      } else {
+        const res = await markNeedFulfilled(itemId, activeParticipant);
+        setItem(res.need);
+      }
+    } catch (err: any) {
+      setError(err.message || 'تعذر تحديث حالة المورد.');
+    } finally {
+      setMarking(false);
+    }
+  };
+
   const hero = (
     <Hero
       title="المحادثة"
@@ -189,88 +211,159 @@ export default function UnifiedChat() {
           >
             {/* Header / Participant Switcher for Owners */}
             {isOwner && participants.length > 0 ? (
-              <div className="bg-background/30 px-6 py-4 border-b border-secondary-light/10">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
-                    <User size={16} />
+              <div className="bg-background/30 px-6 py-4 border-b border-secondary-light/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                      <User size={16} />
+                    </div>
+                    <h3 className="text-sm font-black text-primary">المحادثات النشطة</h3>
                   </div>
-                  <h3 className="text-sm font-black text-primary">المحادثات النشطة</h3>
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    {participants.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => setActiveParticipant(p.id)}
+                        className={`shrink-0 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 border-2 ${activeParticipant === p.id
+                            ? 'bg-primary text-white border-primary shadow-md scale-105'
+                            : 'bg-white text-primary-muted border-secondary-light/20 hover:border-primary/30 hover:text-primary'
+                          }`}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                  {participants.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => setActiveParticipant(p.id)}
-                      className={`shrink-0 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 border-2 ${activeParticipant === p.id
-                          ? 'bg-primary text-white border-primary shadow-md scale-105'
-                          : 'bg-white text-primary-muted border-secondary-light/20 hover:border-primary/30 hover:text-primary'
-                        }`}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
+
+                {/* Delivery/Fulfillment Action for Owner */}
+                {activeParticipant && item && (
+                  <div className="shrink-0">
+                    {item.status === 'delivered' || item.status === 'fulfilled' ? (
+                      <div className="flex items-center gap-2 bg-green-50 text-green-600 px-4 py-2.5 rounded-2xl border border-green-100">
+                        <CheckCircle2 size={16} />
+                        <span className="text-xs font-black">مكتمل</span>
+                        {chatType === 'need' && !showReview && (
+                           <button
+                            onClick={() => setShowReview(true)}
+                            className="mr-2 bg-white text-green-600 border border-green-200 px-3 py-1 rounded-xl hover:bg-green-100 transition-colors"
+                           >
+                            <Star size={12} className="inline ml-1" /> تقييم
+                           </button>
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleMarkComplete}
+                        disabled={marking}
+                        className="w-full md:w-auto bg-accent text-white px-6 py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 hover:bg-[#0e3522] transition-all shadow-md active:scale-95 disabled:opacity-50"
+                      >
+                        {marking ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle2 size={14} />
+                            {chatType === 'gift' ? 'تأكيد التسليم' : 'تم تلبية الاحتياج'}
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : !isOwner ? (
-               <div className="bg-background/30 px-8 py-5 border-b border-secondary-light/10 flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${chatType === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
-                    <User size={20} />
+               <div className="bg-background/30 px-8 py-5 border-b border-secondary-light/10 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${chatType === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-primary">
+                        {chatType === 'need' ? 'مراسلة صاحبة الطلب' : 'مراسلة مقدمة العطاء'}
+                      </h3>
+                      <p className="text-[10px] text-primary-muted font-bold mt-0.5">استفسري عن تفاصيل تقديم الخدمة</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-primary">
-                      {chatType === 'need' ? 'مراسلة صاحبة الطلب' : 'مراسلة مقدمة العطاء'}
-                    </h3>
-                    <p className="text-[10px] text-primary-muted font-bold mt-0.5">استفسري عن تفاصيل تقديم الخدمة</p>
-                  </div>
+
+                  {/* Review Action for Recipient */}
+                  {item && (item.status === 'delivered' || item.status === 'fulfilled') && (
+                    <div className="shrink-0">
+                      {showReview ? (
+                        <span className="text-[10px] font-black text-primary-muted bg-white px-3 py-1 rounded-full">جاري التقييم...</span>
+                      ) : (
+                        <button
+                          onClick={() => setShowReview(true)}
+                          className="bg-yellow-400 hover:bg-yellow-500 text-primary-dark px-5 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                        >
+                          <Star size={14} /> تقييم التجربة
+                        </button>
+                      )}
+                    </div>
+                  )}
                </div>
             ) : null}
 
-            {/* Message Area */}
-            <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-gradient-to-b from-transparent to-background/20 no-scrollbar">
-              {loadingItem ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 size={32} className="animate-spin text-primary-muted/20" />
-                </div>
-              ) : visible.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
-                  <div className="w-16 h-16 rounded-3xl bg-secondary-light/20 flex items-center justify-center text-secondary">
-                    <MessageCircle size={32} />
-                  </div>
-                  <p className="text-sm font-bold text-primary-muted max-w-[200px]">
-                    {isOwner ? 'ابدئي بالتواصل مع المهتمات بطلبكِ.' : 'اسألي عن التفاصيل للبدء في الأثر.'}
-                  </p>
+            {/* Message Area or Review Form */}
+            <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-gradient-to-b from-transparent to-background/20 no-scrollbar relative">
+              {showReview ? (
+                <div className="max-w-md mx-auto py-4">
+                  <ReviewForm
+                    reviewableId={itemId}
+                    reviewableType={chatType}
+                    onSuccess={() => {
+                      setShowReview(false);
+                      router.push(chatType === 'gift' ? '/my-gifts' : '/needs');
+                    }}
+                    onCancel={() => setShowReview(false)}
+                  />
                 </div>
               ) : (
-                visible.map((m, idx) => {
-                  const own = m.sender_id === user?.id;
-                  const showName = !own && m.sender_name && (idx === 0 || visible[idx-1].sender_id !== m.sender_id);
-
-                  return (
-                    <div key={m.id} className={`flex flex-col ${own ? 'items-end' : 'items-start'}`}>
-                      {showName && (
-                        <span className="text-[10px] font-black text-primary-muted/60 mb-1.5 mr-2 ml-2">
-                          {m.sender_name}
-                        </span>
-                      )}
-                      <div
-                        className={`group relative max-w-[85%] md:max-w-[70%] px-5 py-3.5 rounded-[1.5rem] text-sm font-semibold leading-relaxed shadow-sm transition-all hover:shadow-md ${own
-                            ? 'bg-primary text-white rounded-br-none'
-                            : 'bg-white border border-secondary-light/30 text-primary rounded-bl-none'
-                          }`}
-                      >
-                        <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                        <p
-                          className={`text-[9px] mt-2 font-bold flex items-center gap-1 ${own ? 'text-white/60 justify-end' : 'text-primary-muted/60'
-                            }`}
-                        >
-                          {timeAgo(m.created_at)}
-                        </p>
-                      </div>
+                <>
+                  {loadingItem ? (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader2 size={32} className="animate-spin text-primary-muted/20" />
                     </div>
-                  );
-                })
+                  ) : visible.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
+                      <div className="w-16 h-16 rounded-3xl bg-secondary-light/20 flex items-center justify-center text-secondary">
+                        <MessageCircle size={32} />
+                      </div>
+                      <p className="text-sm font-bold text-primary-muted max-w-[200px]">
+                        {isOwner ? 'ابدئي بالتواصل مع المهتمات بطلبكِ.' : 'اسألي عن التفاصيل للبدء في الأثر.'}
+                      </p>
+                    </div>
+                  ) : (
+                    visible.map((m, idx) => {
+                      const own = m.sender_id === user?.id;
+                      const showName = !own && m.sender_name && (idx === 0 || visible[idx-1].sender_id !== m.sender_id);
+
+                      return (
+                        <div key={m.id} className={`flex flex-col ${own ? 'items-end' : 'items-start'}`}>
+                          {showName && (
+                            <span className="text-[10px] font-black text-primary-muted/60 mb-1.5 mr-2 ml-2">
+                              {m.sender_name}
+                            </span>
+                          )}
+                          <div
+                            className={`group relative max-w-[85%] md:max-w-[70%] px-5 py-3.5 rounded-[1.5rem] text-sm font-semibold leading-relaxed shadow-sm transition-all hover:shadow-md ${own
+                                ? 'bg-primary text-white rounded-br-none'
+                                : 'bg-white border border-secondary-light/30 text-primary rounded-bl-none'
+                              }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                            <p
+                              className={`text-[9px] mt-2 font-bold flex items-center gap-1 ${own ? 'text-white/60 justify-end' : 'text-primary-muted/60'
+                                }`}
+                            >
+                              {timeAgo(m.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={bottomRef} />
+                </>
               )}
-              <div ref={bottomRef} />
             </div>
 
             {/* Input Area */}

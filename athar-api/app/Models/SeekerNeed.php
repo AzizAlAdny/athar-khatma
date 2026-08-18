@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Need extends Model
+class SeekerNeed extends Model
 {
     use HasFactory;
+
+    protected $table = 'seeker_needs';
 
     protected $fillable = [
         'user_id',
@@ -18,6 +20,12 @@ class Need extends Model
         'latitude',
         'longitude',
         'status',
+        'fulfilled_at',
+        'fulfilled_by_id',
+    ];
+
+    protected $casts = [
+        'fulfilled_at' => 'datetime',
     ];
 
     public function user()
@@ -30,8 +38,18 @@ class Need extends Model
         return $this->belongsTo(Gift::class);
     }
 
+    public function fulfilledBy()
+    {
+        return $this->belongsTo(User::class, 'fulfilled_by_id');
+    }
+
     public function messages()
     {
         return $this->morphMany(Message::class, 'messageable');
+    }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
     }
 }

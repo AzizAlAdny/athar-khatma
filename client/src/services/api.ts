@@ -9,7 +9,7 @@ export interface Gift {
   [key: string]: any;
 }
 
-export interface Need {
+export interface SeekerNeed {
   id: number;
   user_id: number;
   gift_id: number;
@@ -19,8 +19,14 @@ export interface Need {
   neighborhood?: string;
   created_at_human?: string;
   messages_count?: number;
+  status?: string;
+  fulfilled_at?: string;
+  fulfilled_by_id?: number;
   [key: string]: any;
 }
+
+// Alias for backward compatibility during migration
+export type Need = SeekerNeed;
 
 export interface KhatmaPin {
   id: number;
@@ -33,7 +39,7 @@ export interface KhatmaPin {
   total_impact?: number;
 }
 
-export interface RecentGift {
+export interface KhatmaGift {
   id: number;
   khatma_id: number;
   user_id: number;
@@ -43,7 +49,13 @@ export interface RecentGift {
   city?: string;
   created_at?: string;
   messages_count?: number;
+  status?: string;
+  delivered_at?: string;
+  delivered_to_id?: number;
 }
+
+// Alias for backward compatibility
+export type RecentGift = KhatmaGift;
 
 export interface ChatMessage {
   id: number;
@@ -70,6 +82,22 @@ export interface ApiNotification {
   read_at: string | null;
   created_at?: string;
   excerpt?: string | null;
+}
+
+export interface Review {
+  id: number;
+  reviewer_id: number;
+  reviewee_id: number;
+  reviewable_id: number;
+  reviewable_type: string;
+  rating: number;
+  comment?: string;
+  reviewer?: {
+    id: number;
+    name: string;
+    display_name?: string;
+  };
+  created_at?: string;
 }
 
 export interface KhatmaProfile {
@@ -124,10 +152,6 @@ export interface AuthResponse {
   email?: string;
 }
 
-// Token-based (Bearer) auth. Cross-domain cookie auth is not viable here:
-// browsers block third-party cookies, so the API's session/XSRF cookies are
-// never stored by this app. Auth happens via a Sanctum personal access token
-// returned by /login and /register, persisted here, and sent as a Bearer header.
 export const authTokenKey = 'auth_token';
 
 function getStoredToken(): string | null {
@@ -145,7 +169,6 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   headers.set('Accept', 'application/json');
 
-  // Attach the bearer token when present (stateless API — no cookies needed).
   const token = getStoredToken();
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
@@ -164,7 +187,6 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
       const errorData = JSON.parse(text);
       errorMessage = errorData.message || errorMessage;
     } catch (e) {
-      // If not JSON, it's likely an HTML error page from Laravel
       if (process.env.NODE_ENV === 'development') {
         console.error('Non-JSON error response:', text);
       }
@@ -216,7 +238,6 @@ export const register = (payload: {
 export const resendEmailVerification = () =>
   fetchJson<{ message: string }>('/email/resend', { method: 'POST' });
 
-// Verify email with 6-digit code
 export const verifyWithCode = (email: string, code: string) =>
   fetchJson<{ message: string; verified: boolean; user?: User; token?: string }>('/verify-code', {
     method: 'POST',
@@ -226,17 +247,6 @@ export const verifyWithCode = (email: string, code: string) =>
     body: JSON.stringify({ email, code }),
   });
 
-// Resend verification code for unauthenticated users
-export const resendVerificationCodePublic = (email: string) =>
-  fetchJson<{ message: string }>('/resend-verification-code', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  });
-
-// Request password reset
 export const requestPasswordReset = (email: string) =>
   fetchJson<{ message: string }>('/forgot-password', {
     method: 'POST',
@@ -246,7 +256,6 @@ export const requestPasswordReset = (email: string) =>
     body: JSON.stringify({ email }),
   });
 
-// Reset password with token
 export const resetPassword = (email: string, token: string, password: string, password_confirmation: string) =>
   fetchJson<{ message: string }>('/reset-password', {
     method: 'POST',
@@ -255,20 +264,6 @@ export const resetPassword = (email: string, token: string, password: string, pa
     },
     body: JSON.stringify({ email, token, password, password_confirmation }),
   });
-
-// Complete email verification from the signed link params carried on the
-// frontend verify page URL (id, hash, expires, signature).
-export const verifyEmailLink = (
-  id: string,
-  hash: string,
-  expires: string,
-  signature: string
-) => {
-  const qs = new URLSearchParams({ expires, signature }).toString();
-  return fetchJson<{ message: string; verified: boolean }>(
-    `/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}?${qs}`
-  );
-};
 
 export const fetchUser = async () => {
   const res = await fetchJson<{ data: User }>('/user');
@@ -293,48 +288,45 @@ export const updateUserProfile = (payload: {
 export const logout = () =>
   fetchJson<{ message: string }>('/logout', { method: 'POST' });
 
-export const logoutAll = () =>
-  fetchJson<{ message: string }>('/logout-all', { method: 'POST' });
-
 export const getGifts = () => fetchJson<Gift[]>('/gifts');
-export const getNeeds = () => fetchJson<Need[]>('/needs');
-export const getNeed = (id: number) => fetchJson<Need>(`/needs/${id}`);
-export const getGiftService = (id: number) => fetchJson<any>(`/gifts/${id}`);
+export const getSeekerNeeds = () => fetchJson<SeekerNeed[]>('/seeker-needs');
+export const getSeekerNeed = (id: number) => fetchJson<SeekerNeed>(`/seeker-needs/${id}`);
+export const getKhatmaGift = (id: number) => fetchJson<KhatmaGift>(`/khatma-gifts/${id}`);
 export const getMapPins = () => fetchJson<KhatmaPin[]>('/map');
-export const getRecentGifts = () => fetchJson<RecentGift[]>('/recent-khatmas');
+export const getRecentGifts = () => fetchJson<KhatmaGift[]>('/recent-gifts');
 export const getKhatmaProfile = (id: number) => fetchJson<KhatmaProfile>(`/users/${id}/profile`);
 export const getPublicProfile = (id: number) => fetchJson<KhatmaProfile>(`/users/${id}/public-profile`);
 export const getUserKhatmas = () => fetchJson<{ khatmas: any[], total_impact_score: number }>('/khatmas');
 export const getPublicStats = () => fetchJson<Record<string, any>>('/public-stats');
 export const getAdminStats = () => fetchJson<AdminStats>('/stats');
+
 export const getAdminUsers = (params?: { role?: string; search?: string; page?: number; per_page?: number }) => {
   const queryString = new URLSearchParams(params as any).toString();
   return fetchJson<PaginatedUsers>(`/admin/users${queryString ? `?${queryString}` : ''}`);
 };
-export const updateUserRole = (userId: number, role: string) =>
-  fetchJson<{ message: string; user: User }>(`/admin/users/${userId}/role`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ role }),
-  });
+
 export const deleteKhatma = (id: number) =>
   fetchJson<{ message: string }>(`/admin/khatmas/${id}`, {
     method: 'DELETE',
   });
-export const deleteNeed = (id: number) =>
+
+export const deleteSeekerNeed = (id: number) =>
   fetchJson<{ message: string }>(`/admin/needs/${id}`, {
     method: 'DELETE',
   });
-// Seeker deleting their own need (ownership enforced server-side).
-export const deleteMyNeed = (id: number) =>
-  fetchJson<{ message: string }>(`/needs/${id}`, {
+
+export const deleteMySeekerNeed = (id: number) =>
+  fetchJson<{ message: string }>(`/seeker-needs/${id}`, {
     method: 'DELETE',
   });
 
-// Chat: a thread is keyed by (id, type, participant_id). The owner loads a
-// thread for a specific participant; a respondent always sees only her own thread.
+// Backward compatibility functions
+export const getNeeds = getSeekerNeeds;
+export const getNeed = getSeekerNeed;
+export const getGiftService = getKhatmaGift;
+export const deleteNeed = deleteSeekerNeed;
+export const deleteMyNeed = deleteMySeekerNeed;
+
 export const getChatThreads = () => fetchJson<any[]>('/chat/threads');
 
 export const getMessages = (type: 'need' | 'gift', id: number, participantId?: number) => {
@@ -360,8 +352,6 @@ export const sendMessage = (
     ),
   });
 
-// In-app notifications (header bell). The bell polls the unread count while
-// the dropdown lists the latest notifications on open.
 export const getNotifications = () =>
   fetchJson<ApiNotification[]>('/notifications');
 export const getUnreadNotificationCount = () =>
@@ -373,20 +363,6 @@ export const markNotificationRead = (id: string) =>
 export const markAllNotificationsRead = () =>
   fetchJson<{ status: string }>('/notifications/read-all', {
     method: 'POST',
-  });
-export const createUser = (payload: {
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  city?: string;
-}) =>
-  fetchJson<{ message: string; user: User }>('/admin/users', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
   });
 
 export const recordKhatma = (payload: {
@@ -402,7 +378,7 @@ export const recordKhatma = (payload: {
     body: JSON.stringify(payload),
   });
 
-export const createNeed = (payload: {
+export const createSeekerNeed = (payload: {
   gift_id: number;
   description: string;
   city?: string;
@@ -410,13 +386,45 @@ export const createNeed = (payload: {
   latitude?: number;
   longitude?: number;
 }) =>
-  fetchJson<Need>('/needs', {
+  fetchJson<SeekerNeed>('/seeker-needs', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
   });
+
+export const createNeed = createSeekerNeed;
+
+// New endpoints for Rating & Review
+export const markGiftDelivered = (id: number, deliveredToId: number) =>
+  fetchJson<{ message: string; gift: KhatmaGift }>(`/khatma-gifts/${id}/delivered`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ delivered_to_id: deliveredToId }),
+  });
+
+export const markNeedFulfilled = (id: number, fulfilledById: number) =>
+  fetchJson<{ message: string; need: SeekerNeed }>(`/seeker-needs/${id}/fulfilled`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fulfilled_by_id: fulfilledById }),
+  });
+
+export const submitReview = (payload: {
+  reviewable_id: number;
+  reviewable_type: 'gift' | 'need';
+  rating: number;
+  comment?: string;
+}) =>
+  fetchJson<{ message: string; review: Review }>('/reviews', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+export const getUserReviews = (userId: number) =>
+  fetchJson<{ reviews: Review[]; average_rating: number; total_reviews: number }>(`/users/${userId}/reviews`);
 
 export const authUserKey = 'auth_user';
 

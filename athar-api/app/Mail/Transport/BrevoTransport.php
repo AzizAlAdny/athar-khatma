@@ -47,14 +47,11 @@ class BrevoTransport extends AbstractTransport
      */
     protected function doSend(SentMessage $message): void
     {
-        error_log('DEBUG: BrevoTransport doSend started');
         Log::info('BrevoTransport doSend initiated');
         $email = MessageConverter::toEmail($message->getOriginalMessage());
 
         try {
             $payload = $this->getPayload($email);
-
-            error_log('DEBUG: Brevo API Sending to ' . ($payload['to'][0]['email'] ?? 'unknown'));
 
             Log::info('Brevo API Sending Request', [
                 'to' => array_column($payload['to'], 'email'),
@@ -70,9 +67,6 @@ class BrevoTransport extends AbstractTransport
                 ],
                 'json' => $payload,
             ]);
-
-            error_log('DEBUG: Brevo API HTTP Status: ' . $response->getStatusCode());
-            error_log('DEBUG: Brevo API Response Body: ' . (string) $response->getBody());
 
             Log::info('Brevo API Success', [
                 'status' => $response->getStatusCode(),

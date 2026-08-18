@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Khatma;
-use App\Models\Need;
+use App\Models\SeekerNeed;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Mail\KhatmaCreatedNotification;
@@ -36,7 +36,7 @@ class NotificationService
     /**
      * Send notification when a need is created
      */
-    public function notifyNeedCreated(Need $need)
+    public function notifyNeedCreated(SeekerNeed $need)
     {
         try {
             // Send email to the user

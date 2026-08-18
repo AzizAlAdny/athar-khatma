@@ -11,11 +11,24 @@ interface Achievement {
   date: string;
 }
 
+interface Review {
+  id: number;
+  rating: number;
+  comment?: string;
+  created_at?: string;
+  reviewer?: {
+    name: string;
+    display_name?: string;
+  };
+}
+
 interface ProfileProps {
   data: {
     user: { name: string; bio: string; city: string };
     impact_score: number;
     achievements: Achievement[];
+    reviews?: Review[];
+    average_rating?: number;
   };
   onClose?: () => void;
   isPage?: boolean;
@@ -61,12 +74,58 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
               <p className="text-[10px] text-secondary font-black uppercase tracking-wider">نقاط الأثر</p>
               <p className="text-2xl font-black text-secondary">{data.impact_score}</p>
            </div>
+           {data.average_rating !== undefined && (
+              <div className="px-6 py-3 bg-yellow-50 rounded-2xl border border-yellow-200">
+                <p className="text-[10px] text-yellow-600 font-black uppercase tracking-wider">التقييم</p>
+                <div className="flex items-center gap-1 justify-center">
+                  <span className="text-2xl font-black text-yellow-600">{data.average_rating}</span>
+                  <Star size={18} className="text-yellow-400 fill-yellow-400" />
+                </div>
+              </div>
+           )}
            <div className="px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10">
               <p className="text-[10px] text-primary font-black uppercase tracking-wider">المبادرات</p>
               <p className="text-2xl font-black text-primary">{data.achievements.length}</p>
            </div>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      {data.reviews && data.reviews.length > 0 && (
+        <div className="space-y-6 mt-12">
+          <div className="flex items-center gap-3 border-b border-background pb-4">
+             <div className="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center text-yellow-500">
+                <Star size={20} fill="currentColor" />
+             </div>
+             <h4 className="font-black text-xl text-primary">تقييمات صانعات الأثر</h4>
+          </div>
+
+          <div className="space-y-4">
+            {data.reviews.map((review, idx) => (
+              <div key={idx} className="bg-background/30 p-5 rounded-[1.5rem] border border-secondary-light/10">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex text-yellow-400">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} size={12} fill={s <= review.rating ? "currentColor" : "none"} />
+                      ))}
+                    </div>
+                    <span className="text-xs font-black text-primary">
+                      {review.reviewer?.display_name || review.reviewer?.name || 'مستخدمة'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-primary-muted font-bold">
+                    {review.created_at ? new Date(review.created_at).toLocaleDateString('ar-SA') : ''}
+                  </span>
+                </div>
+                {review.comment && (
+                  <p className="text-sm text-primary-muted font-medium italic">"{review.comment}"</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Achievement List */}
       <div className="space-y-6">

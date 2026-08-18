@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\Models\Need;
+use App\Models\SeekerNeed;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -13,7 +13,7 @@ class NeedCreatedNotification extends Mailable
 
     public $need;
 
-    public function __construct(Need $need)
+    public function __construct(SeekerNeed $need)
     {
         $this->need = $need;
     }

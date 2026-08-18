@@ -7,7 +7,7 @@ import Hero from '@/components/ui/Hero';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { getKhatmaProfile, KhatmaProfile, authUserKey, updateUserProfile, saveAuthUser } from '@/services/api';
+import { getKhatmaProfile, KhatmaProfile, authUserKey, updateUserProfile, saveAuthUser, getUserReviews, Review } from '@/services/api';
 import { User, Settings, ArrowLeft, Check, X, MapPin, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -117,6 +117,7 @@ const CITY_DATA: Record<string, Neighborhood[]> = {
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<KhatmaProfile | null>(null);
+  const [reviewsData, setReviewsData] = useState<{ reviews: Review[]; average_rating: number; total_reviews: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -141,13 +142,21 @@ export default function ProfilePage() {
       const userId = user.id || 1;
 
       getKhatmaProfile(userId)
-        .then(data => {
+        .then(async data => {
           setProfile(data);
           setEditName(data.user.name || '');
           setEditDisplayName(user.display_name || '');
           setEditBio(data.user.bio || '');
           setEditCity(data.user.city || 'الرياض');
           setEditNeighborhood(user.neighborhood || '');
+
+          try {
+            const revs = await getUserReviews(userId);
+            setReviewsData(revs);
+          } catch (e) {
+            console.error('Reviews fetch error:', e);
+          }
+
           setLoading(false);
         })
         .catch(err => {
@@ -335,7 +344,9 @@ export default function ProfilePage() {
                      data={{
                        user: profile.user,
                        impact_score: profile.impact_score || 0,
-                       achievements: (profile.achievements || []) as any
+                       achievements: (profile.achievements || []) as any,
+                       reviews: reviewsData?.reviews,
+                       average_rating: reviewsData?.average_rating
                      }}
                      isPage
                    />

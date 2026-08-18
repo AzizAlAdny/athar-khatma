@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Khatma;
-use App\Models\KhatmaService as KhatmaServiceModel;
+use App\Models\KhatmaGift;
 use App\Http\Resources\KhatmaResource;
 use App\Repositories\Contracts\KhatmaRepositoryInterface;
 use App\Services\NotificationService;
@@ -63,7 +63,7 @@ class KhatmaService
             $khatma = $this->khatmaRepository->create($khatmaData);
 
             foreach ($sanitizedData['gift_ids'] as $giftId) {
-                KhatmaServiceModel::create([
+                KhatmaGift::create([
                     'khatma_id' => $khatma->id,
                     'gift_id' => $giftId,
                     'status' => 'completed',

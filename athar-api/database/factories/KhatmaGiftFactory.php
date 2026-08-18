@@ -2,15 +2,15 @@
 
 namespace Database\Factories;
 
-use App\Models\KhatmaService;
+use App\Models\KhatmaGift;
 use App\Models\Khatma;
 use App\Models\Gift;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<KhatmaService>
+ * @extends Factory<KhatmaGift>
  */
-class KhatmaServiceFactory extends Factory
+class KhatmaGiftFactory extends Factory
 {
     /**
      * Define the model's default state.

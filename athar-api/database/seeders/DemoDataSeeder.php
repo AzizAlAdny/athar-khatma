@@ -174,7 +174,7 @@ class DemoDataSeeder extends Seeder
                 ]);
 
                 for ($i = 0; $i < $khatmaData['service_count']; $i++) {
-                    $khatma->services()->create([
+                    $khatma->khatmaGifts()->create([
                         'gift_id' => $gifts->random()->id,
                         'description' => 'تقديم خدمة مجتمعية تطوعية لنشر بركة القرآن.',
                         'status' => 'completed',

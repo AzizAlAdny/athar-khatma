@@ -3,8 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Message;
-use App\Models\Need;
-use App\Models\KhatmaService;
+use App\Models\SeekerNeed;
+use App\Models\KhatmaGift;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -36,7 +36,7 @@ class NewChatMessage extends Notification
         $sender = $this->message->sender;
         $messageable = $this->message->messageable;
 
-        $type = $this->message->messageable_type === Need::class ? 'need' : 'gift';
+        $type = $this->message->messageable_type === SeekerNeed::class ? 'need' : 'gift';
 
         return [
             'kind' => $this->firstContact ? 'new_participant' : 'new_message',

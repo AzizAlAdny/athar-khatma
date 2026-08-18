@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Message;
-use App\Models\Need;
-use App\Models\KhatmaService;
+use App\Models\SeekerNeed;
+use App\Models\KhatmaGift;
 use App\Models\User;
 use App\Notifications\NewChatMessage;
 use Illuminate\Http\Request;
@@ -21,18 +21,18 @@ class MessageController extends Controller
     private function getMessageable($type, $id)
     {
         if ($type === 'need') {
-            return Need::find($id);
+            return SeekerNeed::find($id);
         } elseif ($type === 'gift') {
-            return KhatmaService::find($id);
+            return KhatmaGift::find($id);
         }
         return null;
     }
 
     private function getOwnerId($messageable)
     {
-        if ($messageable instanceof Need) {
+        if ($messageable instanceof SeekerNeed) {
             return $messageable->user_id;
-        } elseif ($messageable instanceof KhatmaService) {
+        } elseif ($messageable instanceof KhatmaGift) {
             return $messageable->khatma->user_id;
         }
         return null;
@@ -40,9 +40,9 @@ class MessageController extends Controller
 
     private function getOwner($messageable)
     {
-        if ($messageable instanceof Need) {
+        if ($messageable instanceof SeekerNeed) {
             return $messageable->user;
-        } elseif ($messageable instanceof KhatmaService) {
+        } elseif ($messageable instanceof KhatmaGift) {
             return $messageable->khatma?->user;
         }
         return null;
@@ -50,7 +50,7 @@ class MessageController extends Controller
 
     private function getMessageableType($type)
     {
-        return $type === 'need' ? Need::class : KhatmaService::class;
+        return $type === 'need' ? SeekerNeed::class : KhatmaGift::class;
     }
 
     /**
@@ -152,10 +152,10 @@ class MessageController extends Controller
             ->where(function($q) use ($user) {
                 $q->where('sender_id', $user->id)
                   ->orWhere('participant_id', $user->id)
-                  ->orWhereHasMorph('messageable', [Need::class], function($q) use ($user) {
+                  ->orWhereHasMorph('messageable', [SeekerNeed::class], function($q) use ($user) {
                       $q->where('user_id', $user->id);
                   })
-                  ->orWhereHasMorph('messageable', [KhatmaService::class], function($q) use ($user) {
+                  ->orWhereHasMorph('messageable', [KhatmaGift::class], function($q) use ($user) {
                       $q->whereHas('khatma', function($q) use ($user) {
                           $q->where('user_id', $user->id);
                       });
@@ -186,7 +186,7 @@ class MessageController extends Controller
             }
 
             return [
-                'type' => $last->messageable_type === Need::class ? 'need' : 'gift',
+                'type' => $last->messageable_type === SeekerNeed::class ? 'need' : 'gift',
                 'item_id' => $last->messageable_id,
                 'participant_id' => $last->participant_id,
                 'item_title' => $messageable->gift?->name ?: (isset($messageable->description) ? mb_strimwidth($messageable->description, 0, 30, '...') : 'مبادرة'),
@@ -206,7 +206,7 @@ class MessageController extends Controller
         return [
             'id' => $message->id,
             'messageable_id' => $message->messageable_id,
-            'messageable_type' => $message->messageable_type === Need::class ? 'need' : 'gift',
+            'messageable_type' => $message->messageable_type === SeekerNeed::class ? 'need' : 'gift',
             'participant_id' => $message->participant_id,
             'sender_id' => $message->sender_id,
             'sender_name' => $sender?->display_name ?: $sender?->name,

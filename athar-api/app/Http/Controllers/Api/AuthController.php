@@ -67,9 +67,6 @@ class AuthController extends Controller
 
             // Send verification code email
             try {
-                error_log('DEBUG: Starting registration email process for: ' . $user->email);
-                Log::build(['driver' => 'single', 'path' => storage_path('logs/debug.log')])->info('Registration debug start');
-
                 Log::info('Attempting to send verification code email', [
                     'email' => $user->email,
                     'mailer' => config('mail.default'),
@@ -78,7 +75,6 @@ class AuthController extends Controller
                 Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
                 Log::info('Verification code email sent successfully');
             } catch (\Throwable $e) {
-                error_log('DEBUG: Registration email failed: ' . $e->getMessage());
                 Log::error('Verification code email failed at register', [
                     'user_id' => $user->id,
                     'email' => $user->email,
@@ -382,7 +378,7 @@ class AuthController extends Controller
 
     public function profile(Request $request, $id)
     {
-        $user = User::with(['khatmas.services.gift', 'needs.gift'])->findOrFail($id);
+        $user = User::with(['khatmas.khatmaGifts.gift', 'seekerNeeds.gift'])->findOrFail($id);
 
         // Authorization check: only allow users to view their own profile or admins
         if ($request->user()->id !== $user->id && $request->user()->role !== 'admin') {
@@ -407,16 +403,16 @@ class AuthController extends Controller
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $khatma?->impact_score ?? 0,
-            'achievements' => $khatma ? $khatma->services->map(function ($service) {
+            'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
-                    'gift_name' => $service->gift->name,
-                    'category' => $service->gift->category,
-                    'status' => $service->status,
-                    'description' => $service->description,
-                    'date' => $service->created_at->format('Y-m-d'),
+                    'gift_name' => $gift->gift->name,
+                    'category' => $gift->gift->category,
+                    'status' => $gift->status,
+                    'description' => $gift->description,
+                    'date' => $gift->created_at->format('Y-m-d'),
                 ];
             }) : [],
-            'needs' => $user->needs->map(function ($need) {
+            'needs' => $user->seekerNeeds->map(function ($need) {
                 return [
                     'gift_name' => $need->gift?->name,
                     'status' => $need->status,
@@ -428,7 +424,7 @@ class AuthController extends Controller
 
     public function publicProfile($id)
     {
-        $user = User::with(['khatmas.services.gift'])->findOrFail($id);
+        $user = User::with(['khatmas.khatmaGifts.gift'])->findOrFail($id);
 
         // Get the latest khatma if it exists
         $khatma = $user->khatmas->sortByDesc('created_at')->first();
@@ -442,12 +438,12 @@ class AuthController extends Controller
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $khatma?->impact_score ?? 0,
-            'achievements' => $khatma ? $khatma->services->map(function ($service) {
+            'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
-                    'gift_name' => $service->gift->name,
-                    'category' => $service->gift->category,
-                    'status' => $service->status,
-                    'date' => $service->created_at->format('Y-m-d'),
+                    'gift_name' => $gift->gift->name,
+                    'category' => $gift->gift->category,
+                    'status' => $gift->status,
+                    'date' => $gift->created_at->format('Y-m-d'),
                 ];
             }) : [],
         ]);

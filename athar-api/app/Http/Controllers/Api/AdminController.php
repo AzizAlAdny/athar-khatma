@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Khatma;
-use App\Models\Need;
+use App\Models\SeekerNeed;
 use App\Models\Gift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -17,10 +17,10 @@ class AdminController extends Controller
         $stats = [
             'total_users' => User::count(),
             'total_khatmas' => Khatma::count(),
-            'total_needs' => Need::count(),
+            'total_needs' => SeekerNeed::count(),
             'total_gifts' => Gift::count(),
             'active_khatmas' => Khatma::where('status', 'active')->count(),
-            'pending_needs' => Need::where('status', 'pending')->count(),
+            'pending_needs' => SeekerNeed::where('status', 'pending')->count(),
             'khatma_users' => User::where('role', 'khatma')->count(),
             'seeker_users' => User::where('role', 'seeker')->count(),
             'admin_users' => User::where('role', 'admin')->count(),
@@ -89,7 +89,7 @@ class AdminController extends Controller
 
     public function deleteNeed($id)
     {
-        $need = Need::findOrFail($id);
+        $need = SeekerNeed::findOrFail($id);
         $need->delete();
 
         Log::info('Need deleted by admin', [

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Database\Factories\KhatmaServiceFactory;
+use Database\Factories\KhatmaGiftFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class KhatmaService extends Model
+class KhatmaGift extends Model
 {
-    /** @use HasFactory<KhatmaServiceFactory> */
+    /** @use HasFactory<KhatmaGiftFactory> */
     use HasFactory;
+
+    protected $table = 'khatma_gifts';
 
     protected $fillable = [
         'khatma_id',
@@ -17,6 +19,12 @@ class KhatmaService extends Model
         'description',
         'status',
         'points_earned',
+        'delivered_at',
+        'delivered_to_id',
+    ];
+
+    protected $casts = [
+        'delivered_at' => 'datetime',
     ];
 
     public function khatma()
@@ -29,8 +37,18 @@ class KhatmaService extends Model
         return $this->belongsTo(Gift::class);
     }
 
+    public function deliveredTo()
+    {
+        return $this->belongsTo(User::class, 'delivered_to_id');
+    }
+
     public function messages()
     {
         return $this->morphMany(Message::class, 'messageable');
+    }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
     }
 }

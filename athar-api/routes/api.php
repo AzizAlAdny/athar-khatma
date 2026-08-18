@@ -5,7 +5,9 @@ use App\Http\Controllers\Api\GiftController;
 use App\Http\Controllers\Api\KhatmaController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\NeedController;
+use App\Http\Controllers\Api\KhatmaGiftController;
+use App\Http\Controllers\Api\SeekerNeedController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\AdminController;
 use Illuminate\Http\Request;
@@ -28,14 +30,14 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware('signed')
     ->name('api.verification.verify');
 
-Route::get('/gifts', [GiftController::class, 'index']);
-Route::get('/needs', [NeedController::class, 'index']);
-Route::get('/needs/{id}', [NeedController::class, 'show']);
-Route::get('/gifts/{id}', [KhatmaController::class, 'showService']);
+Route::get('/seeker-needs', [SeekerNeedController::class, 'index']);
+Route::get('/seeker-needs/{id}', [SeekerNeedController::class, 'show']);
+Route::get('/khatma-gifts/{id}', [KhatmaGiftController::class, 'show']);
 Route::middleware('throttle:60,1')->get('/map', [KhatmaController::class, 'map']);
-Route::middleware('throttle:60,1')->get('/recent-khatmas', [KhatmaController::class, 'recent']);
+Route::middleware('throttle:60,1')->get('/recent-gifts', [KhatmaGiftController::class, 'recent']);
 Route::get('/public-stats', [StatsController::class, 'publicStats']);
 Route::get('/users/{id}/public-profile', [AuthController::class, 'publicProfile']);
+Route::get('/users/{id}/reviews', [ReviewController::class, 'userReviews']);
 
 // Health check endpoint
 Route::get('/health', function () {
@@ -80,17 +82,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{id}/profile', [AuthController::class, 'profile']);
     });
 
-    // Role-protected routes
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/stats', [StatsController::class, 'index']);
-        Route::get('/admin/users', [AdminController::class, 'users']);
-        Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
-        Route::delete('/admin/khatmas/{id}', [AdminController::class, 'deleteKhatma']);
-        Route::delete('/admin/needs/{id}', [AdminController::class, 'deleteNeed']);
-        Route::post('/admin/users', [AdminController::class, 'createUser']);
-    });
+        // Role-protected routes
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/stats', [StatsController::class, 'index']);
+            Route::get('/admin/users', [AdminController::class, 'users']);
+            Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
+            Route::delete('/admin/khatmas/{id}', [AdminController::class, 'deleteKhatma']);
+            Route::delete('/admin/needs/{id}', [AdminController::class, 'deleteNeed']);
+            Route::post('/admin/users', [AdminController::class, 'createUser']);
+        });
 
-    Route::get('/khatmas', [KhatmaController::class, 'index']);
+        Route::get('/khatmas', [KhatmaController::class, 'index']);
+
+        // Delivery tracking
+        Route::post('/khatma-gifts/{id}/delivered', [KhatmaGiftController::class, 'markDelivered']);
+        Route::post('/seeker-needs/{id}/fulfilled', [SeekerNeedController::class, 'markFulfilled']);
+
+        // Reviews
+        Route::post('/reviews', [ReviewController::class, 'store']);
 
     // Routes that require email verification
     Route::middleware('verified')->group(function () {
@@ -110,9 +119,9 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::middleware('role:seeker,admin', 'ability:need:create')->group(function () {
-            Route::post('/needs', [NeedController::class, 'store']);
+            Route::post('/seeker-needs', [SeekerNeedController::class, 'store']);
             // Seekers can delete their own needs (ownership checked in the controller).
-            Route::delete('/needs/{id}', [NeedController::class, 'destroy']);
+            Route::delete('/seeker-needs/{id}', [SeekerNeedController::class, 'destroy']);
         });
     });
 });

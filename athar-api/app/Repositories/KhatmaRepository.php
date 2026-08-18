@@ -10,14 +10,14 @@ class KhatmaRepository implements KhatmaRepositoryInterface
 {
     public function findById($id): ?Khatma
     {
-        return Khatma::with(['user', 'services' => function($q) {
+        return Khatma::with(['user', 'khatmaGifts' => function($q) {
             $q->with('gift')->withCount('messages');
         }])->find($id);
     }
 
     public function findByUserId($userId)
     {
-        return Khatma::with(['services' => function($q) {
+        return Khatma::with(['khatmaGifts' => function($q) {
             $q->with('gift')->withCount('messages');
         }])
             ->where('user_id', $userId)
@@ -27,7 +27,7 @@ class KhatmaRepository implements KhatmaRepositoryInterface
 
     public function getActiveKhatmas()
     {
-        return Khatma::with(['user', 'services.gift'])
+        return Khatma::with(['user', 'khatmaGifts.gift'])
             ->where('status', KhatmaConstants::STATUS_ACTIVE)
             ->get();
     }
@@ -75,7 +75,7 @@ class KhatmaRepository implements KhatmaRepositoryInterface
                         'lng' => (float) $first->user->longitude,
                     ],
                     'glow_level' => $glowLevel,
-                    'services' => $userKhatmas->flatMap->services->pluck('gift.name')->unique()->values(),
+                    'services' => $userKhatmas->flatMap->khatmaGifts->pluck('gift.name')->unique()->values(),
                     'total_impact' => $totalImpact,
                 ];
             })

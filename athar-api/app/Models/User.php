@@ -93,9 +93,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Khatma::class);
     }
 
-    public function needs()
+    public function seekerNeeds()
     {
-        return $this->hasMany(Need::class);
+        return $this->hasMany(SeekerNeed::class);
     }
 
     public function authEvents()

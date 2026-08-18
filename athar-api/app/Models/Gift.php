@@ -19,13 +19,13 @@ class Gift extends Model
         'description',
     ];
 
-    public function khatmaServices()
+    public function khatmaGifts()
     {
-        return $this->hasMany(KhatmaService::class);
+        return $this->hasMany(KhatmaGift::class);
     }
 
-    public function needs()
+    public function seekerNeeds()
     {
-        return $this->hasMany(Need::class);
+        return $this->hasMany(SeekerNeed::class);
     }
 }
