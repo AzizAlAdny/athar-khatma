@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Mail::extend('brevo', function (array $config) {
+            return new \App\Mail\Transport\BrevoTransport(
+                new \GuzzleHttp\Client($config['guzzle'] ?? []),
+                $config['key']
+            );
+        });
     }
 }
