@@ -37,6 +37,7 @@ class KhatmaResource extends JsonResource
                         'status' => $gift->status,
                         'description' => $gift->description,
                         'messages_count' => $gift->messages_count ?? 0,
+                        'average_rating' => $gift->average_rating,
                         'date' => $gift->created_at->format('Y-m-d'),
                     ];
                 });

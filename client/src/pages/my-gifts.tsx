@@ -13,7 +13,11 @@ import {
   Sparkles,
   Award,
   BookOpen,
-  Plus
+  Plus,
+  MessageCircle,
+  Star,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -96,16 +100,49 @@ export default function MyGifts() {
                           <span className="flex items-center gap-1 text-secondary"><Sparkles size={12} /> {khatma.impact_score} نقطة أثر</span>
                         </div>
 
-                        <div className="mt-5 flex flex-wrap gap-2">
+                        <div className="mt-5 flex flex-wrap gap-3">
                           {(khatma.achievements || []).map((achievement: any, idx: number) => (
-                            <div key={idx} className="flex items-center gap-2 bg-background px-4 py-2 rounded-xl border border-secondary-light/10">
-                              <div className="relative">
-                                <Gift size={14} className="text-secondary" />
-                                {achievement.messages_count > 0 && (
-                                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border border-white"></div>
+                            <div key={idx} className="flex flex-col gap-2 bg-background p-3 rounded-2xl border border-secondary-light/10 min-w-[180px]">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="relative">
+                                    <Gift size={14} className="text-secondary" />
+                                    {achievement.messages_count > 0 && (
+                                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border border-white"></div>
+                                    )}
+                                  </div>
+                                  <span className="text-xs font-black text-primary">{achievement.gift_name}</span>
+                                </div>
+
+                                {achievement.status === 'delivered' ? (
+                                  <span className="bg-green-50 text-green-600 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-green-100">
+                                    <CheckCircle2 size={10} /> تم التسليم
+                                  </span>
+                                ) : (
+                                  <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-blue-100">
+                                    <Clock size={10} /> متوفر
+                                  </span>
                                 )}
                               </div>
-                              <span className="text-xs font-black text-primary">{achievement.gift_name}</span>
+
+                              <div className="flex items-center justify-between mt-1">
+                                <div className="flex items-center gap-1">
+                                  {achievement.average_rating > 0 && (
+                                    <div className="flex items-center gap-0.5 bg-yellow-50 px-1.5 py-0.5 rounded-lg border border-yellow-100">
+                                      <span className="text-[10px] font-black text-yellow-700">{achievement.average_rating}</span>
+                                      <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                {achievement.status !== 'delivered' && (
+                                  <Link href={`/chat/gift/${achievement.id}`}>
+                                    <button className="flex items-center gap-1 text-[10px] font-black text-secondary hover:text-primary transition-colors bg-white px-2 py-1 rounded-lg border border-secondary-light/20">
+                                      <MessageCircle size={12} /> المحادثات
+                                    </button>
+                                  </Link>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

@@ -57,7 +57,9 @@ export default function GiftBrowser() {
   useEffect(() => {
     getRecentGifts()
       .then(data => {
-        setGifts(data || []);
+        // Filter: Show only available gifts (not delivered)
+        const available = (data || []).filter(g => g.status !== 'delivered');
+        setGifts(available);
         setLoading(false);
       })
       .catch(err => {

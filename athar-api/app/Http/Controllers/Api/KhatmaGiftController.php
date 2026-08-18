@@ -46,6 +46,7 @@ class KhatmaGiftController extends Controller
                 'city' => $gift->khatma->user->city ?? null,
                 'created_at' => optional($gift->created_at)->toIso8601String(),
                 'status' => $gift->status,
+                'average_rating' => $gift->average_rating,
             ])
             ->filter(fn ($item) => $item['gift_name'] && $item['user_name'])
             ->values();

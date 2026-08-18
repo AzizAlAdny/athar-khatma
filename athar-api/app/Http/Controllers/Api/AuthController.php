@@ -409,10 +409,12 @@ class AuthController extends Controller
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
             'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
+                    'id' => $gift->id,
                     'gift_name' => $gift->gift->name,
                     'category' => $gift->gift->category,
                     'status' => $gift->status,
                     'description' => $gift->description,
+                    'average_rating' => $gift->average_rating,
                     'date' => $gift->created_at->format('Y-m-d'),
                 ];
             }) : [],
@@ -448,9 +450,11 @@ class AuthController extends Controller
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
             'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
+                    'id' => $gift->id,
                     'gift_name' => $gift->gift->name,
                     'category' => $gift->gift->category,
                     'status' => $gift->status,
+                    'average_rating' => $gift->average_rating,
                     'date' => $gift->created_at->format('Y-m-d'),
                 ];
             }) : [],

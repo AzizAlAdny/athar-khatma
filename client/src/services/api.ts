@@ -52,6 +52,7 @@ export interface KhatmaGift {
   status?: string;
   delivered_at?: string;
   delivered_to_id?: number;
+  average_rating?: number;
 }
 
 // Alias for backward compatibility

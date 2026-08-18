@@ -8,7 +8,7 @@ import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled, markNeedInProgress } from '@/services/api';
-import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star } from 'lucide-react';
+import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star, Clock } from 'lucide-react';
 import ReviewForm from '@/components/ui/ReviewForm';
 
 const POLL_INTERVAL_MS = 4000;

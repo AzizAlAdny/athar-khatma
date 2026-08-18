@@ -51,4 +51,9 @@ class KhatmaGift extends Model
     {
         return $this->morphMany(Review::class, 'reviewable');
     }
+
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviews()->avg('rating');
+    }
 }
