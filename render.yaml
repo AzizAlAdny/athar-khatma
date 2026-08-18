@@ -52,12 +52,20 @@ services:
       - key: QUEUE_CONNECTION
         value: database
 
-      # --- Mail (Resend) ---
+      # --- Mail (Gmail SMTP) ---
       - key: MAIL_MAILER
-        value: resend
-      - key: RESEND_API_KEY
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_USERNAME
         sync: false
-      - key: MAIL_FROM_ADDRESS   # onboarding@resend.dev until a domain is verified
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
         sync: false
       - key: MAIL_FROM_NAME
         value: "ختمة وأثر"
@@ -86,3 +94,51 @@ services:
         value: log
       - key: GOOGLE_MAPS_API_KEY
         sync: false
+
+  - type: worker
+    name: athar-worker
+    runtime: docker
+    rootDir: athar-api
+    plan: free
+    autoDeploy: true
+    dockerCommand: php artisan queue:work --tries=3 --timeout=90
+    envVars:
+      - key: APP_KEY
+        fromService:
+          type: web
+          name: athar-api
+          envVarKey: APP_KEY
+      - key: DB_URL
+        fromService:
+          type: web
+          name: athar-api
+          envVarKey: DB_URL
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_USERNAME
+        fromService:
+          type: web
+          name: athar-api
+          envVarKey: MAIL_USERNAME
+      - key: MAIL_PASSWORD
+        fromService:
+          type: web
+          name: athar-api
+          envVarKey: MAIL_PASSWORD
+      - key: MAIL_FROM_ADDRESS
+        fromService:
+          type: web
+          name: athar-api
+          envVarKey: MAIL_FROM_ADDRESS
+      - key: MAIL_FROM_NAME
+        value: "ختمة وأثر"
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: LOG_CHANNEL
+        value: stderr
