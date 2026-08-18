@@ -47,6 +47,7 @@ class BrevoTransport extends AbstractTransport
      */
     protected function doSend(SentMessage $message): void
     {
+        Log::info('BrevoTransport doSend initiated');
         $email = MessageConverter::toEmail($message->getOriginalMessage());
 
         try {

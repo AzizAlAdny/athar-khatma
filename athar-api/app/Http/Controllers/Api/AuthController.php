@@ -65,7 +65,12 @@ class AuthController extends Controller
 
             // Send verification code email
             try {
+                Log::info('Attempting to send verification code email', [
+                    'email' => $user->email,
+                    'mailer' => config('mail.default')
+                ]);
                 Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
+                Log::info('Mail::send command finished');
             } catch (\Throwable $e) {
                 Log::error('Verification code email failed', [
                     'user_id' => $user->id,
