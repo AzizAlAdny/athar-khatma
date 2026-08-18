@@ -247,6 +247,15 @@ export const verifyWithCode = (email: string, code: string) =>
     body: JSON.stringify({ email, code }),
   });
 
+export const resendVerificationCodePublic = (email: string) =>
+  fetchJson<{ message: string }>('/resend-verification-code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  });
+
 export const requestPasswordReset = (email: string) =>
   fetchJson<{ message: string }>('/forgot-password', {
     method: 'POST',
@@ -264,6 +273,20 @@ export const resetPassword = (email: string, token: string, password: string, pa
     },
     body: JSON.stringify({ email, token, password, password_confirmation }),
   });
+
+// Complete email verification from the signed link params carried on the
+// frontend verify page URL (id, hash, expires, signature).
+export const verifyEmailLink = (
+  id: string,
+  hash: string,
+  expires: string,
+  signature: string
+) => {
+  const qs = new URLSearchParams({ expires, signature }).toString();
+  return fetchJson<{ message: string; verified: boolean }>(
+    `/email/verify/${encodeURIComponent(id)}/${encodeURIComponent(hash)}?${qs}`
+  );
+};
 
 export const fetchUser = async () => {
   const res = await fetchJson<{ data: User }>('/user');
@@ -288,6 +311,9 @@ export const updateUserProfile = (payload: {
 export const logout = () =>
   fetchJson<{ message: string }>('/logout', { method: 'POST' });
 
+export const logoutAll = () =>
+  fetchJson<{ message: string }>('/logout-all', { method: 'POST' });
+
 export const getGifts = () => fetchJson<Gift[]>('/gifts');
 export const getSeekerNeeds = () => fetchJson<SeekerNeed[]>('/seeker-needs');
 export const getSeekerNeed = (id: number) => fetchJson<SeekerNeed>(`/seeker-needs/${id}`);
@@ -304,6 +330,30 @@ export const getAdminUsers = (params?: { role?: string; search?: string; page?: 
   const queryString = new URLSearchParams(params as any).toString();
   return fetchJson<PaginatedUsers>(`/admin/users${queryString ? `?${queryString}` : ''}`);
 };
+
+export const updateUserRole = (userId: number, role: string) =>
+  fetchJson<{ message: string; user: User }>(`/admin/users/${userId}/role`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ role }),
+  });
+
+export const createUser = (payload: {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  city?: string;
+}) =>
+  fetchJson<{ message: string; user: User }>('/admin/users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
 
 export const deleteKhatma = (id: number) =>
   fetchJson<{ message: string }>(`/admin/khatmas/${id}`, {
