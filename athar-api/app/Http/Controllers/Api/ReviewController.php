@@ -82,10 +82,29 @@ class ReviewController extends Controller
             'comment' => strip_tags($validated['comment']),
         ]);
 
-        Log::info('Review submitted', [
+        // Recalculate impact
+        if ($type === 'gift') {
+            $item->update([
+                'points_earned' => $review->rating * 2
+            ]);
+
+            // Update parent Khatma impact score
+            $khatma = $item->khatma;
+            $totalImpact = $khatma->khatmaGifts()->sum('points_earned');
+            $khatma->update([
+                'impact_score' => $totalImpact
+            ]);
+        } elseif ($type === 'need') {
+            $item->update([
+                'points_earned' => $review->rating * 2
+            ]);
+        }
+
+        Log::info('Review submitted and impact recalculated', [
             'reviewer_id' => $user->id,
             'reviewee_id' => $revieweeId,
             'rating' => $review->rating,
+            'new_points' => $item->points_earned,
         ]);
 
         return response()->json([

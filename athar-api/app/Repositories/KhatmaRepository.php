@@ -54,28 +54,44 @@ class KhatmaRepository implements KhatmaRepositoryInterface
     {
         $khatmas = $this->getActiveKhatmas();
 
-        return $khatmas
-            ->filter(function ($khatma) {
-                return $khatma->user && $khatma->user->latitude && $khatma->user->longitude;
-            })
-            ->groupBy('user_id')
-            ->map(function ($userKhatmas) {
-                $first = $userKhatmas->first();
-                $totalImpact = $userKhatmas->sum('impact_score');
+        // Get all users who have either khatmas or fulfilled needs
+        $userIds = $khatmas->pluck('user_id')->unique();
+
+        // Also include users who fulfilled needs
+        $fulfilledNeeds = \App\Models\SeekerNeed::with(['user', 'gift'])
+            ->where('status', 'fulfilled')
+            ->whereNotNull('fulfilled_by_id')
+            ->get();
+
+        $userIds = $userIds->concat($fulfilledNeeds->pluck('fulfilled_by_id'))->unique();
+
+        return \App\Models\User::whereIn('id', $userIds)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get()
+            ->map(function ($user) use ($khatmas, $fulfilledNeeds) {
+                $userKhatmas = $khatmas->where('user_id', $user->id);
+                $userNeeds = $fulfilledNeeds->where('fulfilled_by_id', $user->id);
+
+                $totalImpact = $userKhatmas->sum('impact_score') + $userNeeds->sum('points_earned');
                 $glowLevel = $this->calculateGlowLevel($totalImpact);
 
+                $gifts = $userKhatmas->flatMap->khatmaGifts->pluck('gift.name')
+                    ->concat($userNeeds->pluck('gift.name'))
+                    ->unique()
+                    ->values();
+
                 return [
-                    'id' => $first->id,
-                    'user_id' => $first->user_id,
-                    // Show the preferred map display name when set (الاسم الظاهر على خريطة الأثر).
-                    'user_name' => $first->user->display_name ?: $first->user->name,
-                    'city' => $first->user->city,
+                    'id' => $user->id,
+                    'user_id' => $user->id,
+                    'user_name' => $user->display_name ?: $user->name,
+                    'city' => $user->city,
                     'location' => [
-                        'lat' => (float) $first->user->latitude,
-                        'lng' => (float) $first->user->longitude,
+                        'lat' => (float) $user->latitude,
+                        'lng' => (float) $user->longitude,
                     ],
                     'glow_level' => $glowLevel,
-                    'services' => $userKhatmas->flatMap->khatmaGifts->pluck('gift.name')->unique()->values(),
+                    'gifts' => $gifts,
                     'total_impact' => $totalImpact,
                 ];
             })

@@ -35,7 +35,7 @@ export interface KhatmaPin {
   city?: string;
   location: { lat: number; lng: number };
   glow_level: number;
-  services: string[];
+  gifts: string[];
   total_impact?: number;
 }
 

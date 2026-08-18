@@ -22,6 +22,7 @@ class SeekerNeed extends Model
         'status',
         'fulfilled_at',
         'fulfilled_by_id',
+        'points_earned',
     ];
 
     protected $casts = [

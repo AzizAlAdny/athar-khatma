@@ -393,6 +393,10 @@ class AuthController extends Controller
         // Get the latest khatma if it exists
         $khatma = $user->khatmas->sortByDesc('created_at')->first();
 
+        $fulfilledNeedsPoints = \App\Models\SeekerNeed::where('fulfilled_by_id', $user->id)
+            ->where('status', 'fulfilled')
+            ->sum('points_earned');
+
         return response()->json([
             'id' => $user->id,
             'user' => [
@@ -402,7 +406,7 @@ class AuthController extends Controller
                 'role' => $user->role,
             ],
             'completion_date' => $khatma?->completion_date,
-            'impact_score' => $khatma?->impact_score ?? 0,
+            'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
             'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
                     'gift_name' => $gift->gift->name,
@@ -429,6 +433,10 @@ class AuthController extends Controller
         // Get the latest khatma if it exists
         $khatma = $user->khatmas->sortByDesc('created_at')->first();
 
+        $fulfilledNeedsPoints = \App\Models\SeekerNeed::where('fulfilled_by_id', $user->id)
+            ->where('status', 'fulfilled')
+            ->sum('points_earned');
+
         return response()->json([
             'id' => $user->id,
             'user' => [
@@ -437,7 +445,7 @@ class AuthController extends Controller
                 'city' => $user->city,
             ],
             'completion_date' => $khatma?->completion_date,
-            'impact_score' => $khatma?->impact_score ?? 0,
+            'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
             'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
                     'gift_name' => $gift->gift->name,

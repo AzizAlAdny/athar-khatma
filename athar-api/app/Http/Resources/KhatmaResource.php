@@ -30,6 +30,8 @@ class KhatmaResource extends JsonResource
             'achievements' => $this->whenLoaded('khatmaGifts', function () {
                 return $this->khatmaGifts->map(function ($gift) {
                     return [
+                        'id' => $gift->id,
+                        'gift_id' => $gift->gift_id,
                         'gift_name' => $gift->gift->name,
                         'category' => $gift->gift->category,
                         'status' => $gift->status,

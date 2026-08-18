@@ -79,7 +79,7 @@ class KhatmaService
             // Send notification
             $this->notificationService->notifyKhatmaCreated($khatma);
 
-            return $khatma->load('services.gift');
+            return $khatma->load('khatmaGifts.gift');
         });
     }
 
@@ -90,9 +90,13 @@ class KhatmaService
     {
         $khatmas = $this->khatmaRepository->findByUserId($userId);
 
+        $fulfilledNeedsPoints = \App\Models\SeekerNeed::where('fulfilled_by_id', $userId)
+            ->where('status', 'fulfilled')
+            ->sum('points_earned');
+
         return [
             'khatmas' => KhatmaResource::collection($khatmas),
-            'total_impact_score' => $khatmas->sum('impact_score')
+            'total_impact_score' => $khatmas->sum('impact_score') + $fulfilledNeedsPoints
         ];
     }
 
