@@ -99,6 +99,6 @@ temp/
 *.tmp
 
 # DOCUMENT
-rules/
 docs/
 plan.md
+
