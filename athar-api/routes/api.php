@@ -30,6 +30,7 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware('signed')
     ->name('api.verification.verify');
 
+Route::get('/gifts', [GiftController::class, 'index']);
 Route::get('/seeker-needs', [SeekerNeedController::class, 'index']);
 Route::get('/seeker-needs/{id}', [SeekerNeedController::class, 'show']);
 Route::get('/khatma-gifts/{id}', [KhatmaGiftController::class, 'show']);
