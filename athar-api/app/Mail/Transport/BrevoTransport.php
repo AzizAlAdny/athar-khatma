@@ -71,6 +71,9 @@ class BrevoTransport extends AbstractTransport
                 'json' => $payload,
             ]);
 
+            error_log('DEBUG: Brevo API HTTP Status: ' . $response->getStatusCode());
+            error_log('DEBUG: Brevo API Response Body: ' . (string) $response->getBody());
+
             Log::info('Brevo API Success', [
                 'status' => $response->getStatusCode(),
                 'body' => (string) $response->getBody(),
