@@ -50,13 +50,26 @@ class BrevoTransport extends AbstractTransport
         $email = MessageConverter::toEmail($message->getOriginalMessage());
 
         try {
+            $payload = $this->getPayload($email);
+
+            Log::info('Brevo API Sending Request', [
+                'to' => $payload['to'][0]['email'] ?? 'unknown',
+                'sender' => $payload['sender']['email'] ?? 'unknown',
+                'subject' => $payload['subject'] ?? 'no subject',
+            ]);
+
             $response = $this->client->request('POST', 'https://api.brevo.com/v3/smtp/email', [
                 'headers' => [
                     'api-key' => $this->key,
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
                 ],
-                'json' => $this->getPayload($email),
+                'json' => $payload,
+            ]);
+
+            Log::info('Brevo API Success', [
+                'status' => $response->getStatusCode(),
+                'body' => (string) $response->getBody(),
             ]);
         } catch (GuzzleException $e) {
             Log::error('Brevo API Error', [
