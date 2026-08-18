@@ -67,13 +67,18 @@ class AuthController extends Controller
 
             // Send verification code email
             try {
+                error_log('DEBUG: Starting registration email process for: ' . $user->email);
+                Log::build(['driver' => 'single', 'path' => storage_path('logs/debug.log')])->info('Registration debug start');
+
                 Log::info('Attempting to send verification code email', [
                     'email' => $user->email,
-                    'mailer' => config('mail.default')
+                    'mailer' => config('mail.default'),
+                    'from' => config('mail.from.address')
                 ]);
                 Mail::to($user->email)->send(new VerificationCodeEmail($verificationCode, $user->name));
                 Log::info('Verification code email sent successfully');
             } catch (\Throwable $e) {
+                error_log('DEBUG: Registration email failed: ' . $e->getMessage());
                 Log::error('Verification code email failed at register', [
                     'user_id' => $user->id,
                     'email' => $user->email,
