@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
-import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle2, RefreshCw } from 'lucide-react';
 import { requestPasswordReset } from '@/services/api';
 
 export default function ForgotPassword() {
@@ -36,7 +36,7 @@ export default function ForgotPassword() {
 
     try {
       const data = await requestPasswordReset(email);
-      setMessage(data.message || 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.');
+      setMessage(data.message || 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني من support@athar-khatma.online');
     } catch (err: any) {
       setError(err.message || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.');
     } finally {
@@ -87,7 +87,11 @@ export default function ForgotPassword() {
           disabled={isSubmitting}
           className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
         >
-          {isSubmitting ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <RefreshCw size={20} className="animate-spin" /> جاري الإرسال...
+            </span>
+          ) : 'إرسال رابط إعادة التعيين'}
         </Button>
       </form>
     </AuthLayout>

@@ -52,13 +52,13 @@ services:
       - key: QUEUE_CONNECTION
         value: sync
 
-      # --- Mail (Brevo HTTP API) ---
+      # --- Mail (Resend API) ---
       - key: MAIL_MAILER
-        value: brevo
-      - key: BREVO_API_KEY
+        value: resend
+      - key: RESEND_API_KEY
         sync: false
       - key: MAIL_FROM_ADDRESS
-        sync: false
+        value: support@athar-khatma.online
       - key: MAIL_FROM_NAME
         value: "ختمة وأثر"
 

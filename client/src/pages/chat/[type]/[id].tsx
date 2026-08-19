@@ -7,7 +7,7 @@ import AppShell from '@/components/ui/AppShell';
 import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled, markNeedInProgress } from '@/services/api';
+import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled, markNeedInProgress, markGiftInProgress } from '@/services/api';
 import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star, Clock } from 'lucide-react';
 import ReviewForm from '@/components/ui/ReviewForm';
 
@@ -172,6 +172,20 @@ export default function UnifiedChat() {
     }
   };
 
+  const handleMarkInProgress = async () => {
+    if (!itemId || chatType !== 'gift') return;
+    setMarking(true);
+    setError(null);
+    try {
+      const res = await markGiftInProgress(itemId);
+      setItem(res.gift);
+    } catch (err: any) {
+      setError(err.message || 'تعذر تحديث حالة العطاء.');
+    } finally {
+      setMarking(false);
+    }
+  };
+
   const handleClaim = async () => {
     if (!itemId || chatType !== 'need') return;
     setMarking(true);
@@ -249,7 +263,7 @@ export default function UnifiedChat() {
                   </div>
                 </div>
 
-                {/* Delivery/Fulfillment Action for Owner */}
+                {/* Delivery/Fulfillment Actions for Owner */}
                 {activeParticipant && item && (
                   <div className="shrink-0">
                     {item.status === 'delivered' || item.status === 'fulfilled' ? (
@@ -280,13 +294,20 @@ export default function UnifiedChat() {
                           </>
                         )}
                       </button>
-                    ) : chatType === 'gift' ? (
+                    ) : item.status === 'pending' || item.status === 'open' ? (
                       <button
-                        onClick={handleMarkComplete}
-                        disabled={marking}
-                        className="w-full md:w-auto bg-accent text-white px-6 py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 hover:bg-[#0e3522] transition-all shadow-md active:scale-95 disabled:opacity-50"
+                        onClick={chatType === 'gift' ? handleMarkInProgress : undefined}
+                        disabled={marking || chatType !== 'gift'}
+                        className={`w-full md:w-auto px-6 py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 ${
+                           chatType === 'gift' ? 'bg-secondary text-white hover:bg-secondary-dark' : 'bg-background text-primary-muted cursor-not-allowed'
+                        }`}
                       >
-                         {marking ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> تأكيد التسليم</>}
+                         {marking ? <Loader2 size={14} className="animate-spin" /> : (
+                           <>
+                             <CheckCircle2 size={14} />
+                             {chatType === 'gift' ? 'بدء تقديم العطاء' : 'في انتظار صانعة أثر'}
+                           </>
+                         )}
                       </button>
                     ) : null}
                   </div>

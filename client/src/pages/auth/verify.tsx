@@ -121,7 +121,7 @@ export default function VerifyEmail() {
         // User is not authenticated, use the public endpoint
         data = await resendVerificationCodePublic(email);
       }
-      setMessage(data.message || 'تم إرسال رمز التحقق الجديد إلى بريدكِ الإلكتروني.');
+      setMessage(data.message || 'تم إرسال رمز التحقق الجديد من support@athar-khatma.online');
     } catch (err: any) {
       setError(err.message || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً.');
     } finally {
@@ -156,7 +156,7 @@ export default function VerifyEmail() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-bold text-primary-muted">لقد أرسلنا رمز التحقق إلى بريدكِ الإلكتروني:</p>
+            <p className="text-sm font-bold text-primary-muted">لقد أرسلنا رمز التحقق من support@athar-khatma.online إلى:</p>
             <div className="bg-primary/5 px-4 py-2 rounded-xl border border-primary/10 inline-block">
               <span className="text-lg font-black text-primary select-all break-all" dir="ltr">
                 {email || user?.email || '...'}

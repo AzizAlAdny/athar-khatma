@@ -455,6 +455,11 @@ export const markGiftDelivered = (id: number, deliveredToId: number) =>
     body: JSON.stringify({ delivered_to_id: deliveredToId }),
   });
 
+export const markGiftInProgress = (id: number) =>
+  fetchJson<{ message: string; gift: KhatmaGift }>(`/khatma-gifts/${id}/in-progress`, {
+    method: 'POST',
+  });
+
 export const markNeedFulfilled = (id: number, fulfilledById: number) =>
   fetchJson<{ message: string; need: SeekerNeed }>(`/seeker-needs/${id}/fulfilled`, {
     method: 'POST',

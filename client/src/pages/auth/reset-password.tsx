@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
-import { Lock, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Lock, ArrowLeft, CheckCircle2, RefreshCw } from 'lucide-react';
 import { resetPassword } from '@/services/api';
 
 export default function ResetPassword() {
@@ -120,7 +120,11 @@ export default function ResetPassword() {
           disabled={isSubmitting || !token || !email}
           className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
         >
-          {isSubmitting ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <RefreshCw size={20} className="animate-spin" /> جاري التحديث...
+            </span>
+          ) : 'تحديث كلمة المرور'}
         </Button>
       </form>
     </AuthLayout>

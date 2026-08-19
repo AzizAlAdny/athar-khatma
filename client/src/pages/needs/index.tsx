@@ -8,7 +8,7 @@ import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getSeekerNeeds, deleteMySeekerNeed, SeekerNeed } from '@/services/api';
-import { Plus, MapPin, HelpCircle, Trash2, AlertCircle, Loader2, MessageCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, MapPin, HelpCircle, Trash2, AlertCircle, Loader2, MessageCircle, Clock, CheckCircle2, Phone } from 'lucide-react';
 
 export default function MyNeeds() {
   const { user } = useAuth();
@@ -78,7 +78,7 @@ export default function MyNeeds() {
   const inProgress = needs.filter(n => n.status === 'in_progress');
   const completed = needs.filter(n => n.status === 'fulfilled');
 
-  const renderNeedItem = (need: SeekerNeed, showChat: boolean, showDelete: boolean) => (
+  const renderNeedItem = (need: SeekerNeed, showChat: boolean, showDelete: boolean, showCall: boolean) => (
     <div key={need.id} className="group rounded-[32px] md:rounded-[40px] border border-secondary-light/30 bg-white p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
       <div className="flex flex-col gap-6 md:flex-row md:items-center justify-between">
         <div className="flex items-start gap-5">
@@ -117,6 +117,15 @@ export default function MyNeeds() {
                 <MessageCircle size={14} /> المحادثات
               </Button>
             </Link>
+          )}
+
+          {showCall && (
+             <button
+                onClick={() => alert('ميزة المكالمة الصوتية ستتوفر قريباً ✨')}
+                className="bg-white border border-secondary-light/40 text-primary hover:bg-background rounded-2xl px-4 py-3 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+             >
+                <Phone size={14} className="text-secondary" /> مكالمة
+             </button>
           )}
 
           {showDelete && (
@@ -190,7 +199,7 @@ export default function MyNeeds() {
                     <h3 className="text-xl font-black text-primary">طلبات قيد الانتظار</h3>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {pending.map(n => renderNeedItem(n, false, true))}
+                    {pending.map(n => renderNeedItem(n, false, true, false))}
                   </div>
                 </div>
               )}
@@ -205,7 +214,7 @@ export default function MyNeeds() {
                     <h3 className="text-xl font-black text-primary">طلبات قيد التنفيذ</h3>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {inProgress.map(n => renderNeedItem(n, true, false))}
+                    {inProgress.map(n => renderNeedItem(n, true, false, true))}
                   </div>
                 </div>
               )}
@@ -220,7 +229,7 @@ export default function MyNeeds() {
                     <h3 className="text-xl font-black text-primary">طلبات مكتملة</h3>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {completed.map(n => renderNeedItem(n, false, false))}
+                    {completed.map(n => renderNeedItem(n, false, false, false))}
                   </div>
                 </div>
               )}

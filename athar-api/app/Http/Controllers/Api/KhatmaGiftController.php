@@ -28,12 +28,20 @@ class KhatmaGiftController extends Controller
         ]);
     }
 
-    public function recent()
+    public function recent(Request $request)
     {
-        $gifts = KhatmaGift::with(['gift', 'khatma.user'])
-            ->withCount('messages')
-            ->latest()
-            ->limit(12)
+        $user = $request->user();
+        $query = KhatmaGift::with(['gift', 'khatma.user'])->withCount('messages');
+
+        if ($user && $user->role !== 'admin') {
+            $query->where(function($q) use ($user) {
+                $q->where('status', 'pending')
+                  ->orWhere('delivered_to_id', $user->id);
+            });
+        }
+
+        $gifts = $query->latest()
+            ->limit(24)
             ->get()
             ->map(fn ($gift) => [
                 'id' => $gift->id,
@@ -47,6 +55,7 @@ class KhatmaGiftController extends Controller
                 'created_at' => optional($gift->created_at)->toIso8601String(),
                 'status' => $gift->status,
                 'average_rating' => $gift->average_rating,
+                'delivered_to_id' => $gift->delivered_to_id,
             ])
             ->filter(fn ($item) => $item['gift_name'] && $item['user_name'])
             ->values();
@@ -85,6 +94,38 @@ class KhatmaGiftController extends Controller
         return response()->json([
             'message' => 'تم تحديد العطاء كمسلم بنجاح',
             'gift' => $gift
+        ]);
+    }
+
+    public function markInProgress(Request $request, $id)
+    {
+        $gift = KhatmaGift::with('khatma')->find($id);
+
+        if (!$gift) {
+            return response()->json(['message' => 'العطاء غير موجود'], 404);
+        }
+
+        if ($gift->status !== 'pending') {
+            return response()->json(['message' => 'العطاء تم استلامه مسبقاً أو غير متاح.'], 400);
+        }
+
+        // Only the owner (khatma user) can mark as in_progress
+        if ($request->user()->id !== $gift->khatma->user_id) {
+            return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا العطاء.'], 403);
+        }
+
+        $gift->update([
+            'status' => 'in_progress',
+        ]);
+
+        Log::info('Gift marked as in_progress', [
+            'gift_id' => $gift->id,
+            'owner_id' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'message' => 'تم استلام الطلب بنجاح، يمكنك الآن البدء في التنسيق.',
+            'gift' => $gift->load(['gift', 'khatma.user'])
         ]);
     }
 }

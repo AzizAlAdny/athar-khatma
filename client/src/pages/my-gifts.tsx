@@ -5,7 +5,7 @@ import AppShell from '@/components/ui/AppShell';
 import Hero from '@/components/ui/Hero';
 import Button from '@/components/ui/Button';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { getUserKhatmas } from '@/services/api';
+import { getUserKhatmas, deleteKhatma } from '@/services/api';
 import {
   Gift,
   Calendar,
@@ -17,16 +17,21 @@ import {
   MessageCircle,
   Star,
   CheckCircle2,
-  Clock
+  Clock,
+  Phone,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MyGifts() {
   const [data, setData] = useState<{ khatmas: any[], total_impact_score: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true);
     getUserKhatmas()
       .then(res => {
         setData(res);
@@ -37,7 +42,24 @@ export default function MyGifts() {
         setError('تعذر تحميل سجل العطاءات الخاص بكِ.');
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
+
+  const handleDeleteKhatma = async (id: number) => {
+    if (!confirm('هل أنتِ متأكدة من حذف هذه الختمة وجميع العطايا المرتبطة بها؟')) return;
+    setDeletingId(id);
+    try {
+      await deleteKhatma(id);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'فشل حذف الختمة');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const giftsHero = (
     <Hero
@@ -62,7 +84,7 @@ export default function MyGifts() {
   );
 
   return (
-    <ProtectedRoute allowedRoles={['khatma', 'seeker', 'admin']}>
+    <ProtectedRoute allowedRoles={['khatma', 'admin']}>
       <AppShell hero={giftsHero}>
         <div className="space-y-8 pb-20">
           <div className="flex justify-between items-center px-2">
@@ -72,7 +94,7 @@ export default function MyGifts() {
             </div>
           </div>
 
-          {loading ? (
+          {loading && !data ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
               <p className="text-primary-muted font-bold">جاري تحميل السجل...</p>
@@ -85,24 +107,33 @@ export default function MyGifts() {
             <div className="grid gap-6">
               {data.khatmas.map((khatma) => (
                 <div key={khatma.id} className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-secondary-light/20 hover:shadow-md transition-all group">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-start gap-5">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                    <div className="flex items-start gap-5 flex-1">
                       <div className="w-16 h-16 rounded-3xl bg-secondary/10 flex items-center justify-center text-secondary text-2xl shrink-0 group-hover:scale-110 transition-transform">
                         <BookOpen size={28} />
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-black text-primary">ختمة {khatma.type}</h3>
-                          <span className="bg-accent/10 text-accent text-[10px] font-black px-3 py-1 rounded-full">مكتملة</span>
+                      <div className="text-right w-full">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-lg font-black text-primary">سجل العطاء #{khatma.id}</h3>
+                          {khatma.status === 'active' && (
+                            <button
+                              onClick={() => handleDeleteKhatma(khatma.id)}
+                              disabled={deletingId === khatma.id}
+                              className="text-red-500 hover:text-red-700 p-2 transition-colors"
+                              title="حذف الختمة"
+                            >
+                              {deletingId === khatma.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                            </button>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 text-xs text-primary-muted font-bold">
                           <span className="flex items-center gap-1"><Calendar size={12} /> {khatma.completion_date}</span>
                           <span className="flex items-center gap-1 text-secondary"><Sparkles size={12} /> {khatma.impact_score} نقطة أثر</span>
                         </div>
 
-                        <div className="mt-5 flex flex-wrap gap-3">
+                        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {(khatma.achievements || []).map((achievement: any, idx: number) => (
-                            <div key={idx} className="flex flex-col gap-2 bg-background p-3 rounded-2xl border border-secondary-light/10 min-w-[180px]">
+                            <div key={idx} className="flex flex-col gap-2 bg-background p-4 rounded-2xl border border-secondary-light/10 min-w-[200px]">
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <div className="relative">
@@ -117,6 +148,10 @@ export default function MyGifts() {
                                 {achievement.status === 'delivered' ? (
                                   <span className="bg-green-50 text-green-600 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-green-100">
                                     <CheckCircle2 size={10} /> تم التسليم
+                                  </span>
+                                ) : achievement.status === 'in_progress' ? (
+                                  <span className="bg-secondary/10 text-secondary text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-secondary/20">
+                                    <Clock size={10} /> قيد التنفيذ
                                   </span>
                                 ) : (
                                   <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-blue-100">
@@ -135,23 +170,31 @@ export default function MyGifts() {
                                   )}
                                 </div>
 
-                                {achievement.status !== 'delivered' && (
-                                  <Link href={`/chat/gift/${achievement.id}`}>
-                                    <button className="flex items-center gap-1 text-[10px] font-black text-secondary hover:text-primary transition-colors bg-white px-2 py-1 rounded-lg border border-secondary-light/20">
-                                      <MessageCircle size={12} /> المحادثات
-                                    </button>
-                                  </Link>
-                                )}
+                                <div className="flex gap-2">
+                                  {achievement.status !== 'delivered' && (
+                                    <>
+                                      <Link href={`/chat/gift/${achievement.id}`}>
+                                        <button className="flex items-center gap-1 text-[10px] font-black text-primary hover:text-secondary transition-colors bg-white px-2 py-1 rounded-lg border border-secondary-light/20">
+                                          <MessageCircle size={12} /> محادثة
+                                        </button>
+                                      </Link>
+                                      {achievement.status === 'in_progress' && (
+                                        <button
+                                          onClick={() => alert('ميزة المكالمة الصوتية ستتوفر قريباً ✨')}
+                                          className="flex items-center gap-1 text-[10px] font-black text-secondary hover:text-primary transition-colors bg-white px-2 py-1 rounded-lg border border-secondary-light/20"
+                                        >
+                                          <Phone size={12} /> مكالمة
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
-
-                    <button className="flex items-center justify-center gap-2 text-primary-muted font-black text-xs hover:text-secondary transition-colors md:px-4">
-                      تفاصيل الأثر <ChevronLeft size={16} />
-                    </button>
                   </div>
                 </div>
               ))}

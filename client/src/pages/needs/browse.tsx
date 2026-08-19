@@ -4,19 +4,21 @@ import React, { useEffect, useState } from 'react';
 import AppShell from '@/components/ui/AppShell';
 import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { getSeekerNeeds, SeekerNeed } from '@/services/api';
+import { getSeekerNeeds, SeekerNeed, markNeedInProgress } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { MapPin, HelpCircle, MessageCircle, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { MapPin, HelpCircle, MessageCircle, AlertCircle, Clock, CheckCircle2, Phone, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 export default function BrowseNeeds() {
   const [needs, setNeeds] = useState<SeekerNeed[]>([]);
   const [loading, setLoading] = useState(true);
+  const [claimingId, setClaimingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  useEffect(() => {
+  const loadNeeds = () => {
+    setLoading(true);
     getSeekerNeeds()
       .then(data => {
         setNeeds(data || []);
@@ -27,7 +29,23 @@ export default function BrowseNeeds() {
         setError('تعذر تحميل الطلبات، يرجى المحاولة لاحقاً.');
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadNeeds();
   }, []);
+
+  const handleClaim = async (id: number) => {
+    setClaimingId(id);
+    try {
+      await markNeedInProgress(id);
+      loadNeeds(); // Refresh to update sections
+    } catch (err: any) {
+      alert(err.message || 'فشل استلام الطلب');
+    } finally {
+      setClaimingId(null);
+    }
+  };
 
   const needsHero = (
     <Hero
@@ -46,7 +64,7 @@ export default function BrowseNeeds() {
   const myActiveHelping = needs.filter(n => n.status === 'in_progress' && n.fulfilled_by_id === user?.id);
   const myCompletedHelp = needs.filter(n => n.status === 'fulfilled' && n.fulfilled_by_id === user?.id);
 
-  const renderNeedItem = (need: SeekerNeed, showChat: boolean) => (
+  const renderNeedItem = (need: SeekerNeed, showChat: boolean, showClaim: boolean, showCall: boolean) => (
     <div key={need.id} className="group rounded-[32px] md:rounded-[40px] border border-secondary-light/30 bg-white p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
       <div className="flex flex-col gap-6 md:flex-row md:items-center justify-between">
         <div className="flex items-start gap-5">
@@ -78,16 +96,35 @@ export default function BrowseNeeds() {
           </div>
         </div>
 
-        {showChat && (
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
+          {showChat && (
             <Link
               href={user?.id ? `/chat/need/${need.id}` : '/auth/login'}
               className="flex-1 md:flex-none bg-accent hover:bg-[#0e3522] text-white rounded-2xl px-6 py-3.5 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <MessageCircle size={14} /> {need.status === 'open' ? 'مراسلة صاحبة الطلب' : 'المحادثات'}
             </Link>
-          </div>
-        )}
+          )}
+
+          {showClaim && (
+             <Button
+                onClick={() => handleClaim(need.id)}
+                disabled={claimingId === need.id}
+                className="bg-secondary text-white rounded-2xl px-6 py-3.5 text-xs font-black shadow-lg shadow-secondary/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+             >
+                {claimingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> استلام الطلب</>}
+             </Button>
+          )}
+
+          {showCall && (
+             <button
+                onClick={() => alert('ميزة المكالمة الصوتية ستتوفر قريباً ✨')}
+                className="bg-white border border-secondary-light/40 text-primary hover:bg-background rounded-2xl px-6 py-3.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-2"
+             >
+                <Phone size={14} className="text-secondary" /> مكالمة صوتية
+             </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -110,7 +147,7 @@ export default function BrowseNeeds() {
             </div>
           )}
 
-          {loading ? (
+          {loading && needs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
               <p className="text-primary-muted font-bold">جاري تحميل الطلبات...</p>
@@ -127,7 +164,7 @@ export default function BrowseNeeds() {
                 </div>
                 {available.length > 0 ? (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {available.map(n => renderNeedItem(n, true))}
+                    {available.map(n => renderNeedItem(n, true, true, false))}
                   </div>
                 ) : (
                   <div className="py-10 text-center bg-background/30 rounded-[2.5rem] border border-dashed border-secondary-light/30">
@@ -146,7 +183,7 @@ export default function BrowseNeeds() {
                     <h3 className="text-xl font-black text-primary">طلبات قيد التنفيذ (بواسطتكِ)</h3>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {myActiveHelping.map(n => renderNeedItem(n, true))}
+                    {myActiveHelping.map(n => renderNeedItem(n, true, false, true))}
                   </div>
                 </div>
               )}
@@ -161,7 +198,7 @@ export default function BrowseNeeds() {
                     <h3 className="text-xl font-black text-primary">طلبات لبيتها</h3>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {myCompletedHelp.map(n => renderNeedItem(n, false))}
+                    {myCompletedHelp.map(n => renderNeedItem(n, false, false, false))}
                   </div>
                 </div>
               )}
@@ -171,4 +208,5 @@ export default function BrowseNeeds() {
       </AppShell>
     </ProtectedRoute>
   );
+}
 }
