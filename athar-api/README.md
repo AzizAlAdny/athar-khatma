@@ -1,39 +1,46 @@
 # Khatma & Athar API (ختمة وأثر)
 
-The backend API for the "Khatma & Athar" platform, built with **Laravel 11**. This system manages Quran completions, community gifts/services, spatial data for the impact map, and real-time statistics.
+The backend engine for the Athar platform, built with **Laravel 11**. It manages the coordination lifecycle between givers and seekers, handles impact calculations, and provides spatial data for visualization.
 
 ## 🚀 Tech Stack
 - **Framework**: Laravel 11 (PHP 8.2+)
 - **Database**: MySQL (Compatible with XAMPP)
 - **Auth**: Laravel Sanctum (Token-based)
-- **Spatial**: PostGIS (for advanced geographic queries)
+- **Communication**: Integrated Notification & Mail system
 
-## 📁 Key Features
-- **Two-Sided Marketplace**: Connects Khatmas (Givers) with Community needs (Seekers).
-- **Glow Logic**: Dynamic calculation of impact scores to visualize community contribution on the map.
-- **Real-time Stats**: Aggregated metrics for total completions and beneficiaries.
+## 📁 Key Backend Logic
+- **Lifecycle Management**: Tracking the status of `khatma_gifts` and `seeker_needs` from Pending to Delivered/Fulfilled.
+- **Impact Scoring**: Automated calculation of impact points based on community ratings (Rating × 2).
+- **Spatial Aggregation**: Grouping contributions by city and neighborhood for the interactive map.
+- **Role Enforcement**: Middleware and controller logic ensuring strict visibility rules for `khatma`, `seeker`, and `admin` roles.
 
 ## 🛠️ Local Setup (XAMPP)
-1.  **Clone/Initialize**: Ensure you are in the `athar-api` directory.
-2.  **Install Dependencies**:
+1.  **Dependencies**:
     ```bash
     composer install
     ```
-3.  **Environment Config**:
+2.  **Environment Config**:
     - Copy `.env.example` to `.env`.
-    - Set `DB_CONNECTION=mysql`, `DB_DATABASE=athar_db`, and configure your XAMPP credentials.
-4.  **Database Setup**:
+    - Set `DB_DATABASE=athar_db` and configure your credentials.
+3.  **Database Setup**:
     ```bash
     php artisan migrate:fresh --seed
     ```
-5.  **Run Server**:
+4.  **Run Server**:
     ```bash
     php artisan serve
     ```
 
-## 📍 API Endpoints
-- `POST /api/register` & `POST /api/login`: Authentication.
-- `GET /api/map`: Spatial data for the interactive map (includes Glow levels).
-- `GET /api/stats`: Real-time impact counters.
-- `POST /api/khatmas`: Register completion and select a "Gift".
-- `POST /api/needs`: Post a community need.
+## 📍 Updated API Endpoints
+- `GET /api/khatma-gifts`: Fetch available gifts.
+- `GET /api/seeker-needs`: Fetch browsable community needs.
+- `POST /api/reviews`: Submit a rating (1-5 stars) and update impact points.
+- `POST /api/seeker-needs/{id}/in-progress`: Claim a need as a provider.
+- `POST /api/khatma-gifts/{id}/delivered`: Mark a gift as delivered.
+- `GET /api/map`: Unified spatial data for impact visualization.
+
+## 🧪 Verification
+Run the test suite to ensure naming consistency and lifecycle logic:
+```bash
+php artisan test
+```

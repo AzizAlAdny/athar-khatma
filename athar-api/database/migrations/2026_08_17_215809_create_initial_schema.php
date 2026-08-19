@@ -128,19 +128,21 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 9. Khatma Services
-        Schema::create('khatma_services', function (Blueprint $table) {
+        // 9. Khatma Gifts (Renamed from khatma_services)
+        Schema::create('khatma_gifts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('khatma_id')->constrained()->onDelete('cascade');
             $table->foreignId('gift_id')->constrained()->onDelete('cascade');
             $table->text('description')->nullable();
             $table->string('status')->default('pending');
             $table->integer('points_earned')->default(10);
+            $table->timestamp('delivered_at')->nullable();
+            $table->foreignId('delivered_to_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
 
-        // 10. Needs
-        Schema::create('needs', function (Blueprint $table) {
+        // 10. Seeker Needs (Renamed from needs)
+        Schema::create('seeker_needs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('gift_id')->constrained()->onDelete('cascade');
@@ -150,6 +152,9 @@ return new class extends Migration
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
             $table->string('status')->default('open');
+            $table->timestamp('fulfilled_at')->nullable();
+            $table->foreignId('fulfilled_by_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->integer('points_earned')->default(0);
             $table->timestamps();
         });
 
@@ -180,7 +185,21 @@ return new class extends Migration
             $table->index(['messageable_id', 'messageable_type', 'participant_id'], 'messages_thread_index');
         });
 
-        // 13. Notifications
+        // 13. Reviews
+        Schema::create('reviews', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('reviewer_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('reviewee_id')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('reviewable_id');
+            $table->string('reviewable_type');
+            $table->unsignedTinyInteger('rating'); // 1-5
+            $table->text('comment')->nullable();
+            $table->timestamps();
+
+            $table->index(['reviewable_id', 'reviewable_type']);
+        });
+
+        // 14. Notifications
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('type');
@@ -197,10 +216,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('notifications');
+        Schema::dropIfExists('reviews');
         Schema::dropIfExists('messages');
         Schema::dropIfExists('auth_events');
-        Schema::dropIfExists('needs');
-        Schema::dropIfExists('khatma_services');
+        Schema::dropIfExists('seeker_needs');
+        Schema::dropIfExists('khatma_gifts');
         Schema::dropIfExists('khatmas');
         Schema::dropIfExists('gifts');
         Schema::dropIfExists('personal_access_tokens');
