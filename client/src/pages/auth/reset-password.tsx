@@ -18,10 +18,10 @@ export default function ResetPassword() {
   const { token, email } = router.query;
 
   useEffect(() => {
-    if (!token || !email) {
+    if (router.isReady && (!token || !email)) {
       setError('رابط إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية');
     }
-  }, [token, email]);
+  }, [router.isReady, token, email]);
 
   const validate = () => {
     if (!password) {
@@ -88,7 +88,6 @@ export default function ResetPassword() {
             onChange={e => setPassword(e.target.value)}
             placeholder="••••••••"
             icon={Lock}
-            error={error}
             required
           />
 
