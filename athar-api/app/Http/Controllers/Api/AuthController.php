@@ -537,7 +537,7 @@ class AuthController extends Controller
         }
 
         // Check if token is expired (1 hour)
-        if ($resetRecord->created_at->lt(now()->subHour())) {
+        if (\Illuminate\Support\Carbon::parse($resetRecord->created_at)->lt(now()->subHour())) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
             return response()->json(['message' => 'رابط إعادة تعيين كلمة المرور منتهي الصلاحية.'], 400);
         }
