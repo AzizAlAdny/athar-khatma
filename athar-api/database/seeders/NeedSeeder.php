@@ -126,22 +126,22 @@ class NeedSeeder extends Seeder
             [
                 'gift_slug' => 'gift-mushaf',
                 'description' => 'نجمع تبرعات مصاحف لتوزيعها في مراكز تعليم كبار السن.',
-                'city' => 'جدة',
-                'neighborhood' => 'حي الفيصلية',
+                'city' => 'الرياض',
+                'neighborhood' => 'حي الملقى',
                 'status' => 'open',
             ],
             [
                 'gift_slug' => 'zoom-room',
                 'description' => 'نحتاج إلى متطوعة لفتح غرفة زوم لتحفيظ طالبات الجامعة أسبوعياً.',
-                'city' => 'الدمام',
-                'neighborhood' => 'حي الشاطئ الشرقي',
+                'city' => 'الرياض',
+                'neighborhood' => 'حي الصحافة',
                 'status' => 'open',
             ],
             [
                 'gift_slug' => 'design-media',
                 'description' => 'مطلوب تصميم إعلان لحملة خيرية لجمع التبرعات لتجهيز حلقات تحفيظ جديدة.',
-                'city' => 'مكة المكرمة',
-                'neighborhood' => 'حي أجياد',
+                'city' => 'الرياض',
+                'neighborhood' => 'حي الياسمين',
                 'status' => 'open',
             ],
         ];

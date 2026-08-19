@@ -24,7 +24,8 @@ import {
   Clock,
   CheckCircle2,
   MessageCircle,
-  Award
+  Award,
+  Users
 } from 'lucide-react';
 
 const khatmaOptions = [
