@@ -22,13 +22,20 @@ interface Review {
   };
 }
 
+interface Need {
+  gift_name: string;
+  status: string;
+  date: string;
+}
+
 interface ProfileProps {
   data: {
-    user: { name: string; bio: string; city: string };
-    impact_score: number;
-    achievements: Achievement[];
+    user: { name: string; bio: string; city: string; role?: string };
+    impact_score?: number;
+    achievements?: Achievement[];
     reviews?: Review[];
     average_rating?: number;
+    needs?: Need[];
   };
   onClose?: () => void;
   isPage?: boolean;
@@ -70,28 +77,38 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
         </div>
 
         <div className="mt-8 flex justify-center gap-4">
-           <div className="px-6 py-3 bg-secondary/10 rounded-2xl border border-secondary/20">
-              <p className="text-[10px] text-secondary font-black uppercase tracking-wider">نقاط الأثر</p>
-              <p className="text-2xl font-black text-secondary">{data.impact_score}</p>
-           </div>
-           {data.average_rating !== undefined && (
-              <div className="px-6 py-3 bg-yellow-50 rounded-2xl border border-yellow-200">
-                <p className="text-[10px] text-yellow-600 font-black uppercase tracking-wider">التقييم</p>
-                <div className="flex items-center gap-1 justify-center">
-                  <span className="text-2xl font-black text-yellow-600">{data.average_rating}</span>
-                  <Star size={18} className="text-yellow-400 fill-yellow-400" />
-                </div>
-              </div>
+           {data.user.role !== 'seeker' && (
+             <>
+               <div className="px-6 py-3 bg-secondary/10 rounded-2xl border border-secondary/20">
+                  <p className="text-[10px] text-secondary font-black uppercase tracking-wider">نقاط الأثر</p>
+                  <p className="text-2xl font-black text-secondary">{data.impact_score || 0}</p>
+               </div>
+               {data.average_rating !== undefined && (
+                  <div className="px-6 py-3 bg-yellow-50 rounded-2xl border border-yellow-200">
+                    <p className="text-[10px] text-yellow-600 font-black uppercase tracking-wider">التقييم</p>
+                    <div className="flex items-center gap-1 justify-center">
+                      <span className="text-2xl font-black text-yellow-600">{data.average_rating}</span>
+                      <Star size={18} className="text-yellow-400 fill-yellow-400" />
+                    </div>
+                  </div>
+               )}
+               <div className="px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10">
+                  <p className="text-[10px] text-primary font-black uppercase tracking-wider">المبادرات</p>
+                  <p className="text-2xl font-black text-primary">{data.achievements?.length || 0}</p>
+               </div>
+             </>
            )}
-           <div className="px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10">
-              <p className="text-[10px] text-primary font-black uppercase tracking-wider">المبادرات</p>
-              <p className="text-2xl font-black text-primary">{data.achievements.length}</p>
-           </div>
+           {data.user.role === 'seeker' && (
+             <div className="px-6 py-3 bg-accent/5 rounded-2xl border border-accent/10">
+                <p className="text-[10px] text-accent font-black uppercase tracking-wider">الطلبات المسجلة</p>
+                <p className="text-2xl font-black text-accent">{data.needs?.length || 0}</p>
+             </div>
+           )}
         </div>
       </div>
 
-      {/* Reviews Section */}
-      {data.reviews && data.reviews.length > 0 && (
+      {/* Reviews Section - Only for Khatma */}
+      {data.user.role !== 'seeker' && data.reviews && data.reviews.length > 0 && (
         <div className="space-y-6 mt-12">
           <div className="flex items-center gap-3 border-b border-background pb-4">
              <div className="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center text-yellow-500">
@@ -127,37 +144,77 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
         </div>
       )}
 
-      {/* Achievement List */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 border-b border-background pb-4">
-           <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
-              <Award size={20} />
-           </div>
-           <h4 className="font-black text-xl text-primary">سجل العطاء والأثر</h4>
-        </div>
+      {/* Achievement List - For Khatma */}
+      {data.user.role !== 'seeker' && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 border-b border-background pb-4">
+             <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
+                <Award size={20} />
+             </div>
+             <h4 className="font-black text-xl text-primary">سجل العطاء والأثر</h4>
+          </div>
 
-        <div className="space-y-4">
-          {data.achievements.length > 0 ? (
-            data.achievements.map((ach, idx) => (
-              <div key={idx} className="group bg-white p-5 rounded-[2rem] border border-secondary-light/30 shadow-sm hover:shadow-md hover:border-secondary/30 transition-all duration-300">
-                <div className="flex justify-between items-start mb-3">
-                  <span className="px-3 py-1 bg-background text-primary-muted text-[10px] font-black rounded-full border border-secondary-light/20 uppercase tracking-tight">
-                    {ach.category}
-                  </span>
-                  <span className="text-[10px] text-primary-muted/60 font-bold">{ach.date}</span>
+          <div className="space-y-4">
+            {data.achievements && data.achievements.length > 0 ? (
+              data.achievements.map((ach, idx) => (
+                <div key={idx} className="group bg-white p-5 rounded-[2rem] border border-secondary-light/30 shadow-sm hover:shadow-md hover:border-secondary/30 transition-all duration-300">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className={`px-3 py-1 text-[10px] font-black rounded-full border uppercase tracking-tight ${
+                      ach.status === 'delivered' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-background text-primary-muted border-secondary-light/20'
+                    }`}>
+                      {ach.category} • {ach.status === 'delivered' ? 'تم التسليم' : 'متوفر'}
+                    </span>
+                    <span className="text-[10px] text-primary-muted/60 font-bold">{ach.date}</span>
+                  </div>
+                  <h5 className="font-black text-primary text-lg group-hover:text-secondary transition-colors">{ach.gift_name}</h5>
+                  <p className="text-sm text-primary-muted font-medium mt-2 leading-relaxed line-clamp-2">{ach.description}</p>
                 </div>
-                <h5 className="font-black text-primary text-lg group-hover:text-secondary transition-colors">{ach.gift_name}</h5>
-                <p className="text-sm text-primary-muted font-medium mt-2 leading-relaxed line-clamp-2">{ach.description}</p>
+              ))
+            ) : (
+              <div className="text-center py-10 px-6 bg-background/50 rounded-[2rem] border border-dashed border-secondary-light/40">
+                 <p className="text-primary-muted font-bold">لا توجد إنجازات مسجلة بعد.</p>
+                 <p className="text-xs text-primary-muted/60 mt-1">ابدئي رحلة أثرك اليوم!</p>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-10 px-6 bg-background/50 rounded-[2rem] border border-dashed border-secondary-light/40">
-               <p className="text-primary-muted font-bold">لا توجد إنجازات مسجلة بعد.</p>
-               <p className="text-xs text-primary-muted/60 mt-1">ابدئي رحلة أثرك اليوم!</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Needs List - For Seeker */}
+      {data.user.role === 'seeker' && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 border-b border-background pb-4">
+             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                <MapPin size={20} />
+             </div>
+             <h4 className="font-black text-xl text-primary">طلباتي السابقة</h4>
+          </div>
+
+          <div className="space-y-4">
+            {data.needs && data.needs.length > 0 ? (
+              data.needs.map((need, idx) => (
+                <div key={idx} className="group bg-white p-5 rounded-[2rem] border border-secondary-light/30 shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className={`px-3 py-1 text-[10px] font-black rounded-full border uppercase tracking-tight ${
+                      need.status === 'fulfilled' ? 'bg-green-50 text-green-600 border-green-100' :
+                      need.status === 'in_progress' ? 'bg-secondary/10 text-secondary border-secondary/20' :
+                      'bg-background text-primary-muted border-secondary-light/20'
+                    }`}>
+                      {need.status === 'fulfilled' ? 'مكتمل' : need.status === 'in_progress' ? 'قيد التنفيذ' : 'قيد الانتظار'}
+                    </span>
+                    <span className="text-[10px] text-primary-muted/60 font-bold">{need.date}</span>
+                  </div>
+                  <h5 className="font-black text-primary text-lg">{need.gift_name || 'طلب مساعدة'}</h5>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-10 px-6 bg-background/50 rounded-[2rem] border border-dashed border-secondary-light/40">
+                 <p className="text-primary-muted font-bold">لا توجد طلبات مسجلة بعد.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 

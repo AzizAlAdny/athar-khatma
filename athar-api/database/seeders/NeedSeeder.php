@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Gift;
-use App\Models\Need;
+use App\Models\SeekerNeed;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -146,7 +146,7 @@ class NeedSeeder extends Seeder
 
             $coordinates = $this->getNeighborhoodCoordinates($needData['city'], $needData['neighborhood']);
 
-            Need::create([
+            SeekerNeed::create([
                 'user_id' => $seekers->random()->id,
                 'gift_id' => $gift->id,
                 'description' => $needData['description'],

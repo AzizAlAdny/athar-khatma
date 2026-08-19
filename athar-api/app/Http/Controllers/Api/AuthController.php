@@ -407,7 +407,7 @@ class AuthController extends Controller
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
-            'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
+            'achievements' => $user->role === 'khatma' ? ($khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
                     'id' => $gift->id,
                     'gift_name' => $gift->gift->name,
@@ -417,7 +417,7 @@ class AuthController extends Controller
                     'average_rating' => $gift->average_rating,
                     'date' => $gift->created_at->format('Y-m-d'),
                 ];
-            }) : [],
+            }) : []) : null,
             'needs' => $user->seekerNeeds->map(function ($need) {
                 return [
                     'gift_name' => $need->gift?->name,
@@ -448,7 +448,7 @@ class AuthController extends Controller
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
-            'achievements' => $khatma ? $khatma->khatmaGifts->map(function ($gift) {
+            'achievements' => $user->role === 'khatma' ? ($khatma ? $khatma->khatmaGifts->map(function ($gift) {
                 return [
                     'id' => $gift->id,
                     'gift_name' => $gift->gift->name,
@@ -457,7 +457,14 @@ class AuthController extends Controller
                     'average_rating' => $gift->average_rating,
                     'date' => $gift->created_at->format('Y-m-d'),
                 ];
-            }) : [],
+            }) : []) : null,
+            'needs' => $user->role === 'seeker' ? $user->seekerNeeds->map(function ($need) {
+                return [
+                    'gift_name' => $need->gift?->name,
+                    'status' => $need->status,
+                    'date' => $need->created_at->format('Y-m-d'),
+                ];
+            }) : null,
         ]);
     }
 

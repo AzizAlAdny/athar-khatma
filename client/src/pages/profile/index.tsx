@@ -150,11 +150,13 @@ export default function ProfilePage() {
           setEditCity(data.user.city || 'الرياض');
           setEditNeighborhood(user.neighborhood || '');
 
-          try {
-            const revs = await getUserReviews(userId);
-            setReviewsData(revs);
-          } catch (e) {
-            console.error('Reviews fetch error:', e);
+          if (user.role === 'khatma') {
+            try {
+              const revs = await getUserReviews(userId);
+              setReviewsData(revs);
+            } catch (e) {
+              console.error('Reviews fetch error:', e);
+            }
           }
 
           setLoading(false);
@@ -207,8 +209,8 @@ export default function ProfilePage() {
 
   const profileHero = (
     <Hero
-      title="ملفكِ الشخصي"
-      subtitle="تابعي إنجازاتكِ، وأديري مساهماتكِ في صناعة الأثر."
+      title={user?.role === 'seeker' ? "ملفي الشخصي" : "ملفكِ الشخصي"}
+      subtitle={user?.role === 'seeker' ? "تابعي طلباتكِ وتواصلكِ في مجتمع الأثر." : "تابعي إنجازاتكِ، وأديري مساهماتكِ في صناعة الأثر."}
       variant="primary"
       actions={
         <div className="flex flex-wrap gap-4">
@@ -342,11 +344,12 @@ export default function ProfilePage() {
                 <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_50px_rgba(94,32,59,0.02)] border border-secondary-light/20">
                    <AtharProfile
                      data={{
-                       user: profile.user,
+                       user: { ...profile.user, role: user?.role },
                        impact_score: profile.impact_score || 0,
                        achievements: (profile.achievements || []) as any,
                        reviews: reviewsData?.reviews,
-                       average_rating: reviewsData?.average_rating
+                       average_rating: reviewsData?.average_rating,
+                       needs: (profile.needs || []) as any
                      }}
                      isPage
                    />
