@@ -7,6 +7,7 @@ import Hero from '@/components/ui/Hero';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { useAuth } from '@/context/AuthContext';
 import { getKhatmaProfile, KhatmaProfile, authUserKey, updateUserProfile, saveAuthUser, getUserReviews, Review } from '@/services/api';
 import { User, Settings, ArrowLeft, Check, X, MapPin, Edit3 } from 'lucide-react';
 import Link from 'next/link';
@@ -116,6 +117,7 @@ const CITY_DATA: Record<string, Neighborhood[]> = {
 };
 
 export default function ProfilePage() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<KhatmaProfile | null>(null);
   const [reviewsData, setReviewsData] = useState<{ reviews: Review[]; average_rating: number; total_reviews: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,21 +138,21 @@ export default function ProfilePage() {
   }, []);
 
   const fetchProfile = () => {
-    const storedUser = typeof window !== 'undefined' ? localStorage.getItem(authUserKey) : null;
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      const userId = user.id || 1;
+    const storedUserStr = typeof window !== 'undefined' ? localStorage.getItem(authUserKey) : null;
+    if (storedUserStr) {
+      const storedUser = JSON.parse(storedUserStr);
+      const userId = storedUser.id || 1;
 
       getKhatmaProfile(userId)
         .then(async data => {
           setProfile(data);
           setEditName(data.user.name || '');
-          setEditDisplayName(user.display_name || '');
+          setEditDisplayName(storedUser.display_name || '');
           setEditBio(data.user.bio || '');
           setEditCity(data.user.city || 'الرياض');
-          setEditNeighborhood(user.neighborhood || '');
+          setEditNeighborhood(storedUser.neighborhood || '');
 
-          if (user.role === 'khatma') {
+          if (storedUser.role === 'khatma') {
             try {
               const revs = await getUserReviews(userId);
               setReviewsData(revs);

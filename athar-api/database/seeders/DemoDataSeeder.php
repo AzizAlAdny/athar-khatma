@@ -134,7 +134,9 @@ class DemoDataSeeder extends Seeder
 
             $user = User::create([
                 'name' => $data['name'],
+                'display_name' => $data['name'],
                 'email' => $email,
+                'email_verified_at' => now(),
                 'password' => Hash::make(env('SEED_PASSWORD', 'SecureDemoPassword123!')),
                 'role' => 'khatma',
                 'city' => $data['city'],
@@ -142,6 +144,7 @@ class DemoDataSeeder extends Seeder
                 'latitude' => $neighborhood['lat'],
                 'longitude' => $neighborhood['lng'],
                 'bio' => 'خاتمة للقرآن الكريم مهتمة بترك أثر طيب في مدينة ' . $data['city'],
+                'pledge_accepted' => true,
             ]);
 
             // Multiple khatmas per user so Map aggregation & glow levels are properly exercised.

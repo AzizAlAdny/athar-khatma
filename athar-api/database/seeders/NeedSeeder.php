@@ -94,12 +94,20 @@ class NeedSeeder extends Seeder
         $seekers = User::where('role', 'seeker')->get();
 
         if ($seekers->isEmpty()) {
+            $neighborhood = $this->cityData['الرياض'][0];
             $seeker = User::create([
                 'name' => 'أحمد الشمري',
+                'display_name' => 'أحمد الشمري',
                 'email' => 'ahmed.alshehri@example.com',
+                'email_verified_at' => now(),
                 'password' => Hash::make(env('SEED_PASSWORD', 'SecureDemoPassword123!')),
                 'role' => 'seeker',
                 'city' => 'الرياض',
+                'neighborhood' => $neighborhood['name'],
+                'latitude' => $neighborhood['lat'],
+                'longitude' => $neighborhood['lng'],
+                'bio' => 'باحث عن الأثر ومهتم بدعم المبادرات المجتمعية في مدينة الرياض.',
+                'pledge_accepted' => true,
             ]);
 
             $seekers = collect([$seeker]);
