@@ -139,4 +139,52 @@ class BroadcastingTest extends TestCase
             return $event->targetUserId === $owner->id && $event->action === 'call_ended';
         });
     }
+
+    public function test_authorized_user_can_authenticate_private_channel()
+    {
+        config([
+            'broadcasting.default' => 'pusher',
+            'broadcasting.connections.pusher.key' => 'test-key',
+            'broadcasting.connections.pusher.secret' => 'test-secret',
+            'broadcasting.connections.pusher.app_id' => 'test-app-id',
+        ]);
+
+        [$owner, $ownerToken, $khatma, $khatmaToken, $need] = $this->createUsers();
+
+        $response = $this->withToken($ownerToken)->postJson('/api/broadcasting/auth', [
+            'channel_name' => "private-App.Models.User.{$owner->id}",
+            'socket_id' => '1234.5678',
+        ]);
+
+        if ($response->status() !== 200) {
+            dump([
+                'status' => $response->status(),
+                'content' => $response->content(),
+                'json' => $response->json(),
+                'owner_id' => $owner->id,
+            ]);
+        }
+
+        $response->assertStatus(200);
+        $this->assertArrayHasKey('auth', $response->json());
+    }
+
+    public function test_unauthorized_user_is_forbidden_from_other_private_channel()
+    {
+        config([
+            'broadcasting.default' => 'pusher',
+            'broadcasting.connections.pusher.key' => 'test-key',
+            'broadcasting.connections.pusher.secret' => 'test-secret',
+            'broadcasting.connections.pusher.app_id' => 'test-app-id',
+        ]);
+
+        [$owner, $ownerToken, $khatma, $khatmaToken, $need] = $this->createUsers();
+
+        $response = $this->withToken($khatmaToken)->postJson('/api/broadcasting/auth', [
+            'channel_name' => "private-App.Models.User.{$owner->id}",
+            'socket_id' => '1234.5678',
+        ]);
+
+        $response->assertStatus(403);
+    }
 }
