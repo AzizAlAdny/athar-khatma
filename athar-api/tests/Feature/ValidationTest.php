@@ -15,19 +15,18 @@ class ValidationTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
+        $gift = Gift::factory()->create();
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
-            'type' => 'فردية',
-            'gift_ids' => [1],
+            'gift_ids' => [$gift->id],
         ]);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['completion_date']);
     }
 
-    public function test_khatma_type_is_optional_and_defaults_to_individual()
+    public function test_khatma_creation_persists_valid_khatma()
     {
-        // The UI no longer collects khatma type; omitting it must not fail.
         $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
         $gift = Gift::factory()->create();
@@ -40,7 +39,9 @@ class ValidationTest extends TestCase
         $response->assertStatus(201);
         $this->assertDatabaseHas('khatmas', [
             'user_id' => $user->id,
-            'type' => 'فردية',
+        ]);
+        $this->assertDatabaseHas('khatma_gifts', [
+            'gift_id' => $gift->id,
         ]);
     }
 
@@ -51,26 +52,24 @@ class ValidationTest extends TestCase
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),
-            'type' => 'فردية',
         ]);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['gift_ids']);
     }
 
-    public function test_khatma_validation_rejects_invalid_type()
+    public function test_khatma_validation_rejects_non_existent_gift_ids()
     {
         $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
         $response = $this->withToken($token)->postJson('/api/khatmas', [
             'completion_date' => now()->addDays(7)->toDateString(),
-            'type' => 'invalid_type',
-            'gift_ids' => [1],
+            'gift_ids' => [99999],
         ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['type']);
+        $response->assertJsonValidationErrors(['gift_ids.0']);
     }
 
     public function test_need_validation_requires_gift_id()
@@ -78,9 +77,9 @@ class ValidationTest extends TestCase
         $user = User::factory()->create(['role' => 'seeker', 'email_verified_at' => now()]);
         $token = $user->createToken('test-token', ['need:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->postJson('/api/needs', [
+        $response = $this->withToken($token)->postJson('/api/seeker-needs', [
             'description' => 'Test need',
-            'city' => 'Riyadh',
+            'city' => 'الرياض',
         ]);
 
         $response->assertStatus(422);
@@ -94,9 +93,9 @@ class ValidationTest extends TestCase
 
         $gift = Gift::factory()->create();
 
-        $response = $this->withToken($token)->postJson('/api/needs', [
+        $response = $this->withToken($token)->postJson('/api/seeker-needs', [
             'gift_id' => $gift->id,
-            'city' => 'Riyadh',
+            'city' => 'الرياض',
         ]);
 
         $response->assertStatus(422);

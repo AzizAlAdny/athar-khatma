@@ -20,7 +20,7 @@ class AdminController extends Controller
             'total_needs' => SeekerNeed::count(),
             'total_gifts' => Gift::count(),
             'active_khatmas' => Khatma::where('status', 'active')->count(),
-            'pending_needs' => SeekerNeed::where('status', 'pending')->count(),
+            'pending_needs' => SeekerNeed::where('status', 'open')->count(),
             'khatma_users' => User::where('role', 'khatma')->count(),
             'seeker_users' => User::where('role', 'seeker')->count(),
             'admin_users' => User::where('role', 'admin')->count(),

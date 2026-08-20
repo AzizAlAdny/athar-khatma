@@ -7,6 +7,7 @@ use App\Http\Requests\StoreSeekerNeedRequest;
 use App\Models\SeekerNeed;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SeekerNeedController extends Controller
@@ -93,68 +94,72 @@ class SeekerNeedController extends Controller
 
     public function markFulfilled(Request $request, $id)
     {
-        $need = SeekerNeed::find($id);
-
-        if (!$need) {
-            return response()->json(['message' => 'الطلب غير موجود'], 404);
-        }
-
-        // Only the owner (seeker) can mark as fulfilled
-        if ($request->user()->id !== $need->user_id) {
-            return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا الطلب.'], 403);
-        }
-
         $validated = $request->validate([
             'fulfilled_by_id' => 'required|exists:users,id',
         ]);
 
-        $need->update([
-            'status' => 'fulfilled',
-            'fulfilled_at' => now(),
-            'fulfilled_by_id' => $validated['fulfilled_by_id'],
-        ]);
+        return DB::transaction(function () use ($request, $id, $validated) {
+            $need = SeekerNeed::lockForUpdate()->find($id);
 
-        Log::info('Need marked as fulfilled', [
-            'need_id' => $need->id,
-            'fulfilled_by_id' => $need->fulfilled_by_id,
-        ]);
+            if (!$need) {
+                return response()->json(['message' => 'الطلب غير موجود'], 404);
+            }
 
-        return response()->json([
-            'message' => 'تم تحديد الطلب كمكتمل بنجاح',
-            'need' => $need
-        ]);
+            // Only the owner (seeker) can mark as fulfilled
+            if ($request->user()->id !== $need->user_id) {
+                return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا الطلب.'], 403);
+            }
+
+            $need->update([
+                'status' => 'fulfilled',
+                'fulfilled_at' => now(),
+                'fulfilled_by_id' => $validated['fulfilled_by_id'],
+            ]);
+
+            Log::info('Need marked as fulfilled atomically', [
+                'need_id' => $need->id,
+                'fulfilled_by_id' => $need->fulfilled_by_id,
+            ]);
+
+            return response()->json([
+                'message' => 'تم تحديد الطلب كمكتمل بنجاح',
+                'need' => $need
+            ]);
+        });
     }
 
     public function markInProgress(Request $request, $id)
     {
-        $need = SeekerNeed::find($id);
-
-        if (!$need) {
-            return response()->json(['message' => 'الطلب غير موجود'], 404);
-        }
-
-        if ($need->status !== 'open') {
-            return response()->json(['message' => 'الطلب تم استلامه مسبقاً أو غير متاح.'], 400);
-        }
-
         // Only users with khatma role (or admin) can claim a need
         if ($request->user()->role !== 'khatma' && $request->user()->role !== 'admin') {
             return response()->json(['message' => 'فقط صانعات الأثر يمكنهن استلام الطلبات.'], 403);
         }
 
-        $need->update([
-            'status' => 'in_progress',
-            'fulfilled_by_id' => $request->user()->id,
-        ]);
+        return DB::transaction(function () use ($request, $id) {
+            $need = SeekerNeed::lockForUpdate()->find($id);
 
-        Log::info('Need marked as in_progress', [
-            'need_id' => $need->id,
-            'helper_id' => $request->user()->id,
-        ]);
+            if (!$need) {
+                return response()->json(['message' => 'الطلب غير موجود'], 404);
+            }
 
-        return response()->json([
-            'message' => 'تم استلام الطلب بنجاح، يمكنك الآن البدء في التنسيق.',
-            'need' => $need->load(['user', 'gift'])
-        ]);
+            if ($need->status !== 'open') {
+                return response()->json(['message' => 'الطلب تم استلامه مسبقاً أو غير متاح.'], 400);
+            }
+
+            $need->update([
+                'status' => 'in_progress',
+                'fulfilled_by_id' => $request->user()->id,
+            ]);
+
+            Log::info('Need marked as in_progress atomically', [
+                'need_id' => $need->id,
+                'helper_id' => $request->user()->id,
+            ]);
+
+            return response()->json([
+                'message' => 'تم استلام الطلب بنجاح، يمكنك الآن البدء في التنسيق.',
+                'need' => $need->load(['user', 'gift'])
+            ]);
+        });
     }
 }

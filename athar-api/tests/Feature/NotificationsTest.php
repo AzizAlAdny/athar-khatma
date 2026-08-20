@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Gift;
 use App\Models\Message;
+use App\Models\SeekerNeed;
 use App\Models\User;
 use App\Notifications\NewChatMessage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +18,7 @@ class NotificationsTest extends TestCase
     {
         $seeker = User::factory()->create(['role' => 'seeker', 'email_verified_at' => now()]);
         $gift = Gift::factory()->create();
-        $need = $seeker->needs()->create([
+        $need = $seeker->seekerNeeds()->create([
             'gift_id' => $gift->id,
             'description' => 'أحتاج معلمة تحفيظ',
             'city' => 'الرياض',
@@ -37,7 +38,8 @@ class NotificationsTest extends TestCase
     private function seedThreadMessage($need, int $participantId, string $body = 'مرحباً'): Message
     {
         return Message::create([
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'participant_id' => $participantId,
             'sender_id' => $participantId,
             'body' => $body,
@@ -49,14 +51,14 @@ class NotificationsTest extends TestCase
         [$seeker, $need] = $this->createSeekerWithNeed();
         [$khatma, $token] = $this->createKhatma();
 
-        $this->withToken($token)->postJson("/api/needs/{$need->id}/messages", [
+        $this->withToken($token)->postJson("/api/chat/need/{$need->id}/messages", [
             'body' => 'مرحباً، أرغب بتقديم العطاء',
         ])->assertStatus(201);
 
         $notifications = $seeker->notifications()->get();
         $this->assertCount(1, $notifications);
         $this->assertSame('new_participant', $notifications->first()->data['kind']);
-        $this->assertSame($need->id, $notifications->first()->data['need_id']);
+        $this->assertSame($need->id, $notifications->first()->data['item_id']);
         $this->assertNull($notifications->first()->read_at);
     }
 
@@ -66,7 +68,7 @@ class NotificationsTest extends TestCase
         [$khatma, $token] = $this->createKhatma();
         $this->seedThreadMessage($need, $khatma->id);
 
-        $this->withToken($token)->postJson("/api/needs/{$need->id}/messages", [
+        $this->withToken($token)->postJson("/api/chat/need/{$need->id}/messages", [
             'body' => 'رسالة متابعة',
         ])->assertStatus(201);
 
@@ -82,7 +84,7 @@ class NotificationsTest extends TestCase
         $this->seedThreadMessage($need, $khatma->id);
 
         $ownerToken = $seeker->createToken('owner-token', ['read'])->plainTextToken;
-        $this->withToken($ownerToken)->postJson("/api/needs/{$need->id}/messages", [
+        $this->withToken($ownerToken)->postJson("/api/chat/need/{$need->id}/messages", [
             'body' => 'أهلاً بكِ، متى يناسبكِ؟',
             'participant_id' => $khatma->id,
         ])->assertStatus(201);

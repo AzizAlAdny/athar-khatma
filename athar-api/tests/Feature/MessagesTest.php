@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Gift;
 use App\Models\Message;
-use App\Models\Need;
+use App\Models\SeekerNeed;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,7 +17,7 @@ class MessagesTest extends TestCase
     {
         $seeker = User::factory()->create(['role' => 'seeker', 'email_verified_at' => now()]);
         $gift = Gift::factory()->create();
-        $need = $seeker->needs()->create([
+        $need = $seeker->seekerNeeds()->create([
             'gift_id' => $gift->id,
             'description' => 'أحتاج معلمة تحفيظ',
             'city' => 'الرياض',
@@ -38,13 +38,14 @@ class MessagesTest extends TestCase
         [$seeker, $need] = $this->createSeekerWithNeed();
         [$khatma, $token] = $this->createKhatma();
 
-        $response = $this->withToken($token)->postJson("/api/needs/{$need->id}/messages", [
+        $response = $this->withToken($token)->postJson("/api/chat/need/{$need->id}/messages", [
             'body' => 'مرحباً، أرغب بتقديم العطاء',
         ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('messages', [
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'participant_id' => $khatma->id,
             'sender_id' => $khatma->id,
         ]);
@@ -55,7 +56,8 @@ class MessagesTest extends TestCase
         [$seeker, $need] = $this->createSeekerWithNeed();
         [$khatma, $token] = $this->createKhatma();
         Message::create([
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'participant_id' => $khatma->id,
             'sender_id' => $khatma->id,
             'body' => 'رسالة من الخاتمة',
@@ -63,7 +65,7 @@ class MessagesTest extends TestCase
 
         $ownerToken = $seeker->createToken('test-token', ['read'])->plainTextToken;
         $response = $this->withToken($ownerToken)
-            ->getJson("/api/needs/{$need->id}/messages?participant={$khatma->id}");
+            ->getJson("/api/chat/need/{$need->id}/messages?participant={$khatma->id}");
         $response->assertStatus(200)->assertJsonCount(1);
     }
 
@@ -72,13 +74,14 @@ class MessagesTest extends TestCase
         [$seeker, $need] = $this->createSeekerWithNeed();
         [$khatma, $token] = $this->createKhatma();
         Message::create([
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'participant_id' => $khatma->id,
             'sender_id' => $khatma->id,
             'body' => 'رسالة من الخاتمة',
         ]);
 
-        $response = $this->withToken($token)->getJson("/api/needs/{$need->id}/messages");
+        $response = $this->withToken($token)->getJson("/api/chat/need/{$need->id}/messages");
         $response->assertStatus(200)->assertJsonCount(1);
     }
 
@@ -87,7 +90,8 @@ class MessagesTest extends TestCase
         [$seeker, $need] = $this->createSeekerWithNeed();
         [$khatma, $token] = $this->createKhatma();
         Message::create([
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'participant_id' => $khatma->id,
             'sender_id' => $khatma->id,
             'body' => 'مرحباً',
@@ -95,7 +99,7 @@ class MessagesTest extends TestCase
 
         $ownerToken = $seeker->createToken('test-token', ['read'])->plainTextToken;
         $response = $this->withToken($ownerToken)->postJson(
-            "/api/needs/{$need->id}/messages",
+            "/api/chat/need/{$need->id}/messages",
             ['body' => 'رد بدون تحديد الطرف الآخر']
         );
 
@@ -108,7 +112,8 @@ class MessagesTest extends TestCase
         [$seeker, $need] = $this->createSeekerWithNeed();
         [$khatma, $token] = $this->createKhatma();
         Message::create([
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'participant_id' => $khatma->id,
             'sender_id' => $khatma->id,
             'body' => 'مرحباً',
@@ -116,7 +121,7 @@ class MessagesTest extends TestCase
 
         $ownerToken = $seeker->createToken('test-token', ['read'])->plainTextToken;
         $response = $this->withToken($ownerToken)->postJson(
-            "/api/needs/{$need->id}/messages",
+            "/api/chat/need/{$need->id}/messages",
             [
                 'body' => 'أهلاً بكِ، متى يناسبكِ؟',
                 'participant_id' => $khatma->id,
@@ -125,7 +130,8 @@ class MessagesTest extends TestCase
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('messages', [
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'sender_id' => $seeker->id,
             'participant_id' => $khatma->id,
         ]);
@@ -141,14 +147,15 @@ class MessagesTest extends TestCase
         ]);
 
         Message::create([
-            'need_id' => $need->id,
+            'messageable_id' => $need->id,
+            'messageable_type' => SeekerNeed::class,
             'participant_id' => $khatma->id,
             'sender_id' => $khatma->id,
             'body' => 'رسالة خاصة',
         ]);
 
         $intruderToken = $intruder->createToken('test-token', ['read'])->plainTextToken;
-        $response = $this->withToken($intruderToken)->getJson("/api/needs/{$need->id}/messages");
+        $response = $this->withToken($intruderToken)->getJson("/api/chat/need/{$need->id}/messages");
         $response->assertStatus(200)->assertJsonCount(0);
     }
 
@@ -157,7 +164,7 @@ class MessagesTest extends TestCase
         [$seeker, $need] = $this->createSeekerWithNeed();
         [$khatma, $token] = $this->createKhatma();
 
-        $response = $this->withToken($token)->postJson("/api/needs/{$need->id}/messages", []);
+        $response = $this->withToken($token)->postJson("/api/chat/need/{$need->id}/messages", []);
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['body']);
     }
@@ -166,10 +173,9 @@ class MessagesTest extends TestCase
     {
         [$seeker, $need] = $this->createSeekerWithNeed();
 
-        $this->postJson("/api/needs/{$need->id}/messages", ['body' => 'مرحباً'])
+        $this->postJson("/api/chat/need/{$need->id}/messages", ['body' => 'مرحباً'])
             ->assertStatus(401);
-        $this->getJson("/api/needs/{$need->id}/messages")
+        $this->getJson("/api/chat/need/{$need->id}/messages")
             ->assertStatus(401);
     }
 }
-

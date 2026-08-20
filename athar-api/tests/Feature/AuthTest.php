@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Gift;
 use App\Models\User;
 use App\Models\Khatma;
-use App\Models\KhatmaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,6 +23,7 @@ class AuthTest extends TestCase
             'city' => 'Riyadh',
             'lat' => 24.7136,
             'lng' => 46.6753,
+            'pledge_accepted' => true,
         ];
 
         $response = $this->postJson('/api/register', $payload);
@@ -42,6 +42,7 @@ class AuthTest extends TestCase
             'city' => 'Riyadh',
             'latitude' => 24.7136,
             'longitude' => 46.6753,
+            'pledge_accepted' => true,
         ]);
 
         $user = User::where('email', 'test@example.com')->first();
@@ -61,6 +62,7 @@ class AuthTest extends TestCase
             'city' => 'Jeddah',
             'lat' => 21.4858,
             'lng' => 39.1925,
+            'pledge_accepted' => true,
         ];
 
         $response = $this->postJson('/api/register', $payload);
@@ -69,6 +71,7 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'seeker@example.com',
             'role' => 'seeker',
+            'pledge_accepted' => true,
         ]);
 
         $user = User::where('email', 'seeker@example.com')->first();

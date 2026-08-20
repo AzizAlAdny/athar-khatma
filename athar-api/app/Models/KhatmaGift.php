@@ -54,6 +54,13 @@ class KhatmaGift extends Model
 
     public function getAverageRatingAttribute()
     {
-        return $this->reviews()->avg('rating');
+        if (array_key_exists('reviews_avg_rating', $this->attributes)) {
+            return $this->attributes['reviews_avg_rating'] !== null
+                ? round((float) $this->attributes['reviews_avg_rating'], 1)
+                : 0.0;
+        }
+
+        $avg = $this->reviews()->avg('rating');
+        return $avg !== null ? round((float) $avg, 1) : 0.0;
     }
 }

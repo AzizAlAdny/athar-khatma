@@ -183,6 +183,11 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const text = await response.text();
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined') {
+      clearAuthStorage();
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    }
+
     let errorMessage = `Request failed with status ${response.status}`;
     try {
       const errorData = JSON.parse(text);

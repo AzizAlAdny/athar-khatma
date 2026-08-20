@@ -44,7 +44,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     loadStoredAuth();
-  }, []);
+
+    const handleUnauthorized = () => {
+      setUser(null);
+      clearAuthStorage();
+      if (typeof window !== 'undefined' && !router.pathname.startsWith('/auth/')) {
+        router.push('/auth/login');
+      }
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, [router]);
 
   // Redirect unverified users to verification page
   useEffect(() => {

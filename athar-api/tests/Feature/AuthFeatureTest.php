@@ -178,19 +178,13 @@ class AuthFeatureTest extends TestCase
         Notification::fake();
         Event::fake([Registered::class]);
 
-        // Registration auto-verifies the email (email verification is disabled),
-        // so the signed verification link is idempotent: it redirects without
+        // User is already verified:
+        // the signed verification link is idempotent: it redirects without
         // recording a duplicate email_verified event.
-        $this->postJson('/api/register', [
-            'name' => 'Verify User',
+        $user = User::factory()->create([
             'email' => 'verify@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-            'role' => 'khatma',
-        ])->assertStatus(201);
-
-        $user = User::where('email', 'verify@example.com')->firstOrFail();
-        // Because verification is disabled, the account is already verified.
+            'email_verified_at' => now(),
+        ]);
         $this->assertNotNull($user->email_verified_at);
 
         // Hit the verification endpoint with a valid signed URL.

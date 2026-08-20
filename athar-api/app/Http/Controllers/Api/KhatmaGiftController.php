@@ -31,7 +31,9 @@ class KhatmaGiftController extends Controller
     public function recent(Request $request)
     {
         $user = $request->user();
-        $query = KhatmaGift::with(['gift', 'khatma.user'])->withCount('messages');
+        $query = KhatmaGift::with(['gift', 'khatma.user'])
+            ->withCount('messages')
+            ->withAvg('reviews', 'rating');
 
         if ($user && $user->role !== 'admin') {
             $query->where(function($q) use ($user) {

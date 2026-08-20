@@ -18,6 +18,7 @@ class AuthenticationTest extends TestCase
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
+            'pledge_accepted' => true,
         ]);
 
         $response->assertStatus(201);
@@ -25,6 +26,7 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
             'role' => 'khatma',
+            'pledge_accepted' => true,
         ]);
     }
 
@@ -172,6 +174,7 @@ class AuthenticationTest extends TestCase
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
+            'pledge_accepted' => true,
         ]);
 
         $response->assertStatus(201);
@@ -185,6 +188,7 @@ class AuthenticationTest extends TestCase
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'seeker',
+            'pledge_accepted' => true,
         ]);
 
         $response->assertStatus(201);

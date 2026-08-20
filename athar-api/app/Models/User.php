@@ -99,6 +99,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(SeekerNeed::class);
     }
 
+    public function needs()
+    {
+        return $this->seekerNeeds();
+    }
+
     public function authEvents()
     {
         return $this->hasMany(AuthEvent::class);

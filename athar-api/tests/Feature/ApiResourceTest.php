@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Khatma;
 use App\Models\Gift;
-use App\Models\KhatmaService as KhatmaServiceModel;
+use App\Models\KhatmaGift;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,27 +15,25 @@ class ApiResourceTest extends TestCase
 
     public function test_khatma_resource_returns_correct_structure()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         $gift = Gift::factory()->create();
 
         $khatma = Khatma::factory()->create([
             'user_id' => $user->id,
             'completion_date' => now()->addDays(7),
-            'type' => 'فردية',
             'status' => 'active',
             'impact_score' => 20,
         ]);
 
-        $token = $user->createToken('test-token')->plainTextToken;
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+        $response = $this->withToken($token)->getJson("/api/khatmas/{$khatma->id}");
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
             'id',
             'user_id',
             'completion_date',
-            'type',
             'impact_score',
             'status',
             'created_at',
@@ -51,10 +49,10 @@ class ApiResourceTest extends TestCase
 
     public function test_user_resource_returns_correct_structure()
     {
-        $user = User::factory()->create();
-        $token = $user->createToken('test-token')->plainTextToken;
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/users/{$user->id}/profile");
+        $response = $this->withToken($token)->getJson("/api/users/{$user->id}/profile");
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -74,9 +72,9 @@ class ApiResourceTest extends TestCase
 
     public function test_gift_resource_returns_correct_structure()
     {
-        $gift = Gift::factory()->create();
+        Gift::factory()->create();
 
-        $response = $this->get('/api/gifts');
+        $response = $this->getJson('/api/gifts');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -93,28 +91,25 @@ class ApiResourceTest extends TestCase
 
     public function test_khatma_index_returns_resource_collection()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
-        $gift = Gift::factory()->create();
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
 
-        $khatma1 = Khatma::factory()->create([
+        Khatma::factory()->create([
             'user_id' => $user->id,
             'completion_date' => now()->addDays(7),
-            'type' => 'فردية',
             'status' => 'active',
             'impact_score' => 20,
         ]);
 
-        $khatma2 = Khatma::factory()->create([
+        Khatma::factory()->create([
             'user_id' => $user->id,
             'completion_date' => now()->addDays(14),
-            'type' => 'جماعية',
             'status' => 'active',
             'impact_score' => 30,
         ]);
 
-        $token = $user->createToken('test-token')->plainTextToken;
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get('/api/khatmas');
+        $response = $this->withToken($token)->getJson('/api/khatmas');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -123,7 +118,6 @@ class ApiResourceTest extends TestCase
                     'id',
                     'user_id',
                     'completion_date',
-                    'type',
                     'status',
                     'impact_score',
                 ],
@@ -132,35 +126,33 @@ class ApiResourceTest extends TestCase
         ]);
     }
 
-    public function test_khatma_service_resource_returns_correct_structure()
+    public function test_khatma_gift_resource_returns_correct_structure()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
         $gift = Gift::factory()->create();
 
         $khatma = Khatma::factory()->create([
             'user_id' => $user->id,
             'completion_date' => now()->addDays(7),
-            'type' => 'فردية',
             'status' => 'active',
             'impact_score' => 20,
         ]);
 
-        $service = KhatmaServiceModel::factory()->create([
+        KhatmaGift::factory()->create([
             'khatma_id' => $khatma->id,
             'gift_id' => $gift->id,
             'status' => 'completed',
         ]);
 
-        $token = $user->createToken('test-token')->plainTextToken;
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+        $response = $this->withToken($token)->getJson("/api/khatmas/{$khatma->id}");
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
             'id',
             'user_id',
             'completion_date',
-            'type',
             'impact_score',
             'status',
             'created_at',
@@ -172,25 +164,22 @@ class ApiResourceTest extends TestCase
 
     public function test_api_responses_are_consistent()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
-        $gift = Gift::factory()->create();
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
 
         $khatma = Khatma::factory()->create([
             'user_id' => $user->id,
             'completion_date' => now()->addDays(7),
-            'type' => 'فردية',
             'status' => 'active',
             'impact_score' => 20,
         ]);
 
-        $token = $user->createToken('test-token')->plainTextToken;
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+        $response = $this->withToken($token)->getJson("/api/khatmas/{$khatma->id}");
 
         $response->assertStatus(200);
         $response->assertJson([
             'id' => $khatma->id,
-            'type' => $khatma->type,
             'status' => $khatma->status,
             'impact_score' => $khatma->impact_score,
         ]);

@@ -14,74 +14,68 @@ class SecurityTest extends TestCase
 
     public function test_user_cannot_access_other_users_khatma()
     {
-        $user1 = User::factory()->create(['role' => 'khatma']);
-        $user2 = User::factory()->create(['role' => 'khatma']);
+        $user1 = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
+        $user2 = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
 
-        $gift = Gift::factory()->create();
         $khatma = Khatma::factory()->create([
             'user_id' => $user2->id,
             'completion_date' => now()->addDays(7),
-            'type' => 'فردية',
             'status' => 'active',
             'impact_score' => 20,
         ]);
 
-        $token = $user1->createToken('test-token')->plainTextToken;
+        $token = $user1->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+        $response = $this->withToken($token)->getJson("/api/khatmas/{$khatma->id}");
 
         $response->assertStatus(403);
     }
 
     public function test_user_can_access_own_khatma()
     {
-        $user = User::factory()->create(['role' => 'khatma']);
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
 
-        $gift = Gift::factory()->create();
         $khatma = Khatma::factory()->create([
             'user_id' => $user->id,
             'completion_date' => now()->addDays(7),
-            'type' => 'فردية',
             'status' => 'active',
             'impact_score' => 20,
         ]);
 
-        $token = $user->createToken('test-token')->plainTextToken;
+        $token = $user->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+        $response = $this->withToken($token)->getJson("/api/khatmas/{$khatma->id}");
 
         $response->assertStatus(200);
     }
 
     public function test_admin_can_access_any_khatma()
     {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $user = User::factory()->create(['role' => 'khatma']);
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $user = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
 
-        $gift = Gift::factory()->create();
         $khatma = Khatma::factory()->create([
             'user_id' => $user->id,
             'completion_date' => now()->addDays(7),
-            'type' => 'فردية',
             'status' => 'active',
             'impact_score' => 20,
         ]);
 
-        $token = $admin->createToken('test-token')->plainTextToken;
+        $token = $admin->createToken('test-token', ['*'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/khatmas/{$khatma->id}");
+        $response = $this->withToken($token)->getJson("/api/khatmas/{$khatma->id}");
 
         $response->assertStatus(200);
     }
 
     public function test_user_cannot_access_other_users_profile()
     {
-        $user1 = User::factory()->create(['role' => 'khatma']);
-        $user2 = User::factory()->create(['role' => 'khatma']);
+        $user1 = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
+        $user2 = User::factory()->create(['role' => 'khatma', 'email_verified_at' => now()]);
 
-        $token = $user1->createToken('test-token')->plainTextToken;
+        $token = $user1->createToken('test-token', ['khatma:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->get("/api/users/{$user2->id}/profile");
+        $response = $this->withToken($token)->getJson("/api/users/{$user2->id}/profile");
 
         $response->assertStatus(403);
     }
@@ -100,8 +94,8 @@ class SecurityTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'role' => 'admin',
         ]);
 
@@ -118,10 +112,10 @@ class SecurityTest extends TestCase
         $gift = Gift::factory()->create();
         $token = $user->createToken('test-token', ['need:create'])->plainTextToken;
 
-        $response = $this->withToken($token)->postJson('/api/needs', [
+        $response = $this->withToken($token)->postJson('/api/seeker-needs', [
             'gift_id' => $gift->id,
             'description' => 'Test need',
-            'city' => 'Riyadh',
+            'city' => 'الرياض',
             'latitude' => 24.7136,
             'longitude' => 46.6753,
             'status' => 'fulfilled', // Attempt to override status
@@ -129,7 +123,7 @@ class SecurityTest extends TestCase
         ]);
 
         $response->assertStatus(201);
-        $this->assertDatabaseHas('needs', [
+        $this->assertDatabaseHas('seeker_needs', [
             'user_id' => $user->id, // Should use authenticated user's ID
             'status' => 'open', // Should use default status
         ]);
