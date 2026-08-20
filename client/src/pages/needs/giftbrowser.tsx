@@ -137,7 +137,7 @@ export default function GiftBrowser() {
           {showChat && (
             <Link
               href={`/chat/gift/${gift.id}`}
-              className="bg-accent hover:bg-[#0e3522] text-white rounded-2xl py-3 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+              className="bg-accent hover:bg-accent-dark text-white rounded-2xl py-3 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <MessageCircle size={14} /> محادثة
             </Link>

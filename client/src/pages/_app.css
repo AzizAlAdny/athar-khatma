@@ -1,19 +1,33 @@
 @import "tailwindcss";
 
 @theme {
+  /* Brand Primary (Royal Burgundy / عودي) - Swatch 2 */
   --color-primary: #5e203b;
+  --color-primary-dark: #4a1a2f;
+  --color-primary-light: #7a2d4f;
   --color-primary-muted: #9d7988;
 
+  /* Brand Secondary (Golden Amber & Sand Gold) - Swatches 1, 5, 7, 8 */
   --color-secondary: #d0a45f;
   --color-secondary-dark: #d6a642;
   --color-secondary-muted: #c8aa7b;
   --color-secondary-light: #e7d6b8;
 
+  /* Brand Accent (Emerald Green / أخضر زمردي) - Swatch 4 */
   --color-accent: #154a32;
+  --color-accent-dark: #0e3522;
+  --color-accent-light: #1e6645;
 
+  /* Backgrounds & Surfaces - Swatch 3 */
   --color-background: #f8f7f3;
+  --color-background-subtle: #f1efe9;
+  --color-paper: #ffffff;
 
-  --font-sans: var(--font-cairo), Tahoma, Arial, sans-serif;
+  /* Typography & Defaults */
+  --color-foreground: #0f172a;
+  --color-foreground-muted: #475569;
+
+  --font-sans: var(--font-cairo), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -23,12 +37,14 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--color-background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 
 button,
@@ -40,35 +56,43 @@ textarea {
 
 @layer utilities {
   .btn {
-    @apply inline-flex items-center justify-center rounded-2xl font-semibold transition duration-150 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70;
+    @apply inline-flex items-center justify-center rounded-2xl font-bold transition-all duration-150 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 select-none;
   }
 
   .btn-primary {
-    @apply bg-primary text-white shadow-lg shadow-primary/20 hover:bg-[#4a1a2f];
+    @apply bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-dark active:bg-primary-dark;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-white shadow-lg shadow-accent/20 hover:bg-accent-dark active:bg-accent-dark;
   }
 
   .btn-gold {
-    @apply bg-secondary text-white shadow-lg shadow-secondary/20 hover:bg-secondary-dark;
+    @apply bg-secondary text-white shadow-lg shadow-secondary/20 hover:bg-secondary-dark active:bg-secondary-dark;
   }
 
   .btn-secondary {
-    @apply border border-secondary-light/30 bg-white text-primary hover:bg-background;
+    @apply border border-secondary-light/40 bg-white text-primary hover:bg-background active:bg-background-subtle shadow-sm;
   }
 
   .btn-ghost {
-    @apply bg-transparent text-primary hover:bg-background;
-  }
-
-  .btn-sm {
-    @apply px-4 py-2 text-sm;
-  }
-
-  .btn-md {
-    @apply px-5 py-3 text-sm;
+    @apply bg-transparent text-primary hover:bg-background active:bg-background-subtle;
   }
 
   .btn-lg {
-    @apply px-6 py-4 text-base;
+    @apply px-8 py-4 text-base min-h-[52px];
+  }
+
+  .btn-md {
+    @apply px-5 py-3 text-sm min-h-[44px];
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-xs min-h-[38px];
+  }
+
+  .btn-xs {
+    @apply px-3 py-1.5 text-[10px] min-h-[32px];
   }
 }
 

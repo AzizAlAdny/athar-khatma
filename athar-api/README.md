@@ -25,6 +25,9 @@ The backend engine for the Athar platform, built with **Laravel 11**. It manages
 3.  **Database Setup**:
     ```bash
     php artisan migrate:fresh --seed
+    if have aleardy data and need migrate last edit 
+    php artisan migrate
+
     ```
 4.  **Run Server**:
     ```bash

@@ -85,7 +85,10 @@ export default function ForgotPassword() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-3 rounded-[1.25rem] text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="shadow-xl shadow-primary/10"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">

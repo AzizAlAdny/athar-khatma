@@ -61,7 +61,7 @@ export default function MyNeeds() {
       variant="accent"
       actions={
         <Link href="/needs/register">
-          <Button className="bg-accent hover:bg-[#0e3522] text-white rounded-2xl px-8 py-4 text-sm font-black flex items-center justify-center gap-2 shadow-xl shadow-accent/10 active:scale-95 transition-all w-full md:w-auto">
+          <Button variant="accent" size="lg" className="flex items-center justify-center gap-2 w-full md:w-auto">
             <Plus size={18} /> أضيفي احتياجاً
           </Button>
         </Link>
@@ -242,7 +242,7 @@ export default function MyNeeds() {
               <p className="text-primary-muted font-bold text-lg">لم تسجلي أي طلب بعد..</p>
               <p className="text-secondary-muted text-sm mt-1 mb-8">سجلي احتياجكِ الأول وسيصلكِ الدعم من صانعات الأثر.</p>
               <Link href="/needs/register">
-                <Button className="bg-accent hover:bg-[#0e3522] text-white rounded-2xl px-10 py-4 text-sm font-black shadow-xl shadow-accent/10 active:scale-95 transition-all">
+                <Button variant="accent" size="lg">
                   <span className="flex items-center justify-center gap-2"><Plus size={16} /> أضيفي احتياجاً</span>
                 </Button>
               </Link>

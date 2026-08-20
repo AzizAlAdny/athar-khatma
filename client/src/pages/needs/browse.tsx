@@ -100,7 +100,7 @@ export default function BrowseNeeds() {
           {showChat && (
             <Link
               href={user?.id ? `/chat/need/${need.id}` : '/auth/login'}
-              className="flex-1 md:flex-none bg-accent hover:bg-[#0e3522] text-white rounded-2xl px-6 py-3.5 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+              className="flex-1 md:flex-none bg-accent hover:bg-accent-dark text-white rounded-2xl px-6 py-3.5 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <MessageCircle size={14} /> {need.status === 'open' ? 'مراسلة صاحبة الطلب' : 'المحادثات'}
             </Link>

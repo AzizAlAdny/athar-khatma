@@ -133,11 +133,7 @@ export default function ProfilePage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = () => {
+  const fetchProfile = React.useCallback(() => {
     const storedUserStr = typeof window !== 'undefined' ? localStorage.getItem(authUserKey) : null;
     if (storedUserStr) {
       const storedUser = JSON.parse(storedUserStr);
@@ -171,7 +167,11 @@ export default function ProfilePage() {
     } else {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleUpdateProfile = async () => {
     setIsUpdating(true);

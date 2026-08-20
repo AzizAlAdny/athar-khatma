@@ -2,23 +2,26 @@
 
 import type { ButtonHTMLAttributes } from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonVariant = 'primary' | 'accent' | 'gold' | 'secondary' | 'ghost';
+export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
-type ButtonSize = 'sm' | 'md' | 'lg';
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  fullWidth?: boolean;
   className?: string;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'btn-primary',
+  accent: 'btn-accent',
+  gold: 'btn-gold',
   secondary: 'btn-secondary',
   ghost: 'btn-ghost',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
+  xs: 'btn-xs',
   sm: 'btn-sm',
   md: 'btn-md',
   lg: 'btn-lg',
@@ -27,6 +30,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 export default function Button({
   variant = 'primary',
   size = 'md',
+  fullWidth = false,
   className = '',
   children,
   disabled,
@@ -34,7 +38,7 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`btn ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`btn ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       disabled={disabled}
       {...props}
     >

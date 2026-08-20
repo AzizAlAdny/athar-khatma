@@ -166,7 +166,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
             </Link>
             <Link
               href="/auth/register"
-              className="flex items-center gap-1 bg-primary text-white px-2 md:px-5 py-1.5 md:py-2.5 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black hover:bg-[#4a1a2f] transition-colors shadow-md shadow-primary/10 active:scale-95"
+              className="flex items-center gap-1 bg-primary text-white px-2 md:px-5 py-1.5 md:py-2.5 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black hover:bg-primary-dark transition-colors shadow-md shadow-primary/10 active:scale-95"
             >
               <UserPlus size={12} /> تسجيل
             </Link>

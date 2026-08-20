@@ -13,6 +13,8 @@ import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { ChevronDown, MapPin, Filter, X, Gift } from 'lucide-react';
 
+import { themeColors } from '@/constants/theme';
+
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 const CITY_COORDINATES: Record<string, { lat: number; lng: number; zoom: number }> = {
@@ -55,8 +57,6 @@ const ImpactMap = () => {
       });
   }, []);
 
-
-
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
     setIsDropdownOpen(false);
@@ -81,12 +81,12 @@ const ImpactMap = () => {
     setInfoWindowData(pin);
   };
 
-  const getGlowColor = (level: number) => {
+  const getGlowColor = (level: number): string => {
     switch (level) {
-      case 3: return '#D0A45F'; // Main Gold
-      case 2: return '#154A32'; // Deep Green
-      case 1: return '#5E203B'; // Deep Burgundy
-      default: return '#9D7988'; // Muted Mauve
+      case 3: return themeColors.glow.level3;
+      case 2: return themeColors.glow.level2;
+      case 1: return themeColors.glow.level1;
+      default: return themeColors.glow.level0;
     }
   };
 
@@ -147,25 +147,18 @@ const ImpactMap = () => {
         </div>
       </div>
 
-      <div className="relative flex-1 min-h-[500px]">
+      <div className="relative flex-1 min-h-[380px] sm:min-h-[480px] md:min-h-[560px]">
         <MapsErrorBoundary onError={() => setMapError(true)}>
-        <APIProvider
-          apiKey={GOOGLE_MAPS_API_KEY}
-          onLoad={() => console.log('Google Maps API loaded')}
-          onError={(err) => {
-            console.error('Google Maps Load Error:', err);
-            setMapError(true);
-          }}
-        >
+        <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
           <Map
-            defaultCenter={CITY_COORDINATES['الرياض']}
-            defaultZoom={CITY_COORDINATES['الرياض'].zoom}
-            center={CITY_COORDINATES[selectedCity]}
-            zoom={CITY_COORDINATES[selectedCity].zoom}
-            mapId="ATHAR_IMPACT_MAP"
-            className="w-full h-full"
+            style={{ width: '100%', height: '100%' }}
+            defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
+            defaultZoom={11}
+            center={CITY_COORDINATES[selectedCity] ? { lat: CITY_COORDINATES[selectedCity].lat, lng: CITY_COORDINATES[selectedCity].lng } : undefined}
+            zoom={CITY_COORDINATES[selectedCity]?.zoom}
+            gestureHandling={'greedy'}
             disableDefaultUI={false}
-            clickableIcons={false}
+            mapId="athar_impact_map"
           >
             {filteredPins.map((pin) => (
               <CustomMarker
@@ -181,22 +174,18 @@ const ImpactMap = () => {
               const lat = typeof infoWindowData.location.lat === 'string' ? parseFloat(infoWindowData.location.lat) : infoWindowData.location.lat;
               const lng = typeof infoWindowData.location.lng === 'string' ? parseFloat(infoWindowData.location.lng) : infoWindowData.location.lng;
 
-              if (isNaN(lat) || isNaN(lng)) {
-                console.error('Invalid InfoWindow coordinates:', infoWindowData.location);
-                return null;
-              }
+              if (isNaN(lat) || isNaN(lng)) return null;
 
               return (
                 <InfoWindow
                   position={{ lat, lng }}
                   onCloseClick={() => setInfoWindowData(null)}
-                  headerDisabled
+                  headerDisabled={true}
                 >
-                  <div className="p-3 pr-8 text-right relative min-w-[200px]" dir="rtl">
-                    {/* Custom Close Button */}
+                  <div className="p-4 text-right relative font-sans" dir="rtl">
                     <button
                       onClick={() => setInfoWindowData(null)}
-                      className="absolute top-0 left-0 p-1.5 text-primary-muted hover:text-red-500 transition-colors"
+                      className="absolute top-3 left-3 text-primary-muted hover:text-primary transition-colors p-1"
                       aria-label="Close"
                     >
                       <X size={18} />
@@ -226,7 +215,7 @@ const ImpactMap = () => {
 
                     <button
                       onClick={() => openProfile(infoWindowData.user_id)}
-                      className="w-full py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-[#4a1a2f] transition-all shadow-md shadow-primary/10 active:scale-95"
+                      className="w-full py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/10 active:scale-95"
                     >
                       عرض الملف الشخصي
                     </button>
@@ -346,11 +335,11 @@ const OsmFallback = ({ pins, openProfile }: any) => {
     map.current.addControl(new maplibregl.NavigationControl());
 
     pins.forEach((pin: any) => {
-            const el = document.createElement('div');
+      const el = document.createElement('div');
       el.style.width = '34px';
       el.style.height = '34px';
       el.style.borderRadius = '50%';
-      el.style.backgroundColor = '#154A32';
+      el.style.backgroundColor = themeColors.accent.DEFAULT;
       el.style.border = '2px solid white';
       el.style.cursor = 'pointer';
       el.style.display = 'flex';
@@ -372,7 +361,7 @@ const OsmFallback = ({ pins, openProfile }: any) => {
               <p class="text-[11px] text-primary-muted mb-3">إجمالي الأثر: <span class="font-bold text-secondary">${pin.total_impact || 0}</span></p>
               <button
                 id="profile-btn-${pin.user_id}"
-                class="w-full py-2 bg-accent text-white text-[10px] font-black rounded-xl hover:bg-[#0d3121] transition-colors"
+                class="w-full py-2 bg-accent text-white text-[10px] font-black rounded-xl hover:bg-accent-dark transition-colors"
               >
                 عرض الملف الشخصي
               </button>
@@ -390,7 +379,7 @@ const OsmFallback = ({ pins, openProfile }: any) => {
   }, [pins, openProfile]);
 
   return (
-    <div className="relative w-full h-[600px] rounded-xl overflow-hidden shadow-lg">
+    <div className="relative w-full h-[380px] sm:h-[480px] md:h-[580px] rounded-xl overflow-hidden shadow-lg">
       <div ref={mapContainer} className="absolute inset-0" />
       <div className="absolute top-4 left-4 z-10 bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-red-600 shadow-sm">
         Google Maps load failed. Using fallback map.

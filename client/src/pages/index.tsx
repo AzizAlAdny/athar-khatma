@@ -90,15 +90,15 @@ export default function Home() {
 
   // Guests get signup/login CTAs; signed-in users go to their role's main action.
   const primaryAction = !isAuthenticated ? (
-    <Link href="/auth/register" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a1a2f] transition-all shadow-xl shadow-primary/10 active:scale-95">
+    <Link href="/auth/register" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
       <UserPlus size={18} />تسجيل
     </Link>
   ) : user?.role === 'seeker' ? (
-    <Link href="/needs" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a1a2f] transition-all shadow-xl shadow-primary/10 active:scale-95">
+    <Link href="/needs" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
       <Plus size={18} /> سجلي احتياجك
     </Link>
   ) : (
-    <Link href="/khatma/register" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-[#4a1a2f] transition-all shadow-xl shadow-primary/10 active:scale-95">
+    <Link href="/khatma/register" className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
       <Plus size={18} /> سجلي ختمتك
     </Link>
   );

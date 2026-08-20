@@ -183,7 +183,9 @@ export default function RegisterKhatma() {
               type="button"
               disabled={isSubmitting}
               onClick={handleSubmit}
-              className="w-full md:w-auto px-16 py-5 rounded-2xl text-lg font-black bg-primary hover:bg-[#4a1a2f] shadow-xl shadow-primary/10 transition-all active:scale-95"
+              variant="primary"
+              size="lg"
+              className="w-full sm:w-auto px-12 text-base font-black shadow-xl shadow-primary/10"
             >
               {isSubmitting ? 'جاري الحفظ...' : 'تسجيل الختمة وإطلاق الأثر ✨'}
             </Button>

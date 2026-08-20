@@ -11,11 +11,12 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
   variable: '--font-cairo',
+  display: 'swap',
 })
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <div className={`${cairo.variable} font-sans`}>
+    <div className={`${cairo.variable} font-sans min-h-screen bg-background text-foreground`}>
       <ErrorBoundary>
         <AuthProvider>
           <CallProvider>

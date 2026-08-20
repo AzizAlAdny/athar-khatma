@@ -349,7 +349,9 @@ export default function RegisterNeed() {
                 type="button"
                 disabled={isSubmitting}
                 onClick={handleSubmit}
-                className="w-full md:w-auto px-16 py-5 rounded-2xl text-lg font-black bg-accent hover:bg-[#0e3522] shadow-xl shadow-accent/10 transition-all active:scale-95 text-white"
+                variant="accent"
+                size="lg"
+                className="w-full sm:w-auto px-12 text-base font-black shadow-xl shadow-accent/10"
               >
                 {isSubmitting ? 'جاري الإرسال...' : 'نشر طلب الاحتياج الآن ✨'}
               </Button>
