@@ -14,25 +14,23 @@ let echoInstance: Echo<any> | null = null;
 export const getEcho = (): Echo<any> | null => {
   if (typeof window === 'undefined') return null;
 
-  const token = getStoredToken();
-  const pusherKey = process.env.NEXT_PUBLIC_PUSHER_APP_KEY || 'local-key';
+  const pusherKey = process.env.NEXT_PUBLIC_PUSHER_APP_KEY;
+  // If no Pusher key is configured, return null gracefully so components use fallback polling
+  if (!pusherKey) return null;
+
   const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER || 'mt1';
-  const pusherHost = process.env.NEXT_PUBLIC_PUSHER_HOST || window.location.hostname;
-  const pusherPort = Number(process.env.NEXT_PUBLIC_PUSHER_PORT || (window.location.protocol === 'https:' ? 443 : 8000));
-  const isTls = process.env.NEXT_PUBLIC_PUSHER_SCHEME === 'https' || window.location.protocol === 'https:';
+  const customHost = process.env.NEXT_PUBLIC_PUSHER_HOST;
+  const customPort = process.env.NEXT_PUBLIC_PUSHER_PORT ? Number(process.env.NEXT_PUBLIC_PUSHER_PORT) : undefined;
+  const isTls = process.env.NEXT_PUBLIC_PUSHER_SCHEME !== 'http';
 
   if (!echoInstance) {
     try {
-      echoInstance = new Echo({
+      const options: Record<string, any> = {
         broadcaster: 'pusher',
         key: pusherKey,
         cluster: pusherCluster,
-        wsHost: pusherHost,
-        wsPort: pusherPort,
-        wssPort: pusherPort,
         forceTLS: isTls,
         disableStats: true,
-        enabledTransports: ['ws', 'wss'],
         authEndpoint: `${API_BASE}/broadcasting/auth`,
         auth: {
           headers: {
@@ -43,7 +41,18 @@ export const getEcho = (): Echo<any> | null => {
             Accept: 'application/json',
           },
         },
-      });
+      };
+
+      // Only configure custom wsHost if explicitly provided (e.g. self-hosted Laravel Reverb or Soketi)
+      // Otherwise, Pusher.com connects directly to official cloud servers (e.g. wss://ws-eu.pusher.com)
+      if (customHost) {
+        options.wsHost = customHost;
+        options.wsPort = customPort || (isTls ? 443 : 80);
+        options.wssPort = customPort || 443;
+        options.enabledTransports = ['ws', 'wss'];
+      }
+
+      echoInstance = new Echo(options);
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('Failed to initialize Laravel Echo, falling back to polling:', err);
