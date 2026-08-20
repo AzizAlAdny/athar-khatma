@@ -12,6 +12,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '@/services/api';
+import { getEcho } from '@/services/echo';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -52,17 +53,55 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
-  // Poll the unread badge every 15s while signed in.
+  // Real-time WebSocket listener for immediate notifications
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+
+    const echo = getEcho();
+    if (!echo) return;
+
+    const channelName = `App.Models.User.${user.id}`;
+    const channel = echo.private(channelName);
+
+    channel.notification((notification: any) => {
+      setUnread((count) => count + 1);
+      setNotifications((prev) => [
+        {
+          id: notification.id || String(Date.now()),
+          kind: notification.kind || 'new_message',
+          sender_name: notification.sender_name,
+          type: notification.type,
+          item_id: notification.item_id,
+          item_title: notification.item_title,
+          excerpt: notification.excerpt,
+          read_at: null,
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    });
+
+    return () => {
+      echo.leave(channelName);
+    };
+  }, [isAuthenticated, user?.id]);
+
+  // Fallback poll for the unread badge
   useEffect(() => {
     if (!isAuthenticated) return;
     let mounted = true;
     const load = () =>
       getUnreadNotificationCount()
-        .then(r => { if (mounted) setUnread(r.unread); })
-        .catch(() => { });
+        .then((r) => {
+          if (mounted) setUnread(r.unread);
+        })
+        .catch(() => {});
     load();
-    const timer = setInterval(load, 15000);
-    return () => { mounted = false; clearInterval(timer); };
+    const timer = setInterval(load, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
   }, [isAuthenticated]);
 
   const toggleBell = async () => {

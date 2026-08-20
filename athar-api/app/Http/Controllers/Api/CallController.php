@@ -146,8 +146,20 @@ class CallController extends Controller
             'receiver_ice_candidates' => [],
         ]);
 
+        $shapedCall = $this->shapeCall($call->load(['caller', 'receiver']), $user->id);
+
+        try {
+            broadcast(new \App\Events\CallSignaled(
+                $validated['receiver_id'],
+                'incoming_call',
+                $this->shapeCall($call, $validated['receiver_id'])
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast failed for incoming call', ['error' => $e->getMessage()]);
+        }
+
         return response()->json([
-            'call' => $this->shapeCall($call->load(['caller', 'receiver']), $user->id)
+            'call' => $shapedCall
         ], 201);
     }
 
@@ -178,6 +190,16 @@ class CallController extends Controller
                 'sdp_answer' => $validated['sdp_answer'],
                 'started_at' => Carbon::now(),
             ]);
+
+            try {
+                broadcast(new \App\Events\CallSignaled(
+                    $call->caller_id,
+                    'call_answered',
+                    ['sdp_answer' => $validated['sdp_answer'], 'call_id' => $call->id]
+                ));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Broadcast failed for call answer', ['error' => $e->getMessage()]);
+            }
         } else {
             $call->update([
                 'status' => 'rejected',
@@ -186,6 +208,16 @@ class CallController extends Controller
 
             // Add system chat message for rejected call
             $this->addCallChatMessage($call, '📞 مكالمة صوتية لم يتم الرد عليها');
+
+            try {
+                broadcast(new \App\Events\CallSignaled(
+                    $call->caller_id,
+                    'call_rejected',
+                    ['call_id' => $call->id]
+                ));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Broadcast failed for call reject', ['error' => $e->getMessage()]);
+            }
         }
 
         return response()->json([
@@ -213,6 +245,8 @@ class CallController extends Controller
             'candidate' => 'required|array',
         ]);
 
+        $targetUserId = $call->caller_id === $user->id ? $call->receiver_id : $call->caller_id;
+
         if ($call->caller_id === $user->id) {
             $candidates = $call->caller_ice_candidates ?? [];
             $candidates[] = $validated['candidate'];
@@ -221,6 +255,16 @@ class CallController extends Controller
             $candidates = $call->receiver_ice_candidates ?? [];
             $candidates[] = $validated['candidate'];
             $call->update(['receiver_ice_candidates' => $candidates]);
+        }
+
+        try {
+            broadcast(new \App\Events\CallSignaled(
+                $targetUserId,
+                'ice_candidate',
+                ['candidate' => $validated['candidate'], 'call_id' => $call->id]
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast failed for ice candidate', ['error' => $e->getMessage()]);
         }
 
         return response()->json([
@@ -261,6 +305,18 @@ class CallController extends Controller
             'ended_at' => $now,
             'duration_seconds' => $duration,
         ]);
+
+        $targetUserId = $call->caller_id === $user->id ? $call->receiver_id : $call->caller_id;
+
+        try {
+            broadcast(new \App\Events\CallSignaled(
+                $targetUserId,
+                'call_ended',
+                ['call_id' => $call->id, 'status' => $newStatus, 'duration_seconds' => $duration]
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast failed for call end', ['error' => $e->getMessage()]);
+        }
 
         // Add summary chat message
         $formattedDuration = $call->formatted_duration;

@@ -130,6 +130,13 @@ class MessageController extends Controller
         $recipient = $isOwner ? User::find($message->participant_id) : User::find($ownerId);
         $recipient?->notify(new NewChatMessage($message, $isFirstContact));
 
+        // Real-time broadcast
+        try {
+            broadcast(new \App\Events\MessageSent($message->load('sender')));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast failed for message', ['error' => $e->getMessage()]);
+        }
+
         Log::info('Chat message sent', [
             'type' => $type,
             'id' => $id,

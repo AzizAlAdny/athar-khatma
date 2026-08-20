@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { audioToneService } from '../services/audioToneService';
 import { WebRTCService } from '../services/webrtcService';
 import { API_BASE } from '../services/api';
+import { getEcho } from '../services/echo';
+import { useAuth } from './AuthContext';
 
 export interface CallData {
   id: number;
@@ -45,6 +47,7 @@ interface CallContextType {
 const CallContext = createContext<CallContextType | undefined>(undefined);
 
 export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [call, setCall] = useState<CallData | null>(null);
   const [status, setStatus] = useState<CallStatus>('IDLE');
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -94,7 +97,53 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Poll for incoming calls when IDLE and user is authenticated
+  // Real-time WebSocket listener for incoming calls & signaling
+  useEffect(() => {
+    if (!user?.id) return;
+    const echo = getEcho();
+    if (!echo) return;
+
+    const channelName = `call.${user.id}`;
+    const channel = echo.private(channelName);
+
+    channel.listen('.call.signaled', async (data: { action: string; payload: any }) => {
+      const { action, payload } = data;
+
+      if (action === 'incoming_call') {
+        if (status === 'IDLE') {
+          setCall(payload);
+          setStatus('INCOMING_RINGING');
+          audioToneService.playIncomingRingtone();
+        }
+      } else if (action === 'call_answered') {
+        if (status === 'OUTGOING_RINGING' && payload?.sdp_answer) {
+          setStatus('CONNECTING');
+          audioToneService.playConnectedTone();
+          if (webrtcRef.current) {
+            await webrtcRef.current.handleAnswer(payload.sdp_answer);
+            setStatus('CONNECTED');
+          }
+        }
+      } else if (action === 'call_rejected') {
+        audioToneService.playEndTone();
+        resetCallState('BUSY');
+      } else if (action === 'ice_candidate') {
+        if (payload?.candidate && webrtcRef.current) {
+          await webrtcRef.current.addIceCandidate(payload.candidate);
+        }
+      } else if (action === 'call_ended') {
+        audioToneService.playEndTone();
+        resetCallState('ENDED');
+      }
+    });
+
+    return () => {
+      channel.stopListening('.call.signaled');
+      echo.leave(channelName);
+    };
+  }, [user?.id, status, resetCallState]);
+
+  // Background fallback poll for incoming calls when IDLE
   useEffect(() => {
     const checkActiveCall = async () => {
       if (status !== 'IDLE') return;
@@ -123,7 +172,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    const interval = setInterval(checkActiveCall, 3500);
+    const interval = setInterval(checkActiveCall, 8000);
     return () => clearInterval(interval);
   }, [status]);
 
@@ -370,7 +419,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify({ action: 'reject' })
       });
-    } catch (e) {}
+    } catch (e) { }
     audioToneService.playEndTone();
     resetCallState('ENDED');
   };
@@ -387,7 +436,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'Accept': 'application/json'
         }
       });
-    } catch (e) {}
+    } catch (e) { }
     audioToneService.playEndTone();
     resetCallState('ENDED');
   };

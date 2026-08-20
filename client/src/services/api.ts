@@ -243,7 +243,7 @@ export interface AuthResponse {
 
 export const authTokenKey = 'auth_token';
 
-function getStoredToken(): string | null {
+export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(authTokenKey);
 }

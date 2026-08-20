@@ -8,11 +8,12 @@ import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled, markNeedInProgress, markGiftInProgress } from '@/services/api';
-import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star, Clock } from 'lucide-react';
+import { getEcho } from '@/services/echo';
+import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star, Clock, Wifi } from 'lucide-react';
 import ReviewForm from '@/components/ui/ReviewForm';
 import { VoiceCallButton } from '@/components/chat/VoiceCallButton';
 
-const POLL_INTERVAL_MS = 4000;
+const POLL_INTERVAL_MS = 12000;
 
 const timeAgo = (value?: string): string => {
   if (!value) return '';
@@ -100,6 +101,31 @@ export default function UnifiedChat() {
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId, user?.id, item, chatType]);
+
+  // Real-time WebSocket listener for instant messages
+  useEffect(() => {
+    if (!itemId || !chatType || !user?.id) return;
+    const effectiveParticipant = isOwner ? activeParticipant : user.id;
+    if (!effectiveParticipant) return;
+
+    const echo = getEcho();
+    if (!echo) return;
+
+    const channelName = `chat.${chatType}.${itemId}.${effectiveParticipant}`;
+    const channel = echo.private(channelName);
+
+    channel.listen('.message.sent', (incomingMsg: ChatMessage) => {
+      setMessages(prev => {
+        if (prev.some(m => m.id === incomingMsg.id)) return prev;
+        return [...prev, incomingMsg];
+      });
+    });
+
+    return () => {
+      channel.stopListening('.message.sent');
+      echo.leave(channelName);
+    };
+  }, [itemId, chatType, isOwner, activeParticipant, user?.id]);
 
   // Owner: derive the conversation list and auto-select the latest participant.
   useEffect(() => {

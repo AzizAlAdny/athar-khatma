@@ -6,12 +6,14 @@ use App\Models\Message;
 use App\Models\SeekerNeed;
 use App\Models\KhatmaGift;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * Stored via the database channel and rendered by the header bell.
+ * Stored via database channel and broadcast live over WebSockets for SPA header bell.
  */
-class NewChatMessage extends Notification
+class NewChatMessage extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -20,11 +22,11 @@ class NewChatMessage extends Notification
     }
 
     /**
-     * In-app only (database channel).
+     * Database + Broadcast channels.
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     /**
@@ -49,5 +51,13 @@ class NewChatMessage extends Notification
             'item_title' => $messageable?->gift?->name,
             'excerpt' => mb_strimwidth($this->message->body, 0, 80, '…'),
         ];
+    }
+
+    /**
+     * Real-time broadcast payload.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toDatabase($notifiable));
     }
 }
