@@ -10,6 +10,7 @@ use App\Models\SeekerNeed;
 use App\Models\User;
 use App\Models\Call;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -148,6 +149,7 @@ class BroadcastingTest extends TestCase
             'broadcasting.connections.pusher.secret' => 'test-secret',
             'broadcasting.connections.pusher.app_id' => 'test-app-id',
         ]);
+        require base_path('routes/channels.php');
 
         [$owner, $ownerToken, $khatma, $khatmaToken, $need] = $this->createUsers();
 
@@ -155,15 +157,6 @@ class BroadcastingTest extends TestCase
             'channel_name' => "private-App.Models.User.{$owner->id}",
             'socket_id' => '1234.5678',
         ]);
-
-        if ($response->status() !== 200) {
-            dump([
-                'status' => $response->status(),
-                'content' => $response->content(),
-                'json' => $response->json(),
-                'owner_id' => $owner->id,
-            ]);
-        }
 
         $response->assertStatus(200);
         $this->assertArrayHasKey('auth', $response->json());
@@ -177,6 +170,7 @@ class BroadcastingTest extends TestCase
             'broadcasting.connections.pusher.secret' => 'test-secret',
             'broadcasting.connections.pusher.app_id' => 'test-app-id',
         ]);
+        require base_path('routes/channels.php');
 
         [$owner, $ownerToken, $khatma, $khatmaToken, $need] = $this->createUsers();
 
