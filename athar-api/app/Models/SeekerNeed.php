@@ -44,6 +44,11 @@ class SeekerNeed extends Model
         return $this->belongsTo(User::class, 'fulfilled_by_id');
     }
 
+    public function helper()
+    {
+        return $this->fulfilledBy();
+    }
+
     public function messages()
     {
         return $this->morphMany(Message::class, 'messageable');

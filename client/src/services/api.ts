@@ -132,18 +132,106 @@ export interface AdminStats {
   total_gifts: number;
   active_khatmas: number;
   pending_needs: number;
+  in_progress_needs?: number;
+  fulfilled_needs?: number;
   khatma_users: number;
   seeker_users: number;
   admin_users: number;
+  total_reviews?: number;
+  average_platform_rating?: number;
   total_impact_points: number;
+  active_calls?: number;
 }
 
-export interface PaginatedUsers {
-  data: User[];
+export interface PaginatedResponse<T> {
+  data: T[];
   current_page: number;
   last_page: number;
   per_page: number;
   total: number;
+}
+
+export type PaginatedUsers = PaginatedResponse<User>;
+
+export interface AdminKhatma {
+  id: number;
+  user_id: number;
+  completion_date: string;
+  impact_score: number;
+  status: string;
+  created_at: string;
+  user?: {
+    id: number;
+    name: string;
+    display_name?: string;
+    email: string;
+    city?: string;
+  };
+  khatma_gifts?: Array<{
+    id: number;
+    gift_id: number;
+    status: string;
+    points_earned?: number;
+    gift?: {
+      id: number;
+      name: string;
+      icon?: string;
+    };
+  }>;
+}
+
+export interface AdminNeed {
+  id: number;
+  user_id: number;
+  gift_id: number;
+  description: string;
+  city: string;
+  status: 'open' | 'in_progress' | 'fulfilled';
+  fulfilled_by_id?: number | null;
+  fulfilled_at?: string | null;
+  created_at: string;
+  user?: {
+    id: number;
+    name: string;
+    display_name?: string;
+    email: string;
+    city?: string;
+  };
+  gift?: {
+    id: number;
+    name: string;
+    icon?: string;
+  };
+  helper?: {
+    id: number;
+    name: string;
+    display_name?: string;
+    email: string;
+  } | null;
+}
+
+export interface AdminReview {
+  id: number;
+  reviewer_id: number;
+  reviewee_id: number;
+  reviewable_id: number;
+  reviewable_type: string;
+  rating: number;
+  comment?: string | null;
+  created_at: string;
+  reviewer?: {
+    id: number;
+    name: string;
+    display_name?: string;
+    email: string;
+  };
+  reviewee?: {
+    id: number;
+    name: string;
+    display_name?: string;
+    email: string;
+  };
+  reviewable?: any;
 }
 
 export interface AuthResponse {
@@ -333,25 +421,21 @@ export const getPublicStats = () => fetchJson<Record<string, any>>('/public-stat
 export const getAdminStats = () => fetchJson<AdminStats>('/stats');
 
 export const getAdminUsers = (params?: { role?: string; search?: string; page?: number; per_page?: number }) => {
-  const queryString = new URLSearchParams(params as any).toString();
+  const cleanParams = Object.fromEntries(
+    Object.entries(params || {}).filter(([_, v]) => v !== undefined && v !== '')
+  );
+  const queryString = new URLSearchParams(cleanParams as any).toString();
   return fetchJson<PaginatedUsers>(`/admin/users${queryString ? `?${queryString}` : ''}`);
 };
 
-export const updateUserRole = (userId: number, role: string) =>
-  fetchJson<{ message: string; user: User }>(`/admin/users/${userId}/role`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ role }),
-  });
-
-export const createUser = (payload: {
+export const createAdminUser = (payload: {
   name: string;
+  display_name?: string;
   email: string;
   password: string;
-  role: string;
+  role: 'khatma' | 'seeker' | 'admin';
   city?: string;
+  bio?: string;
 }) =>
   fetchJson<{ message: string; user: User }>('/admin/users', {
     method: 'POST',
@@ -361,15 +445,58 @@ export const createUser = (payload: {
     body: JSON.stringify(payload),
   });
 
-export const deleteKhatma = (id: number) =>
+export const createUser = createAdminUser;
+
+export const getAdminKhatmas = (params?: { status?: string; search?: string; page?: number; per_page?: number }) => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params || {}).filter(([_, v]) => v !== undefined && v !== '')
+  );
+  const queryString = new URLSearchParams(cleanParams as any).toString();
+  return fetchJson<PaginatedResponse<AdminKhatma>>(`/admin/khatmas${queryString ? `?${queryString}` : ''}`);
+};
+
+export const deleteAdminKhatma = (id: number) =>
   fetchJson<{ message: string }>(`/admin/khatmas/${id}`, {
     method: 'DELETE',
   });
 
-export const deleteSeekerNeed = (id: number) =>
+export const deleteKhatma = deleteAdminKhatma;
+
+export const getAdminNeeds = (params?: { status?: string; search?: string; page?: number; per_page?: number }) => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params || {}).filter(([_, v]) => v !== undefined && v !== '')
+  );
+  const queryString = new URLSearchParams(cleanParams as any).toString();
+  return fetchJson<PaginatedResponse<AdminNeed>>(`/admin/needs${queryString ? `?${queryString}` : ''}`);
+};
+
+export const deleteAdminNeed = (id: number) =>
   fetchJson<{ message: string }>(`/admin/needs/${id}`, {
     method: 'DELETE',
   });
+
+export const deleteSeekerNeed = deleteAdminNeed;
+
+export const getAdminReviews = (params?: { rating?: number; reviewable_type?: string; search?: string; page?: number; per_page?: number }) => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params || {}).filter(([_, v]) => v !== undefined && v !== '')
+  );
+  const queryString = new URLSearchParams(cleanParams as any).toString();
+  return fetchJson<PaginatedResponse<AdminReview>>(`/admin/reviews${queryString ? `?${queryString}` : ''}`);
+};
+
+export const deleteAdminReview = (id: number) =>
+  fetchJson<{ message: string }>(`/admin/reviews/${id}`, {
+    method: 'DELETE',
+  });
+
+export const getAdminCalls = (params?: { status?: string; page?: number; per_page?: number }) => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params || {}).filter(([_, v]) => v !== undefined && v !== '')
+  );
+  const queryString = new URLSearchParams(cleanParams as any).toString();
+  return fetchJson<PaginatedResponse<any>>(`/admin/calls${queryString ? `?${queryString}` : ''}`);
+};
 
 export const deleteMySeekerNeed = (id: number) =>
   fetchJson<{ message: string }>(`/seeker-needs/${id}`, {

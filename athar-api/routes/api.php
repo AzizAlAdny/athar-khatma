@@ -86,12 +86,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Role-protected routes
         Route::middleware('role:admin')->group(function () {
-            Route::get('/stats', [StatsController::class, 'index']);
+            Route::get('/stats', [AdminController::class, 'index']);
             Route::get('/admin/users', [AdminController::class, 'users']);
-            Route::put('/admin/users/{id}/role', [AdminController::class, 'updateRole']);
-            Route::delete('/admin/khatmas/{id}', [AdminController::class, 'deleteKhatma']);
-            Route::delete('/admin/needs/{id}', [AdminController::class, 'deleteNeed']);
             Route::post('/admin/users', [AdminController::class, 'createUser']);
+
+            Route::get('/admin/khatmas', [AdminController::class, 'khatmas']);
+            Route::delete('/admin/khatmas/{id}', [AdminController::class, 'deleteKhatma']);
+
+            Route::get('/admin/needs', [AdminController::class, 'needs']);
+            Route::delete('/admin/needs/{id}', [AdminController::class, 'deleteNeed']);
+
+            Route::get('/admin/reviews', [AdminController::class, 'reviews']);
+            Route::delete('/admin/reviews/{id}', [AdminController::class, 'deleteReview']);
+
+            Route::get('/admin/calls', [AdminController::class, 'calls']);
         });
 
         Route::get('/khatmas', [KhatmaController::class, 'index']);
