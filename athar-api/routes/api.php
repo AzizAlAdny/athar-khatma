@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Broadcast;
+
+// Broadcasting Authentication for Private Channels (Pusher / Laravel Echo)
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 // Public routes with rate limiting for authentication
 Route::middleware('throttle:5,1')->group(function () {
