@@ -2,6 +2,9 @@ import type { AppProps } from 'next/app'
 import { Cairo } from 'next/font/google'
 import '@/pages/_app.css'
 import { AuthProvider } from '@/context/AuthContext'
+import { CallProvider } from '@/context/CallContext'
+import { IncomingCallModal } from '@/components/call/IncomingCallModal'
+import { ActiveCallModal } from '@/components/call/ActiveCallModal'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
 // Arabic-first UI font: variable weight (200–1000) covers font-black/900 used across the app
@@ -15,7 +18,11 @@ export default function App({ Component, pageProps }: AppProps) {
     <div className={`${cairo.variable} font-sans`}>
       <ErrorBoundary>
         <AuthProvider>
-          <Component {...pageProps} />
+          <CallProvider>
+            <Component {...pageProps} />
+            <IncomingCallModal />
+            <ActiveCallModal />
+          </CallProvider>
         </AuthProvider>
       </ErrorBoundary>
     </div>

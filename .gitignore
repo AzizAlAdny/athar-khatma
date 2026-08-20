@@ -101,5 +101,5 @@ temp/
 # DOCUMENT
 docs/
 plan.md
-rules/AGENT_RULES.md
+.agents/rules/AGENT_RULES.md
 

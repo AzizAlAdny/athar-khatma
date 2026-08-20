@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GiftController;
 use App\Http\Controllers\Api\KhatmaController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\CallController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\KhatmaGiftController;
 use App\Http\Controllers\Api\SeekerNeedController;
@@ -109,6 +110,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/chat/threads', [MessageController::class, 'threads']);
         Route::get('/chat/{type}/{id}/messages', [MessageController::class, 'index']);
         Route::middleware('throttle:60,1')->post('/chat/{type}/{id}/messages', [MessageController::class, 'store']);
+
+        // Voice Call API Endpoints
+        Route::get('/calls/active', [CallController::class, 'activeCall']);
+        Route::middleware('throttle:10,1')->post('/calls/initiate', [CallController::class, 'initiate']);
+        Route::post('/calls/{id}/respond', [CallController::class, 'respond']);
+        Route::post('/calls/{id}/signal', [CallController::class, 'signal']);
+        Route::post('/calls/{id}/end', [CallController::class, 'end']);
+        Route::get('/calls/{id}', [CallController::class, 'show']);
 
         // In-app notifications for the header bell (database channel).
         Route::get('/notifications', [NotificationController::class, 'index']);

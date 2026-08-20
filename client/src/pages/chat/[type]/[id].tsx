@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getNeed, getGiftService, getMessages, sendMessage, ChatMessage, markGiftDelivered, markNeedFulfilled, markNeedInProgress, markGiftInProgress } from '@/services/api';
 import { ChevronRight, AlertCircle, Send, Loader2, MessageCircle, User, CheckCircle2, Star, Clock } from 'lucide-react';
 import ReviewForm from '@/components/ui/ReviewForm';
+import { VoiceCallButton } from '@/components/chat/VoiceCallButton';
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -122,6 +123,20 @@ export default function UnifiedChat() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeParticipant]);
+
+  const callTarget = (() => {
+    if (isOwner) {
+      if (!activeParticipant) return null;
+      const p = participants.find(part => part.id === activeParticipant);
+      return { id: activeParticipant, name: p?.name || 'مستخدم' };
+    } else {
+      if (!item) return null;
+      const ownerId = item.user_id || item.khatma?.user_id;
+      const ownerName = item.user?.display_name || item.user?.name || item.khatma?.user?.display_name || 'صاحبة الأثر';
+      if (!ownerId) return null;
+      return { id: ownerId, name: ownerName };
+    }
+  })();
 
   const visible = isOwner
     ? messages.filter(m => m.participant_id === activeParticipant)
@@ -263,9 +278,17 @@ export default function UnifiedChat() {
                   </div>
                 </div>
 
-                {/* Delivery/Fulfillment Actions for Owner */}
+                {/* Delivery/Fulfillment Actions & Voice Call for Owner */}
                 {activeParticipant && item && (
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex items-center gap-3">
+                    {callTarget && (
+                      <VoiceCallButton
+                        receiverId={callTarget.id}
+                        receiverName={callTarget.name}
+                        contextType={chatType}
+                        contextId={itemId}
+                      />
+                    )}
                     {item.status === 'delivered' || item.status === 'fulfilled' ? (
                       <div className="flex items-center gap-2 bg-green-50 text-green-600 px-4 py-2.5 rounded-2xl border border-green-100">
                         <CheckCircle2 size={16} />
@@ -327,9 +350,17 @@ export default function UnifiedChat() {
                     </div>
                   </div>
 
-                  {/* Claim/Review Actions for Recipient/Helper */}
+                  {/* Claim/Review Actions & Voice Call for Recipient/Helper */}
                   {item && (
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex items-center gap-3">
+                      {callTarget && (
+                        <VoiceCallButton
+                          receiverId={callTarget.id}
+                          receiverName={callTarget.name}
+                          contextType={chatType}
+                          contextId={itemId}
+                        />
+                      )}
                        {item.status === 'open' && chatType === 'need' && user?.role === 'khatma' && (
                          <button
                            onClick={handleClaim}
@@ -395,6 +426,18 @@ export default function UnifiedChat() {
                     </div>
                   ) : (
                     visible.map((m, idx) => {
+                      const isCallLog = m.body.startsWith('📞');
+                      if (isCallLog) {
+                        return (
+                          <div key={m.id} className="flex justify-center my-2 animate-fade-in">
+                            <div className="bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm">
+                              <span>{m.body}</span>
+                              <span className="text-[10px] text-emerald-600/70 font-medium">• {timeAgo(m.created_at)}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       const own = m.sender_id === user?.id;
                       const showName = !own && m.sender_name && (idx === 0 || visible[idx-1].sender_id !== m.sender_id);
 
