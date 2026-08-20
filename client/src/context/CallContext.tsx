@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { audioToneService } from '../services/audioToneService';
 import { WebRTCService } from '../services/webrtcService';
+import { API_BASE } from '../services/api';
 
 export interface CallData {
   id: number;
@@ -57,7 +58,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pollIntervalRef = useRef<any>(null);
   const processedCandidatesCount = useRef<number>(0);
 
-  const getToken = () => localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  const getToken = () => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+  };
 
   // Stop tones & reset state
   const resetCallState = useCallback((endReasonStatus?: CallStatus) => {
@@ -90,7 +94,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Poll for incoming calls when IDLE
+  // Poll for incoming calls when IDLE and user is authenticated
   useEffect(() => {
     const checkActiveCall = async () => {
       if (status !== 'IDLE') return;
@@ -98,7 +102,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!token) return;
 
       try {
-        const res = await fetch('/api/calls/active', {
+        const res = await fetch(`${API_BASE}/calls/active`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -119,7 +123,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    const interval = setInterval(checkActiveCall, 3000);
+    const interval = setInterval(checkActiveCall, 3500);
     return () => clearInterval(interval);
   }, [status]);
 
@@ -161,7 +165,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!token) return;
 
       try {
-        const res = await fetch(`/api/calls/${call.id}`, {
+        const res = await fetch(`${API_BASE}/calls/${call.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -231,7 +235,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await webrtc.initialize({
         onIceCandidate: (candidate) => {
           if (call?.id) {
-            fetch(`/api/calls/${call.id}/signal`, {
+            fetch(`${API_BASE}/calls/${call.id}/signal`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -258,7 +262,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const sdpOffer = await webrtc.createOffer();
 
-      const res = await fetch('/api/calls/initiate', {
+      const res = await fetch(`${API_BASE}/calls/initiate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -300,7 +304,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await webrtc.initialize({
         onIceCandidate: (candidate) => {
-          fetch(`/api/calls/${call.id}/signal`, {
+          fetch(`${API_BASE}/calls/${call.id}/signal`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -326,7 +330,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const sdpAnswer = await webrtc.handleOfferAndCreateAnswer(call.sdp_offer || '{}');
 
-      const res = await fetch(`/api/calls/${call.id}/respond`, {
+      const res = await fetch(`${API_BASE}/calls/${call.id}/respond`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -357,7 +361,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!call) return;
     try {
       const token = getToken();
-      await fetch(`/api/calls/${call.id}/respond`, {
+      await fetch(`${API_BASE}/calls/${call.id}/respond`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -376,7 +380,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!call) return;
     try {
       const token = getToken();
-      await fetch(`/api/calls/${call.id}/end`, {
+      await fetch(`${API_BASE}/calls/${call.id}/end`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
