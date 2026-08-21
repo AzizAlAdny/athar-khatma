@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -81,21 +82,43 @@ class AdminController extends Controller
             'password' => 'required|string|min:8',
             'role' => 'required|in:khatma,seeker,admin',
             'city' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'bio' => 'nullable|string|max:1000',
         ]);
+
+        $city = $request->city ?: 'الرياض';
+        $latitude = $request->latitude;
+        $longitude = $request->longitude;
+
+        if ($latitude === null || $longitude === null) {
+            $defaultCoords = [
+                'الرياض' => ['lat' => 24.7136, 'lng' => 46.6753],
+                'جدة' => ['lat' => 21.5433, 'lng' => 39.1728],
+                'الدمام' => ['lat' => 26.4207, 'lng' => 50.0888],
+                'مكة المكرمة' => ['lat' => 21.4225, 'lng' => 39.8262],
+            ];
+            $coords = $defaultCoords[$city] ?? ['lat' => 24.7136, 'lng' => 46.6753];
+            $latitude = $coords['lat'];
+            $longitude = $coords['lng'];
+        }
 
         $user = User::create([
             'name' => $request->name,
             'display_name' => $request->display_name ?: $request->name,
             'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'password' => Hash::make($request->password),
             'role' => $request->role,
-            'city' => $request->city ?: 'الرياض',
+            'city' => $city,
+            'neighborhood' => $request->neighborhood,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
             'bio' => $request->bio,
+            'pledge_accepted' => true,
         ]);
 
         $user->email_verified_at = now();
-        $user->pledge_accepted = true;
         $user->save();
 
         Log::info('User created by admin', [
@@ -109,6 +132,7 @@ class AdminController extends Controller
             'user' => $user,
         ], 201);
     }
+
 
     /**
      * Get platform-wide khatmas with search, filters, and relationship eager loading.

@@ -81,21 +81,81 @@ class AdminFeatureTest extends TestCase
 
         $payload = [
             'name' => 'نورة العتيبي',
+            'display_name' => 'أم محمد',
             'email' => 'noura@example.com',
             'password' => 'SecurePass123!',
             'role' => 'khatma',
             'city' => 'الرياض',
+            'neighborhood' => 'حي الملقى',
+            'latitude' => 24.8142,
+            'longitude' => 46.6111,
+            'bio' => 'مهتمة بتعليم القرآن الكريم وتحفيظ الصغار.',
         ];
 
         $response = $this->withToken($token)->postJson('/api/admin/users', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('user.email', 'noura@example.com')
-            ->assertJsonPath('user.role', 'khatma');
+            ->assertJsonPath('user.role', 'khatma')
+            ->assertJsonPath('user.neighborhood', 'حي الملقى')
+            ->assertJsonPath('user.bio', 'مهتمة بتعليم القرآن الكريم وتحفيظ الصغار.');
 
         $user = User::where('email', 'noura@example.com')->firstOrFail();
         $this->assertNotNull($user->email_verified_at);
         $this->assertTrue((bool) $user->pledge_accepted);
+        $this->assertEquals('حي الملقى', $user->neighborhood);
+        $this->assertEquals(24.8142, (float) $user->latitude);
+    }
+
+    public function test_admin_create_user_validation_fails_on_duplicate_email_or_invalid_role()
+    {
+        [$admin, $token] = $this->createAdmin();
+
+        User::factory()->create(['email' => 'existing@example.com']);
+
+        // Duplicate email
+        $response = $this->withToken($token)->postJson('/api/admin/users', [
+            'name' => 'سارة',
+            'email' => 'existing@example.com',
+            'password' => 'SecurePass123!',
+            'role' => 'khatma',
+        ]);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        // Short password
+        $response = $this->withToken($token)->postJson('/api/admin/users', [
+            'name' => 'سارة',
+            'email' => 'unique@example.com',
+            'password' => '123',
+            'role' => 'khatma',
+        ]);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['password']);
+
+        // Invalid role
+        $response = $this->withToken($token)->postJson('/api/admin/users', [
+            'name' => 'سارة',
+            'email' => 'unique@example.com',
+            'password' => 'SecurePass123!',
+            'role' => 'superman',
+        ]);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['role']);
+    }
+
+    public function test_non_admin_cannot_create_users_via_admin_api()
+    {
+        [$khatmaUser, $token] = $this->createKhatmaUser();
+
+        $response = $this->withToken($token)->postJson('/api/admin/users', [
+            'name' => 'مستخدم جديد',
+            'email' => 'newuser@example.com',
+            'password' => 'SecurePass123!',
+            'role' => 'seeker',
+        ]);
+
+        $response->assertStatus(403);
     }
 
     public function test_admin_can_list_all_khatmas_with_eager_loaded_relations()

@@ -24,7 +24,6 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import {
   getAdminStats,
   getAdminUsers,
-  createAdminUser,
   type AdminStats,
   type User,
   type PaginatedUsers,
@@ -32,6 +31,7 @@ import {
 import KhatmaManagement from '@/components/admin/KhatmaManagement';
 import NeedManagement from '@/components/admin/NeedManagement';
 import ReviewManagement from '@/components/admin/ReviewManagement';
+import CreateUserModal from '@/components/admin/CreateUserModal';
 
 type AdminTab = 'overview' | 'users' | 'khatmas' | 'needs' | 'reviews';
 
@@ -94,11 +94,10 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-[130px] flex items-center justify-center gap-2 px-5 py-3 rounded-[1.5rem] text-sm font-black transition-all cursor-pointer ${
-                  activeTab === tab.id
+                className={`flex-1 min-w-[130px] flex items-center justify-center gap-2 px-5 py-3 rounded-[1.5rem] text-sm font-black transition-all cursor-pointer ${activeTab === tab.id
                     ? 'bg-primary text-white shadow-md'
                     : 'text-primary-muted hover:bg-background'
-                }`}
+                  }`}
               >
                 <tab.icon size={18} />
                 {tab.label}
@@ -430,7 +429,12 @@ function UsersTab() {
                     </td>
                     <td className="py-5 text-primary-muted font-medium">{u.email}</td>
                     <td className="py-5">{getRoleBadge(u.role)}</td>
-                    <td className="py-5 text-primary-muted font-medium">{u.city || 'الرياض'}</td>
+                    <td className="py-5 text-primary-muted font-medium">
+                      <div>{u.city || 'الرياض'}</div>
+                      {(u as any).neighborhood && (
+                        <div className="text-[11px] text-primary-muted/70">{(u as any).neighborhood}</div>
+                      )}
+                    </td>
                     <td className="py-5">
                       <div className="flex gap-2 text-xs font-bold text-primary-muted">
                         {u.role === 'khatma' && (
@@ -495,149 +499,3 @@ function UsersTab() {
   );
 }
 
-function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [name, setName] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'khatma' | 'seeker' | 'admin'>('khatma');
-  const [city, setCity] = useState('الرياض');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    try {
-      await createAdminUser({
-        name,
-        display_name: displayName || undefined,
-        email,
-        password,
-        role,
-        city,
-      });
-      alert('تم إنشاء المستخدم بنجاح وتفعيله مباشرة.');
-      onSuccess();
-    } catch (err: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Create user error:', err);
-      }
-      setError(err?.message || 'فشل إنشاء المستخدم. يرجى التأكد من البيانات المدخلة.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full space-y-6 shadow-2xl border border-secondary-light/40">
-        <div className="flex justify-between items-center border-b border-background pb-4">
-          <h3 className="text-xl font-black text-primary">إضافة مستخدم جديد</h3>
-          <button onClick={onClose} className="text-primary-muted hover:text-primary font-bold text-sm cursor-pointer">
-            ✕
-          </button>
-        </div>
-
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-          <div>
-            <label className="block text-xs font-bold text-primary mb-1">الاسم الكامل *</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-secondary-light/40 bg-background/50 focus:outline-none focus:border-primary font-medium"
-              placeholder="مثال: هند بنت محمد"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-primary mb-1">الاسم المستعار (اختياري)</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-secondary-light/40 bg-background/50 focus:outline-none focus:border-primary font-medium"
-              placeholder="مثال: أم عبد الرحمن"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-primary mb-1">البريد الإلكتروني *</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-secondary-light/40 bg-background/50 focus:outline-none focus:border-primary font-medium"
-              placeholder="user@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-primary mb-1">كلمة المرور *</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-secondary-light/40 bg-background/50 focus:outline-none focus:border-primary font-medium"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-primary mb-1">الدور *</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as any)}
-                className="w-full px-3 py-2.5 rounded-xl border border-secondary-light/40 bg-background/50 focus:outline-none focus:border-primary font-bold text-xs"
-              >
-                <option value="khatma">خاتمة</option>
-                <option value="seeker">طالبة احتياج</option>
-                <option value="admin">مشرفة إدارية</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-primary mb-1">المدينة</label>
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-secondary-light/40 bg-background/50 focus:outline-none focus:border-primary font-medium text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="pt-2 flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 rounded-full border border-secondary-light/40 font-bold text-xs text-primary-muted hover:bg-background cursor-pointer"
-            >
-              إلغاء
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 py-3 rounded-full bg-primary text-white font-black text-xs hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-            >
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-              تأكيد الإضافة
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}

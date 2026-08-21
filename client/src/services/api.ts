@@ -435,6 +435,9 @@ export const createAdminUser = (payload: {
   password: string;
   role: 'khatma' | 'seeker' | 'admin';
   city?: string;
+  neighborhood?: string;
+  latitude?: number;
+  longitude?: number;
   bio?: string;
 }) =>
   fetchJson<{ message: string; user: User }>('/admin/users', {
