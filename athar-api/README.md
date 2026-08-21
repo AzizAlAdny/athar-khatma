@@ -7,12 +7,12 @@ The backend engine for the Athar platform, built with **Laravel 12** and **PHP 8
 ## 🚀 Tech Stack
 
 - **Framework**: Laravel 12 (PHP 8.2+)
-- **Database**: SQLite (default local) / PostgreSQL (`pdo_pgsql` for Render) / MySQL (XAMPP compatible)
+- **Database**: PostgreSQL (Supabase Cloud Database / `ext-pdo_pgsql`)
 - **Authentication**: Laravel Sanctum (Token & Ability-based) with strict role authorization (`admin`, `khatma`, `seeker`)
 - **Email & Verification**: Resend (`resend/resend-laravel`) with 6-digit OTP code verification & signed email link fallbacks
 - **Real-Time Broadcasting**: Pusher PHP Server + Laravel Echo private channels (`routes/channels.php`)
 - **Voice Calling**: WebRTC Signaling & Call State Management API
-- **Testing**: PHPUnit 11 (99+ Feature & Unit tests)
+- **Testing**: PHPUnit 11 (99+ Feature & Unit tests with in-memory SQLite support)
 - **Code Quality**: Laravel Pint
 
 ---
@@ -32,8 +32,9 @@ The backend engine for the Athar platform, built with **Laravel 12** and **PHP 8
 ## 🛠️ Local Setup
 
 ### 1. Prerequisites
-- **PHP 8.2+** with extensions: `pdo`, `pdo_sqlite` (or `pdo_mysql` / `pdo_pgsql`), `mbstring`, `openssl`, `curl`
+- **PHP 8.2+** with extensions: `pdo_pgsql`, `pdo`, `mbstring`, `openssl`, `curl` (and `pdo_sqlite` for local tests)
 - **Composer 2+**
+- **Supabase Account / Project** (or local PostgreSQL instance)
 
 ### 2. Installation
 ```bash
@@ -53,12 +54,20 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Configure your `.env` file with your preferred settings:
-- **Database** (default is SQLite):
-  ```env
-  DB_CONNECTION=sqlite
-  ```
-  *(For MySQL / XAMPP, set `DB_CONNECTION=mysql`, `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_DATABASE=athar_db`, `DB_USERNAME=root`)*
+Configure your `.env` file with your **Supabase PostgreSQL** credentials:
+```env
+# Supabase PostgreSQL Configuration
+DB_CONNECTION=pgsql
+DB_HOST=aws-0-eu-central-1.pooler.supabase.com
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=postgres.your_project_ref
+DB_PASSWORD=your_supabase_database_password
+DB_SSLMODE=require
+
+# (Optional) For running fast offline test suite locally:
+# DB_CONNECTION=sqlite
+```
 - **Email (Resend or Log)**:
   ```env
   MAIL_MAILER=resend
