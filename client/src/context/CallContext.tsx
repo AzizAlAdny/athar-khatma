@@ -62,15 +62,47 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const processedCandidatesCount = useRef<number>(0);
   const statusRef = useRef<CallStatus>('IDLE');
   const isPollingRef = useRef<boolean>(false);
+  const activeCallIdRef = useRef<number | null>(null);
+  const pendingLocalCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
   const getToken = () => {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
   };
 
+  // Send one local ICE candidate to the backend signaling endpoint
+  const sendIceCandidate = useCallback((callId: number, candidate: RTCIceCandidateInit) => {
+    const token = getToken();
+    if (!token) return;
+    fetch(`${API_BASE}/calls/${callId}/signal`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ candidate })
+    }).catch((e) => {
+      console.warn('Failed to send ICE candidate:', e);
+    });
+  }, []);
+
+  // Queue local ICE candidates until the call id is known, then send them directly.
+  // (ICE gathering starts while /calls/initiate is still in flight, so `call`
+  // state is not available yet inside the callback closure.)
+  const emitOrQueueIceCandidate = useCallback((candidate: RTCIceCandidateInit) => {
+    if (activeCallIdRef.current) {
+      sendIceCandidate(activeCallIdRef.current, candidate);
+    } else {
+      pendingLocalCandidatesRef.current.push(candidate);
+    }
+  }, [sendIceCandidate]);
+
   // Stop tones & reset state
   const resetCallState = useCallback((endReasonStatus?: CallStatus) => {
     audioToneService.stopAllTones();
+    activeCallIdRef.current = null;
+    pendingLocalCandidatesRef.current = [];
     if (webrtcRef.current) {
       webrtcRef.current.cleanup();
       webrtcRef.current = null;
@@ -141,7 +173,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         audioToneService.playEndTone();
         resetCallState('BUSY');
       } else if (action === 'ice_candidate') {
-        if (payload?.candidate && webrtcRef.current) {
+        // Guard against candidates from a different/stale call session
+        if (payload?.candidate && webrtcRef.current && payload.call_id === activeCallIdRef.current) {
           await webrtcRef.current.addIceCandidate(payload.candidate);
         }
       } else if (action === 'call_ended') {
@@ -305,26 +338,18 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await webrtc.initialize({
         onIceCandidate: (candidate) => {
-          if (call?.id) {
-            fetch(`${API_BASE}/calls/${call.id}/signal`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({ candidate })
-            });
-          }
+          emitOrQueueIceCandidate(candidate);
         },
         onRemoteStream: (stream) => {
           if (remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = stream;
+            remoteAudioRef.current.play().catch(() => { });
           }
         },
         onConnectionStateChange: (state) => {
           if (state === 'connected') setStatus('CONNECTED');
-          if (state === 'failed' || state === 'disconnected') {
+          // "disconnected" is often transient and recovers on its own — only hang up on "failed"
+          if (state === 'failed') {
             endCall();
           }
         },
@@ -353,6 +378,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(data.message || 'فشل إجراء المكالمة');
       }
 
+      // Call id is now known — flush ICE candidates gathered during initiation
+      activeCallIdRef.current = data.call.id;
+      const pendingCandidates = pendingLocalCandidatesRef.current;
+      pendingLocalCandidatesRef.current = [];
+      pendingCandidates.forEach((cand) => sendIceCandidate(data.call.id, cand));
+
       setCall(data.call);
     } catch (e: any) {
       audioToneService.playEndTone();
@@ -369,30 +400,25 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       audioToneService.stopAllTones();
       setStatus('CONNECTING');
       const token = getToken();
+      activeCallIdRef.current = call.id;
 
       const webrtc = new WebRTCService();
       webrtcRef.current = webrtc;
 
       await webrtc.initialize({
         onIceCandidate: (candidate) => {
-          fetch(`${API_BASE}/calls/${call.id}/signal`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({ candidate })
-          });
+          emitOrQueueIceCandidate(candidate);
         },
         onRemoteStream: (stream) => {
           if (remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = stream;
+            remoteAudioRef.current.play().catch(() => { });
           }
         },
         onConnectionStateChange: (state) => {
           if (state === 'connected') setStatus('CONNECTED');
-          if (state === 'failed' || state === 'disconnected') {
+          // "disconnected" is often transient and recovers on its own — only hang up on "failed"
+          if (state === 'failed') {
             endCall();
           }
         },
@@ -448,10 +474,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // End active call
   const endCall = async () => {
-    if (!call) return;
+    // Use the ref so this works even from stale closures (e.g. connection state changes)
+    const callId = activeCallIdRef.current ?? call?.id;
+    if (!callId) return;
     try {
       const token = getToken();
-      await fetch(`${API_BASE}/calls/${call.id}/end`, {
+      await fetch(`${API_BASE}/calls/${callId}/end`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

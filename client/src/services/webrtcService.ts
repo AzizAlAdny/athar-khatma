@@ -25,11 +25,7 @@ export class WebRTCService {
     this.cleanup();
 
     const rtcConfig: RTCConfiguration = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-      ]
+      iceServers: this.buildIceServers()
     };
 
     this.peerConnection = new RTCPeerConnection(rtcConfig);
@@ -78,6 +74,36 @@ export class WebRTCService {
     };
 
     return this.localStream;
+  }
+
+  /**
+   * Build the ICE servers list.
+   * STUN is used for peer discovery, and an optional TURN relay (configured
+   * via env vars) guarantees connectivity when both users sit behind
+   * symmetric / carrier-grade NAT (common on mobile data networks) — in that
+   * case STUN alone cannot establish the audio path.
+   */
+  private buildIceServers(): RTCIceServer[] {
+    const iceServers: RTCIceServer[] = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' }
+    ];
+
+    const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
+    const turnUsername = process.env.NEXT_PUBLIC_TURN_USERNAME;
+    const turnCredential = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+
+    if (turnUrl) {
+      iceServers.push({
+        // Supports a comma-separated list (e.g. "turn:...:3478,turns:...:443")
+        urls: turnUrl.split(',').map(u => u.trim()).filter(Boolean),
+        username: turnUsername || '',
+        credential: turnCredential || ''
+      });
+    }
+
+    return iceServers;
   }
 
   public async createOffer(): Promise<string> {
