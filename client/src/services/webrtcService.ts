@@ -49,6 +49,22 @@ export class WebRTCService {
       }
     });
 
+    // Diagnostics: confirm the mic track is live and capturing
+    const micTrack = this.localStream.getAudioTracks()[0];
+    if (micTrack) {
+      console.log('[WebRTC] Local mic track:', {
+        label: micTrack.label,
+        enabled: micTrack.enabled,
+        muted: micTrack.muted,
+        readyState: micTrack.readyState
+      });
+      if (micTrack.muted) {
+        console.warn('[WebRTC] Mic track is muted at the source — the device is not delivering audio (OS-level mute or another app holds the mic)');
+      }
+    } else {
+      console.error('[WebRTC] No audio track in local stream!');
+    }
+
     // ICE candidate handler
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate && this.callbacks) {
@@ -60,6 +76,18 @@ export class WebRTCService {
     this.peerConnection.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
         this.remoteStream = event.streams[0];
+        // Diagnostics: a remote audio track that stays `muted` means the
+        // sender is not actually transmitting audio frames (mic issue on
+        // their side), even when ICE is connected.
+        const track = event.track;
+        console.log('[WebRTC] Remote track received:', {
+          kind: track.kind,
+          enabled: track.enabled,
+          muted: track.muted,
+          readyState: track.readyState
+        });
+        track.onunmute = () => console.log('[WebRTC] Remote track unmuted — audio frames are arriving');
+        track.onmute = () => console.warn('[WebRTC] Remote track muted — NO audio frames arriving from the peer (check their mic)');
         if (this.callbacks) {
           this.callbacks.onRemoteStream(this.remoteStream);
         }
@@ -79,12 +107,57 @@ export class WebRTCService {
 
     // Connection state change
     this.peerConnection.onconnectionstatechange = () => {
-      if (this.peerConnection && this.callbacks) {
+      if (!this.peerConnection) return;
+      if (this.peerConnection.connectionState === 'connected') {
+        this.startMediaFlowDiagnostics();
+      }
+      if (this.callbacks) {
         this.callbacks.onConnectionStateChange(this.peerConnection.connectionState);
       }
     };
 
     return this.localStream;
+  }
+
+  /**
+   * Diagnostics: while connected, sample RTC stats every 3 s and log whether
+   * audio bytes are actually flowing in each direction. This splits
+   * "connected but silent" reports into sender-side vs receiver-side faults.
+   */
+  private statsInterval: any = null;
+  private lastInboundBytes = 0;
+  private lastOutboundBytes = 0;
+
+  private startMediaFlowDiagnostics(): void {
+    if (this.statsInterval) return; // already running
+    this.lastInboundBytes = 0;
+    this.lastOutboundBytes = 0;
+    let ticks = 0;
+    this.statsInterval = setInterval(async () => {
+      if (!this.peerConnection || this.peerConnection.connectionState !== 'connected' || ++ticks > 20) {
+        if (this.statsInterval) { clearInterval(this.statsInterval); this.statsInterval = null; }
+        return;
+      }
+      try {
+        const stats = await this.peerConnection.getStats();
+        stats.forEach((report) => {
+          if (report.type === 'inbound-rtp' && (report as any).kind === 'audio') {
+            const bytes = (report as any).bytesReceived ?? 0;
+            const growing = bytes > this.lastInboundBytes;
+            console.log(`[WebRTC] Inbound audio: ${bytes} bytes received ${growing ? '✅ (media arriving)' : '❌ (NOT growing — peer is sending silence or nothing)'}`);
+            this.lastInboundBytes = bytes;
+          }
+          if (report.type === 'outbound-rtp' && (report as any).kind === 'audio') {
+            const bytes = (report as any).bytesSent ?? 0;
+            const growing = bytes > this.lastOutboundBytes;
+            console.log(`[WebRTC] Outbound audio: ${bytes} bytes sent ${growing ? '✅ (your mic is transmitting)' : '❌ (NOT growing — your mic is not capturing!)'}`);
+            this.lastOutboundBytes = bytes;
+          }
+        });
+      } catch (e) {
+        console.warn('[WebRTC] stats sample failed:', e);
+      }
+    }, 3000);
   }
 
   /**
@@ -230,6 +303,11 @@ export class WebRTCService {
     if (this.volumeInterval) {
       clearInterval(this.volumeInterval);
       this.volumeInterval = null;
+    }
+
+    if (this.statsInterval) {
+      clearInterval(this.statsInterval);
+      this.statsInterval = null;
     }
 
     if (this.localStream) {
