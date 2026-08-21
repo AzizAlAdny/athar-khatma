@@ -65,10 +65,15 @@ class GiftSeeder extends Seeder
         ];
 
         foreach ($gifts as $gift) {
-            DB::table('gifts')->insert(array_merge($gift, [
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]));
+            DB::table('gifts')->updateOrInsert(
+                ['slug' => $gift['slug']],
+                array_merge($gift, [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ])
+            );
         }
+
+        $this->command->info('Gifts seeded successfully.');
     }
-}
+}

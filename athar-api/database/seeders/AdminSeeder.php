@@ -13,19 +13,30 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user with secure password from environment
-        User::create([
-            'name' => 'Admin User',
-            'email' => env('ADMIN_EMAIL', 'admin@example.com'),
-            'password' => Hash::make(env('ADMIN_PASSWORD', 'SecureAdminPassword123!')),
-            'role' => 'admin',
-            'city' => 'System',
-            'bio' => 'System administrator',
-        ]);
+        $adminEmail = env('ADMIN_EMAIL', 'katmaweb@outlook.com');
+        $adminPassword = env('ADMIN_PASSWORD', 'SecureAdminPassword123!');
+
+        // Create or update admin user
+        User::updateOrCreate(
+            ['email' => $adminEmail],
+            [
+                'name' => 'مدير النظام',
+                'display_name' => 'مدير النظام',
+                'password' => Hash::make($adminPassword),
+                'role' => 'admin',
+                'city' => 'الرياض',
+                'neighborhood' => 'حي العليا',
+                'latitude' => 24.7136,
+                'longitude' => 46.6753,
+                'bio' => 'مدير نظام منصة أثر وختمة',
+                'email_verified_at' => now(),
+                'pledge_accepted' => true,
+            ]
+        );
 
         $this->command->info('Admin user created successfully.');
-        $this->command->warn('Email: ' . env('ADMIN_EMAIL', 'admin@example.com'));
-        $this->command->warn('Password: ' . env('ADMIN_PASSWORD', 'SecureAdminPassword123!'));
-        $this->command->warn('Please change the default password after first login.');
+        $this->command->warn('Email: ' . $adminEmail);
+        $this->command->warn('Password: ' . $adminPassword);
     }
 }
+
