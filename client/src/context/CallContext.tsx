@@ -60,6 +60,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const timerIntervalRef = useRef<any>(null);
   const pollIntervalRef = useRef<any>(null);
   const processedCandidatesCount = useRef<number>(0);
+  const statusRef = useRef<CallStatus>('IDLE');
+  const isPollingRef = useRef<boolean>(false);
 
   const getToken = () => {
     if (typeof window === 'undefined') return null;
@@ -97,6 +99,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Keep a ref in sync with status so async callbacks (intervals & WebSocket
+  // listeners) always read the latest value instead of stale closure state
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   // Real-time WebSocket listener for incoming calls & signaling
   useEffect(() => {
     if (!user?.id) return;
@@ -110,17 +118,22 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { action, payload } = data;
 
       if (action === 'incoming_call') {
-        if (status === 'IDLE') {
+        if (statusRef.current === 'IDLE') {
+          statusRef.current = 'INCOMING_RINGING';
           setCall(payload);
           setStatus('INCOMING_RINGING');
           audioToneService.playIncomingRingtone();
         }
       } else if (action === 'call_answered') {
-        if (status === 'OUTGOING_RINGING' && payload?.sdp_answer) {
+        if (statusRef.current === 'OUTGOING_RINGING' && payload?.sdp_answer) {
+          // Flip status immediately (before the async work) so the HTTP polling
+          // fallback cannot race and apply the same answer twice
+          statusRef.current = 'CONNECTING';
           setStatus('CONNECTING');
           audioToneService.playConnectedTone();
           if (webrtcRef.current) {
             await webrtcRef.current.handleAnswer(payload.sdp_answer);
+            statusRef.current = 'CONNECTED';
             setStatus('CONNECTED');
           }
         }
@@ -210,9 +223,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!call?.id || status === 'IDLE' || status === 'ENDED') return;
 
     const pollCallData = async () => {
+      // Skip this tick if the previous poll request is still in flight
+      if (isPollingRef.current) return;
       const token = getToken();
       if (!token) return;
 
+      isPollingRef.current = true;
       try {
         const res = await fetch(`${API_BASE}/calls/${call.id}`, {
           headers: {
@@ -236,11 +252,15 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Caller detects receiver accepted call
-        if (updatedCall.is_caller && updatedCall.status === 'connected' && updatedCall.sdp_answer && status === 'OUTGOING_RINGING') {
+        if (updatedCall.is_caller && updatedCall.status === 'connected' && updatedCall.sdp_answer && statusRef.current === 'OUTGOING_RINGING') {
+          // Flip status immediately (before the async work) so a concurrent
+          // WebSocket event or poll tick cannot apply the same answer twice
+          statusRef.current = 'CONNECTING';
           setStatus('CONNECTING');
           audioToneService.playConnectedTone();
           if (webrtcRef.current) {
             await webrtcRef.current.handleAnswer(updatedCall.sdp_answer);
+            statusRef.current = 'CONNECTED';
             setStatus('CONNECTED');
           }
         }
@@ -259,6 +279,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (e) {
         console.error('Call polling error:', e);
+      } finally {
+        isPollingRef.current = false;
       }
     };
 

@@ -93,6 +93,15 @@ export class WebRTCService {
   public async handleOfferAndCreateAnswer(sdpOfferStr: string): Promise<string> {
     if (!this.peerConnection) throw new Error('PeerConnection not initialized');
 
+    // Offer already answered (double-accept race) — reuse the existing local description
+    if (this.peerConnection.signalingState === 'stable' && this.peerConnection.localDescription) {
+      return JSON.stringify(this.peerConnection.localDescription);
+    }
+    // An offer can only be applied while the connection is in the "stable" state
+    if (this.peerConnection.signalingState !== 'stable') {
+      throw new Error('Cannot apply SDP offer: connection is not in stable state');
+    }
+
     const offer = JSON.parse(sdpOfferStr);
     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
     await this.flushPendingIceCandidates();
@@ -104,6 +113,11 @@ export class WebRTCService {
 
   public async handleAnswer(sdpAnswerStr: string): Promise<void> {
     if (!this.peerConnection) return;
+    // A remote answer may only be applied while in "have-local-offer" state.
+    // If the connection is already "stable", the answer was applied earlier
+    // (e.g. duplicate delivery via WebSocket + HTTP polling) — skip it instead
+    // of throwing InvalidStateError.
+    if (this.peerConnection.signalingState !== 'have-local-offer') return;
     const answer = JSON.parse(sdpAnswerStr);
     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
     await this.flushPendingIceCandidates();
