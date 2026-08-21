@@ -100,6 +100,11 @@ export class WebRTCService {
     this.peerConnection.oniceconnectionstatechange = () => {
       if (!this.peerConnection) return;
       console.log('[WebRTC] ICE connection state:', this.peerConnection.iceConnectionState);
+      // Start byte counters on ICE connected/completed as well — the aggregate
+      // connectionState can lag or never fire in some browsers.
+      if (this.peerConnection.iceConnectionState === 'connected' || this.peerConnection.iceConnectionState === 'completed') {
+        this.startMediaFlowDiagnostics();
+      }
       if (this.callbacks && this.callbacks.onIceConnectionStateChange) {
         this.callbacks.onIceConnectionStateChange(this.peerConnection.iceConnectionState);
       }
@@ -108,6 +113,7 @@ export class WebRTCService {
     // Connection state change
     this.peerConnection.onconnectionstatechange = () => {
       if (!this.peerConnection) return;
+      console.log('[WebRTC] Connection state:', this.peerConnection.connectionState);
       if (this.peerConnection.connectionState === 'connected') {
         this.startMediaFlowDiagnostics();
       }
