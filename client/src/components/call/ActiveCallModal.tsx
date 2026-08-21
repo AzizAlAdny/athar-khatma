@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCall } from '../../context/CallContext';
 
 export const ActiveCallModal: React.FC = () => {
-  const { call, status, isMuted, durationSeconds, audioVolume, endCall, toggleMute } = useCall();
+  const { call, status, isMuted, durationSeconds, audioVolume, endCall, toggleMute, audioBlocked, networkFailed, unlockRemoteAudio } = useCall();
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
 
   if (!call || ['IDLE', 'INCOMING_RINGING'].includes(status)) {
@@ -99,6 +99,26 @@ export const ActiveCallModal: React.FC = () => {
             {call.other_user_name.charAt(0)}
           </div>
         </div>
+
+        {/* Diagnostics: autoplay block / NAT-traversal failure banners */}
+        {(audioBlocked || networkFailed) && (
+          <div className="w-full mb-4 space-y-2">
+            {audioBlocked && (
+              <button
+                type="button"
+                onClick={unlockRemoteAudio}
+                className="w-full py-2.5 px-4 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
+              >
+                الصوت لم يبدأ تلقائيًا — اضغط هنا للتشغيل 🔊
+              </button>
+            )}
+            {networkFailed && (
+              <div className="w-full py-2.5 px-4 rounded-xl bg-rose-500/15 border border-rose-400/40 text-rose-300 text-xs font-semibold leading-relaxed">
+                تعذّر تأسيس اتصال صوتي بين الجهازين — شبكتك تمنع الاتصال المباشر. جرّب شبكة أخرى، أو فعّل خادم TURN من إعدادات النشر.
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Name & Status */}
         <h3 className="text-2xl font-bold text-white mb-2">{call.other_user_name}</h3>

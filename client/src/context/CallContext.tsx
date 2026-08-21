@@ -35,6 +35,8 @@ interface CallContextType {
   durationSeconds: number;
   audioVolume: number;
   error: string | null;
+  audioBlocked: boolean;
+  networkFailed: boolean;
   remoteAudioRef: React.RefObject<HTMLAudioElement | null>;
   startCall: (receiverId: number, receiverName: string, contextType: 'need' | 'gift', contextId: number) => Promise<void>;
   acceptCall: () => Promise<void>;
@@ -42,6 +44,7 @@ interface CallContextType {
   endCall: () => Promise<void>;
   toggleMute: () => void;
   clearError: () => void;
+  unlockRemoteAudio: () => void;
 }
 
 const CallContext = createContext<CallContextType | undefined>(undefined);
@@ -54,10 +57,15 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [durationSeconds, setDurationSeconds] = useState<number>(0);
   const [audioVolume, setAudioVolume] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  // If autoplay policy blocks remote audio, we surface a tap-to-start banner
+  const [audioBlocked, setAudioBlocked] = useState<boolean>(false);
+  // If ICE fails to build a media path (NAT without TURN) we surface a warning
+  const [networkFailed, setNetworkFailed] = useState<boolean>(false);
 
   const webrtcRef = useRef<WebRTCService | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const timerIntervalRef = useRef<any>(null);
+  const networkFailedTimerRef = useRef<any>(null);
   const pollIntervalRef = useRef<any>(null);
   const processedCandidatesCount = useRef<number>(0);
   const statusRef = useRef<CallStatus>('IDLE');
@@ -98,11 +106,85 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [sendIceCandidate]);
 
+  // Attach the remote stream and make sure it actually plays. play() may be
+  // rejected by strict autoplay policies (mobile Safari) because the remote
+  // track arrives seconds after the user's answer/dial click — in that case
+  // we surface a tap-to-start banner (unlockRemoteAudio runs inside the tap,
+  // which counts as a real user gesture and is always allowed).
+  const connectRemoteStream = useCallback((stream: MediaStream) => {
+    const attempt = (retries: number) => {
+      const el = remoteAudioRef.current;
+      if (!el) {
+        if (retries > 0) setTimeout(() => attempt(retries - 1), 250);
+        return;
+      }
+      el.srcObject = stream;
+      el.muted = false;
+      el.volume = 1;
+      el.play()
+        .then(() => setAudioBlocked(false))
+        .catch((e) => {
+          console.warn('[CallContext] Remote audio playback blocked:', e);
+          setAudioBlocked(true);
+        });
+    };
+    attempt(10);
+  }, []);
+
+  // Tap-to-start: retry playback inside a user gesture.
+  const unlockRemoteAudio = useCallback(() => {
+    const el = remoteAudioRef.current;
+    if (!el) return;
+    el.muted = false;
+    el.volume = 1;
+    el.play()
+      .then(() => setAudioBlocked(false))
+      .catch((e) => console.warn('[CallContext] unlock play failed:', e));
+  }, []);
+
+  // Shared connection-state handler for caller & receiver.
+  const handleConnectionState = useCallback((state: RTCPeerConnectionState) => {
+    if (state === 'connected') {
+      setStatus('CONNECTED');
+      setNetworkFailed(false);
+      if (networkFailedTimerRef.current) {
+        clearTimeout(networkFailedTimerRef.current);
+        networkFailedTimerRef.current = null;
+      }
+      // Renew the playback attempt now that the media path exists — covers
+      // the case where autoplay was rejected before the track arrived.
+      const el = remoteAudioRef.current;
+      if (el && el.paused) {
+        el.play().catch(() => setAudioBlocked(true));
+      }
+    }
+    if (state === 'failed') {
+      // The direct path between the two browsers could not be built — this is
+      // the classic symptom of both sides sitting behind carrier/symmetric NAT
+      // with no TURN relay. A TURN server would bridge it. Give ICE ~12 s to
+      // recover via alternate candidates before hanging up (and show the
+      // warning banner so the problem is diagnosable instead of a silent drop).
+      setNetworkFailed(true);
+      if (!networkFailedTimerRef.current) {
+        networkFailedTimerRef.current = setTimeout(() => {
+          networkFailedTimerRef.current = null;
+          endCall();
+        }, 12000);
+      }
+    }
+  }, []);
+
   // Stop tones & reset state
   const resetCallState = useCallback((endReasonStatus?: CallStatus) => {
     audioToneService.stopAllTones();
     activeCallIdRef.current = null;
     pendingLocalCandidatesRef.current = [];
+    setAudioBlocked(false);
+    setNetworkFailed(false);
+    if (networkFailedTimerRef.current) {
+      clearTimeout(networkFailedTimerRef.current);
+      networkFailedTimerRef.current = null;
+    }
     if (webrtcRef.current) {
       webrtcRef.current.cleanup();
       webrtcRef.current = null;
@@ -187,7 +269,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       channel.stopListening('.call.signaled');
       echo.leave(channelName);
     };
-  }, [user?.id, status, resetCallState]);
+  }, [user?.id, resetCallState]);
 
   // Background fallback poll for incoming calls when IDLE
   useEffect(() => {
@@ -333,6 +415,14 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStatus('OUTGOING_RINGING');
       audioToneService.playRingbackTone();
 
+      // Warm the remote <audio> element inside the user gesture so strict
+      // autoplay policies (iOS Safari) don't block the remote stream later.
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1;
+        remoteAudioRef.current.play().catch(() => { });
+      }
+
       const webrtc = new WebRTCService();
       webrtcRef.current = webrtc;
 
@@ -341,17 +431,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           emitOrQueueIceCandidate(candidate);
         },
         onRemoteStream: (stream) => {
-          if (remoteAudioRef.current) {
-            remoteAudioRef.current.srcObject = stream;
-            remoteAudioRef.current.play().catch(() => { });
-          }
+          connectRemoteStream(stream);
         },
         onConnectionStateChange: (state) => {
-          if (state === 'connected') setStatus('CONNECTED');
-          // "disconnected" is often transient and recovers on its own — only hang up on "failed"
-          if (state === 'failed') {
-            endCall();
-          }
+          handleConnectionState(state);
         },
         onAudioVolumeChange: (vol) => setAudioVolume(vol)
       });
@@ -399,6 +482,13 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       audioToneService.stopAllTones();
       setStatus('CONNECTING');
+
+      // Warm the remote <audio> element inside the accept gesture.
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1;
+        remoteAudioRef.current.play().catch(() => { });
+      }
       const token = getToken();
       activeCallIdRef.current = call.id;
 
@@ -410,17 +500,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           emitOrQueueIceCandidate(candidate);
         },
         onRemoteStream: (stream) => {
-          if (remoteAudioRef.current) {
-            remoteAudioRef.current.srcObject = stream;
-            remoteAudioRef.current.play().catch(() => { });
-          }
+          connectRemoteStream(stream);
         },
         onConnectionStateChange: (state) => {
-          if (state === 'connected') setStatus('CONNECTED');
-          // "disconnected" is often transient and recovers on its own — only hang up on "failed"
-          if (state === 'failed') {
-            endCall();
-          }
+          handleConnectionState(state);
         },
         onAudioVolumeChange: (vol) => setAudioVolume(vol)
       });
@@ -510,13 +593,16 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         durationSeconds,
         audioVolume,
         error,
+        audioBlocked,
+        networkFailed,
         remoteAudioRef,
         startCall,
         acceptCall,
         rejectCall,
         endCall,
         toggleMute,
-        clearError
+        clearError,
+        unlockRemoteAudio
       }}
     >
       {children}

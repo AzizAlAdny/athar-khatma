@@ -7,6 +7,7 @@ export interface WebRTCCallbacks {
   onIceCandidate: (candidate: RTCIceCandidateInit) => void;
   onRemoteStream: (stream: MediaStream) => void;
   onConnectionStateChange: (state: RTCPeerConnectionState) => void;
+  onIceConnectionStateChange?: (state: RTCIceConnectionState) => void;
   onAudioVolumeChange?: (volume: number) => void;
 }
 
@@ -63,6 +64,16 @@ export class WebRTCService {
           this.callbacks.onRemoteStream(this.remoteStream);
         }
         this.setupVolumeAnalyzer(this.remoteStream);
+      }
+    };
+
+    // ICE connection state change (more granular than connectionState; used
+    // to diagnose NAT/traversal failures in production)
+    this.peerConnection.oniceconnectionstatechange = () => {
+      if (!this.peerConnection) return;
+      console.log('[WebRTC] ICE connection state:', this.peerConnection.iceConnectionState);
+      if (this.callbacks && this.callbacks.onIceConnectionStateChange) {
+        this.callbacks.onIceConnectionStateChange(this.peerConnection.iceConnectionState);
       }
     };
 
