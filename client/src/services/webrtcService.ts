@@ -263,10 +263,13 @@ export class WebRTCService {
 
     const offer = JSON.parse(sdpOfferStr);
     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    await this.flushPendingIceCandidates();
 
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
+
+    // Flush pending ICE candidates now that BOTH remote and local descriptions are established
+    await this.flushPendingIceCandidates();
+
     return JSON.stringify(answer);
   }
 

@@ -586,19 +586,28 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         onAudioVolumeChange: (vol) => setAudioVolume(vol)
       });
 
-      // Flush any ICE candidates buffered by the WebSocket listener before
-      // the peer connection was created (fixes Bug B3 — candidate drop race).
+      const sdpAnswer = await webrtc.handleOfferAndCreateAnswer(call.sdp_offer || '{}');
+
+      // Now that local & remote descriptions are stable, apply all caller candidates:
+      // 1. Candidates that came with the call payload
+      if (call.caller_ice_candidates && Array.isArray(call.caller_ice_candidates)) {
+        console.log(`[CallContext] Applying ${call.caller_ice_candidates.length} caller candidates from call payload`);
+        for (const cand of call.caller_ice_candidates) {
+          await webrtc.addIceCandidate(cand);
+        }
+      }
+      // 2. Candidates received via WebSocket while ringing
       const buffered = wsIceCandidateBufferRef.current.filter(b => b.call_id === call.id);
       wsIceCandidateBufferRef.current = [];
-      for (const b of buffered) {
-        await webrtc.addIceCandidate(b.candidate);
+      if (buffered.length > 0) {
+        console.log(`[CallContext] Applying ${buffered.length} buffered WS caller candidates`);
+        for (const b of buffered) {
+          await webrtc.addIceCandidate(b.candidate);
+        }
       }
 
-      // Start the watchdog — ICE negotiation begins after handleOfferAndCreateAnswer.
-      // If neither event fires within 15 s, the watchdog reads the actual state directly.
+      // Start the watchdog — ICE negotiation begins after answer is established
       startConnectingWatchdog();
-
-      const sdpAnswer = await webrtc.handleOfferAndCreateAnswer(call.sdp_offer || '{}');
 
       const res = await fetch(`${API_BASE}/calls/${call.id}/respond`, {
         method: 'POST',
