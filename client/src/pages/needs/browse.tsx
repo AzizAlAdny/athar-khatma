@@ -79,74 +79,122 @@ export default function BrowseNeeds() {
   const myCompletedHelp = needs.filter(n => n.status === 'fulfilled' && n.fulfilled_by_id === user?.id);
 
   const renderNeedItem = (need: SeekerNeed, showChat: boolean, showClaim: boolean, showCall: boolean, showComplete: boolean = false) => (
-    <div key={need.id} className="group rounded-3xl md:rounded-[40px] border border-secondary-light/30 bg-white p-4 sm:p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center justify-between">
-        <div className="flex items-start gap-3 sm:gap-5 flex-1 min-w-0">
-          <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl sm:rounded-3xl bg-background text-accent shadow-sm text-xl sm:text-2xl group-hover:scale-105 transition-transform">
-            {need.gift?.icon === 'book-open' ? '📖' : <MapPin size={22} className="sm:w-6 sm:h-6" />}
-          </div>
-          <div className="text-right flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-black text-primary truncate">{need.gift?.name || 'طلب مساعدة'}</h3>
-              {(need.messages_count ?? 0) > 0 && (
-                <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent animate-pulse shrink-0">
-                  <MessageCircle size={10} />
-                </div>
-              )}
+    <div key={need.id} className="group rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] border border-secondary-light/20 bg-white p-5 sm:p-6 md:p-7 shadow-sm transition-all hover:shadow-md flex flex-col justify-between h-full">
+      <div>
+        {/* Top: Icon + Title & Location + Status Badge */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-xs">
+              {need.gift?.icon === 'book-open' ? '📖' : <MapPin size={22} />}
             </div>
-            <p className="text-primary-muted text-xs sm:text-sm font-medium mt-1 leading-relaxed line-clamp-2">{need.description}</p>
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-primary-muted font-bold mt-2.5 sm:mt-3">
-              <MapPin size={12} className="text-secondary shrink-0" />
-              <span>{need.city || 'الرياض'}</span>
-              {need.neighborhood && (
-                <>
-                  <span className="opacity-50">•</span>
-                  <span>{need.neighborhood}</span>
-                </>
-              )}
-              <span className="opacity-50">•</span>
-              <span>منذ {need.created_at_human || 'قليل'}</span>
+            <div className="text-right min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-primary truncate">{need.gift?.name || 'طلب مساعدة'}</h3>
+                {(need.messages_count ?? 0) > 0 && (
+                  <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent animate-pulse shrink-0">
+                    <MessageCircle size={10} />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-primary-muted font-bold mt-0.5">
+                <MapPin size={11} className="text-secondary shrink-0" />
+                <span>{need.city || 'الرياض'}</span>
+                {need.neighborhood && (
+                  <>
+                    <span className="opacity-40">•</span>
+                    <span>{need.neighborhood}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Status Badge */}
+          {need.status === 'fulfilled' ? (
+            <span className="bg-green-50 text-green-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-green-200 shrink-0 flex items-center gap-1">
+              <CheckCircle2 size={11} /> تمت التلبية
+            </span>
+          ) : need.status === 'in_progress' ? (
+            <span className="bg-secondary/10 text-secondary text-[10px] font-black px-2.5 py-1 rounded-full border border-secondary/20 shrink-0 flex items-center gap-1">
+              <Clock size={11} /> قيد التنفيذ
+            </span>
+          ) : (
+            <span className="bg-accent/10 text-accent text-[10px] font-black px-2.5 py-1 rounded-full border border-accent/20 shrink-0 flex items-center gap-1">
+              <Clock size={11} /> متاح للدعم
+            </span>
+          )}
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full lg:w-auto pt-2 lg:pt-0 border-t border-secondary-light/10 lg:border-t-0">
-          {showChat && (
-            <Link
-              href={user?.id ? `/chat/need/${need.id}` : '/auth/login'}
-              className="flex-1 lg:flex-none bg-accent hover:bg-accent-dark text-white rounded-2xl px-4 sm:px-6 py-3 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
-            >
-              <MessageCircle size={14} /> {need.status === 'open' ? 'مراسلة صاحبة الطلب' : 'المحادثات'}
-            </Link>
-          )}
+        {/* Description */}
+        <p className="text-primary-muted text-xs sm:text-sm font-medium leading-relaxed mb-4 line-clamp-3 text-right">
+          {need.description}
+        </p>
+      </div>
 
-          {showClaim && (
-             <Button
-                onClick={() => handleClaim(need.id)}
-                disabled={claimingId === need.id}
-                className="flex-1 lg:flex-none bg-secondary text-white rounded-2xl px-4 sm:px-6 py-3 text-xs font-black shadow-lg shadow-secondary/10 transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
-             >
-                {claimingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> استلام الطلب</>}
-             </Button>
-          )}
+      {/* Footer / Actions Bar */}
+      <div className="pt-4 border-t border-secondary-light/10 mt-auto space-y-3">
+        <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-primary-muted font-bold">
+          <span>منذ {need.created_at_human || 'قليل'}</span>
+          {need.user?.name && <span className="opacity-80">صاحبة الطلب: {need.user.name}</span>}
+        </div>
 
-          {showCall && (
-             <Link
-                href={`/chat/need/${need.id}`}
-                className="flex-1 lg:flex-none bg-white border border-secondary-light/40 text-primary hover:bg-background rounded-2xl px-4 sm:px-6 py-3 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
-             >
-                <Phone size={14} className="text-secondary" /> مكالمة صوتية
-             </Link>
-          )}
-
-          {showComplete && (
-             <Button
+        {/* Button Actions Grid */}
+        <div className="space-y-2">
+          {showComplete ? (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {showChat && (
+                  <Link
+                    href={`/chat/need/${need.id}`}
+                    className="bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <MessageCircle size={13} /> محادثة
+                  </Link>
+                )}
+                {showCall && (
+                  <Link
+                    href={`/chat/need/${need.id}`}
+                    className="bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/20 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <Phone size={13} /> مكالمة صوتية
+                  </Link>
+                )}
+              </div>
+              <Button
                 onClick={() => handleComplete(need.id)}
                 disabled={completingId === need.id}
-                className="flex-1 lg:flex-none bg-green-600 hover:bg-green-700 text-white rounded-2xl px-4 sm:px-6 py-3 text-xs font-black shadow-lg shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
-             >
+                className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              >
                 {completingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> تم الإنجاز واكتمال الطلب</>}
-             </Button>
+              </Button>
+            </>
+          ) : showClaim ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {showChat && (
+                <Link
+                  href={user?.id ? `/chat/need/${need.id}` : '/auth/login'}
+                  className="bg-background hover:bg-secondary-light/20 text-primary border border-secondary-light/30 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle size={13} /> استفسار / محادثة
+                </Link>
+              )}
+              <Button
+                onClick={() => handleClaim(need.id)}
+                disabled={claimingId === need.id}
+                className="bg-secondary hover:bg-secondary-dark text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-secondary/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                {claimingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> استلام الطلب</>}
+              </Button>
+            </div>
+          ) : (
+            showChat && (
+              <Link
+                href={`/chat/need/${need.id}`}
+                className="block w-full bg-background hover:bg-secondary-light/20 text-primary rounded-xl py-2.5 text-xs font-black transition-all text-center"
+              >
+                <span className="flex items-center justify-center gap-1.5"><MessageCircle size={13} /> سجل المحادثة</span>
+              </Link>
+            )
           )}
         </div>
       </div>
@@ -156,7 +204,7 @@ export default function BrowseNeeds() {
   return (
     <ProtectedRoute allowedRoles={['khatma', 'admin']}>
       <AppShell hero={needsHero}>
-        <div className="space-y-8 sm:space-y-12">
+        <div className="space-y-8 sm:space-y-12 pb-20">
           <div className="flex flex-col gap-2 sm:gap-4 md:flex-row md:items-center md:justify-between px-2">
             <div className="text-right">
               <h2 className="text-xl sm:text-2xl font-black text-primary">طلبات المحتاجين</h2>
@@ -165,48 +213,48 @@ export default function BrowseNeeds() {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-100 text-red-600 text-sm font-bold p-5 rounded-3xl flex items-center gap-3">
-              <AlertCircle size={20} className="shrink-0" />
+            <div className="bg-red-50 border border-red-100 text-red-600 text-xs sm:text-sm font-bold p-4 sm:p-5 rounded-2xl md:rounded-3xl flex items-center gap-3">
+              <AlertCircle size={18} className="shrink-0" />
               {error}
             </div>
           )}
 
           {loading && needs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-primary-muted font-bold">جاري تحميل الطلبات...</p>
+            <div className="flex flex-col items-center justify-center py-16 sm:py-20 space-y-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-primary-muted font-bold text-xs sm:text-sm">جاري تحميل الطلبات...</p>
             </div>
           ) : (
-            <div className="space-y-16">
+            <div className="space-y-12 sm:space-y-16">
               {/* 1. Available Section */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 px-2">
-                  <div className="w-10 h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent">
-                    <Clock size={20} />
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex items-center gap-2.5 sm:gap-3 px-2">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent">
+                    <Clock size={18} />
                   </div>
-                  <h3 className="text-xl font-black text-primary">طلبات متاحة</h3>
+                  <h3 className="text-lg sm:text-xl font-black text-primary">طلبات متاحة ({available.length})</h3>
                 </div>
                 {available.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {available.map(n => renderNeedItem(n, true, true, false))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                    {available.map(n => renderNeedItem(n, true, true, false, false))}
                   </div>
                 ) : (
-                  <div className="py-10 text-center bg-background/30 rounded-[2.5rem] border border-dashed border-secondary-light/30">
-                    <p className="text-primary-muted font-bold text-sm">لا توجد طلبات متاحة حالياً.</p>
+                  <div className="py-8 sm:py-10 text-center bg-background/30 rounded-2xl md:rounded-[2.5rem] border border-dashed border-secondary-light/30">
+                    <p className="text-primary-muted font-bold text-xs sm:text-sm">لا توجد طلبات متاحة حالياً.</p>
                   </div>
                 )}
               </div>
 
               {/* 2. My Active Helping Section */}
               {myActiveHelping.length > 0 && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 px-2 border-t border-background pt-12">
-                    <div className="w-10 h-10 rounded-xl bg-secondary/5 flex items-center justify-center text-secondary">
-                      <Clock size={20} />
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="flex items-center gap-2.5 sm:gap-3 px-2 border-t border-background pt-8 sm:pt-12">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-secondary/5 flex items-center justify-center text-secondary">
+                      <Clock size={18} />
                     </div>
-                    <h3 className="text-xl font-black text-primary">طلبات قيد التنفيذ (بواسطتكِ)</h3>
+                    <h3 className="text-lg sm:text-xl font-black text-primary">طلبات قيد التنفيذ (بواسطتكِ) ({myActiveHelping.length})</h3>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {myActiveHelping.map(n => renderNeedItem(n, true, false, true, true))}
                   </div>
                 </div>
@@ -214,15 +262,15 @@ export default function BrowseNeeds() {
 
               {/* 3. My Completed Help Section */}
               {myCompletedHelp.length > 0 && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 px-2 border-t border-background pt-12">
-                    <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
-                      <CheckCircle2 size={20} />
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="flex items-center gap-2.5 sm:gap-3 px-2 border-t border-background pt-8 sm:pt-12">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+                      <CheckCircle2 size={18} />
                     </div>
-                    <h3 className="text-xl font-black text-primary">طلبات لبيتها</h3>
+                    <h3 className="text-lg sm:text-xl font-black text-primary">طلبات لبيتها ({myCompletedHelp.length})</h3>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {myCompletedHelp.map(n => renderNeedItem(n, false, false, false))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                    {myCompletedHelp.map(n => renderNeedItem(n, true, false, false, false))}
                   </div>
                 </div>
               )}
