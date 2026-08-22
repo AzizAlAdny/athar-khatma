@@ -206,13 +206,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Start a watchdog that fires if we are still CONNECTING after 15 seconds.
-  // This catches the scenario where ICE is silently stuck at 'checking' with
-  // no TURN relay — neither onconnectionstatechange nor oniceconnectionstatechange
-  // will ever fire 'connected' or 'failed', leaving the UI frozen at "جاري الربط".
-  // When the watchdog fires we read the actual ICE state directly:
-  //   • 'connected'/'completed' → force CONNECTED (event simply never fired)
-  //   • anything else           → surface the network-failed banner
+  // Start a watchdog that fires if we are still CONNECTING after 25 seconds.
   const startConnectingWatchdog = useCallback(() => {
     if (connectingWatchdogRef.current) {
       clearTimeout(connectingWatchdogRef.current);
@@ -224,13 +218,26 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const pcState = webrtcRef.current?.getPeerConnectionState();
       console.warn('[CallContext] CONNECTING watchdog fired. ICE state:', iceState, '| PC state:', pcState);
       if (iceState === 'connected' || iceState === 'completed' || pcState === 'connected') {
-        // ICE actually succeeded but the event never reached us
+        // ICE actually succeeded
         handleConnectionState('connected');
+      } else if (iceState === 'checking') {
+        // Still actively checking candidate pairs — give ICE another 10 seconds before failing
+        console.log('[CallContext] ICE is actively checking, extending watchdog by 10s');
+        connectingWatchdogRef.current = setTimeout(() => {
+          connectingWatchdogRef.current = null;
+          if (statusRef.current !== 'CONNECTING') return;
+          const finalIceState = webrtcRef.current?.getIceConnectionState();
+          if (finalIceState === 'connected' || finalIceState === 'completed') {
+            handleConnectionState('connected');
+          } else {
+            handleConnectionState('failed');
+          }
+        }, 10000);
       } else {
         // Genuinely stuck — treat as failure and show the banner
         handleConnectionState('failed');
       }
-    }, 15000);
+    }, 25000);
   }, [handleConnectionState]);
 
   // Stop tones & reset state

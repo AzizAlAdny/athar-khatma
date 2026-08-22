@@ -203,15 +203,12 @@ export class WebRTCService {
   }
 
   /**
-   * Build the ICE servers list with robust multi-provider STUN and TURN relays.
+   * Build the ICE servers list with fast, high-availability STUN and Metered TURN relays.
    */
   private buildIceServers(): RTCIceServer[] {
     const iceServers: RTCIceServer[] = [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun.cloudflare.com:3478' },
-      { urls: 'stun:stun.services.mozilla.com:3478' }
+      { urls: 'stun:stun.cloudflare.com:3478' }
     ];
 
     const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
