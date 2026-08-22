@@ -74,6 +74,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pendingLocalCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   // Buffer ICE candidates received via WebSocket before acceptCall creates the peer connection
   const wsIceCandidateBufferRef = useRef<{ candidate: RTCIceCandidateInit; call_id: number }[]>([]);
+  // Watchdog: if CONNECTING for >15 s with no ICE event, surface network error
+  const connectingWatchdogRef = useRef<any>(null);
 
   const getToken = () => {
     if (typeof window === 'undefined') return null;
@@ -156,6 +158,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (state === 'connected') {
       // Idempotency guard: skip if we already promoted to CONNECTED
       if (statusRef.current === 'CONNECTED') return;
+      // ICE established — cancel the CONNECTING watchdog
+      if (connectingWatchdogRef.current) {
+        clearTimeout(connectingWatchdogRef.current);
+        connectingWatchdogRef.current = null;
+      }
       setStatus('CONNECTED');
       statusRef.current = 'CONNECTED';
       setNetworkFailed(false);
@@ -174,6 +181,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     if (state === 'failed') {
+      // Cancel watchdog — we already know it failed
+      if (connectingWatchdogRef.current) {
+        clearTimeout(connectingWatchdogRef.current);
+        connectingWatchdogRef.current = null;
+      }
       // The direct path between the two browsers could not be built — this is
       // the classic symptom of both sides sitting behind carrier/symmetric NAT
       // with no TURN relay. A TURN server would bridge it. Give ICE ~12 s to
@@ -189,12 +201,43 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Start a watchdog that fires if we are still CONNECTING after 15 seconds.
+  // This catches the scenario where ICE is silently stuck at 'checking' with
+  // no TURN relay — neither onconnectionstatechange nor oniceconnectionstatechange
+  // will ever fire 'connected' or 'failed', leaving the UI frozen at "جاري الربط".
+  // When the watchdog fires we read the actual ICE state directly:
+  //   • 'connected'/'completed' → force CONNECTED (event simply never fired)
+  //   • anything else           → surface the network-failed banner
+  const startConnectingWatchdog = useCallback(() => {
+    if (connectingWatchdogRef.current) {
+      clearTimeout(connectingWatchdogRef.current);
+    }
+    connectingWatchdogRef.current = setTimeout(() => {
+      connectingWatchdogRef.current = null;
+      if (statusRef.current !== 'CONNECTING') return; // already resolved
+      const iceState = webrtcRef.current?.getIceConnectionState();
+      const pcState  = webrtcRef.current?.getPeerConnectionState();
+      console.warn('[CallContext] CONNECTING watchdog fired. ICE state:', iceState, '| PC state:', pcState);
+      if (iceState === 'connected' || iceState === 'completed' || pcState === 'connected') {
+        // ICE actually succeeded but the event never reached us
+        handleConnectionState('connected');
+      } else {
+        // Genuinely stuck — treat as failure and show the banner
+        handleConnectionState('failed');
+      }
+    }, 15000);
+  }, [handleConnectionState]);
+
   // Stop tones & reset state
   const resetCallState = useCallback((endReasonStatus?: CallStatus) => {
     audioToneService.stopAllTones();
     activeCallIdRef.current = null;
     pendingLocalCandidatesRef.current = [];
     wsIceCandidateBufferRef.current = [];
+    if (connectingWatchdogRef.current) {
+      clearTimeout(connectingWatchdogRef.current);
+      connectingWatchdogRef.current = null;
+    }
     setAudioBlocked(false);
     setNetworkFailed(false);
     if (networkFailedTimerRef.current) {
@@ -265,6 +308,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // when the ICE media path is actually up and plays it at that point.
           statusRef.current = 'CONNECTING';
           setStatus('CONNECTING');
+          // Start the watchdog in case ICE events never fire
+          startConnectingWatchdog();
           if (webrtcRef.current) {
             await webrtcRef.current.handleAnswer(payload.sdp_answer);
             // Status will be promoted to CONNECTED by handleConnectionState
@@ -403,6 +448,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // when the ICE media path is actually up and plays it at that point.
           statusRef.current = 'CONNECTING';
           setStatus('CONNECTING');
+          // Start the watchdog in case ICE events never fire
+          startConnectingWatchdog();
           if (webrtcRef.current) {
             await webrtcRef.current.handleAnswer(updatedCall.sdp_answer);
             // Status promoted to CONNECTED by handleConnectionState.
@@ -542,6 +589,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       for (const b of buffered) {
         await webrtc.addIceCandidate(b.candidate);
       }
+
+      // Start the watchdog — ICE negotiation begins after handleOfferAndCreateAnswer.
+      // If neither event fires within 15 s, the watchdog reads the actual state directly.
+      startConnectingWatchdog();
 
       const sdpAnswer = await webrtc.handleOfferAndCreateAnswer(call.sdp_offer || '{}');
 

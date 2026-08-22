@@ -22,6 +22,17 @@ export class WebRTCService {
   private volumeAnalyser: AnalyserNode | null = null;
   private volumeInterval: any = null;
 
+  /** Returns the current ICE connection state, or null if not yet initialized. */
+  public getIceConnectionState(): RTCIceConnectionState | null {
+    return this.peerConnection?.iceConnectionState ?? null;
+  }
+
+  /** Returns the current high-level peer connection state, or null if not yet initialized. */
+  public getPeerConnectionState(): RTCPeerConnectionState | null {
+    return this.peerConnection?.connectionState ?? null;
+  }
+
+
   public async initialize(callbacks: WebRTCCallbacks): Promise<MediaStream> {
     this.callbacks = callbacks;
     this.cleanup();
