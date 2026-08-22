@@ -34,8 +34,8 @@ export class WebRTCService {
 
 
   public async initialize(callbacks: WebRTCCallbacks): Promise<MediaStream> {
-    this.callbacks = callbacks;
     this.cleanup();
+    this.callbacks = callbacks;
 
     const rtcConfig: RTCConfiguration = {
       iceServers: this.buildIceServers()
