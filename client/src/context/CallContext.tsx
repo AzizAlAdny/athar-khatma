@@ -94,18 +94,23 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'Accept': 'application/json'
       },
       body: JSON.stringify({ candidate })
+    }).then(async (res) => {
+      if (!res.ok) {
+        console.warn(`[CallContext] Failed to send ICE candidate (HTTP ${res.status}):`, await res.text());
+      } else {
+        console.log(`[CallContext] ICE candidate sent successfully for call #${callId}`);
+      }
     }).catch((e) => {
-      console.warn('Failed to send ICE candidate:', e);
+      console.warn('[CallContext] Failed to send ICE candidate network error:', e);
     });
   }, []);
 
   // Queue local ICE candidates until the call id is known, then send them directly.
-  // (ICE gathering starts while /calls/initiate is still in flight, so `call`
-  // state is not available yet inside the callback closure.)
   const emitOrQueueIceCandidate = useCallback((candidate: RTCIceCandidateInit) => {
     if (activeCallIdRef.current) {
       sendIceCandidate(activeCallIdRef.current, candidate);
     } else {
+      console.log('[CallContext] Call ID unknown yet, buffering local ICE candidate');
       pendingLocalCandidatesRef.current.push(candidate);
     }
   }, [sendIceCandidate]);
@@ -216,7 +221,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       connectingWatchdogRef.current = null;
       if (statusRef.current !== 'CONNECTING') return; // already resolved
       const iceState = webrtcRef.current?.getIceConnectionState();
-      const pcState  = webrtcRef.current?.getPeerConnectionState();
+      const pcState = webrtcRef.current?.getPeerConnectionState();
       console.warn('[CallContext] CONNECTING watchdog fired. ICE state:', iceState, '| PC state:', pcState);
       if (iceState === 'connected' || iceState === 'completed' || pcState === 'connected') {
         // ICE actually succeeded but the event never reached us
@@ -320,13 +325,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         audioToneService.playEndTone();
         resetCallState('BUSY');
       } else if (action === 'ice_candidate') {
-        // Guard against candidates from a different/stale call session.
-        // If the peer connection does not exist yet (receiver hasn't tapped Accept),
-        // buffer the candidate and flush it once acceptCall() initialises webrtcRef.
+        console.log(`[CallContext] Received ICE candidate via WS for call #${payload?.call_id} (activeCallId: #${activeCallIdRef.current})`);
         if (payload?.candidate && payload.call_id) {
-          if (webrtcRef.current && payload.call_id === activeCallIdRef.current) {
+          if (webrtcRef.current && (activeCallIdRef.current === null || payload.call_id === activeCallIdRef.current)) {
             await webrtcRef.current.addIceCandidate(payload.candidate);
           } else {
+            console.log(`[CallContext] Buffering WS ICE candidate for call #${payload.call_id}`);
             wsIceCandidateBufferRef.current.push({
               candidate: payload.candidate,
               call_id: payload.call_id

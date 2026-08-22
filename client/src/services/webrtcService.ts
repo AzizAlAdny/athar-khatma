@@ -40,6 +40,7 @@ export class WebRTCService {
     const rtcConfig: RTCConfiguration = {
       iceServers: this.buildIceServers()
     };
+    console.log('[WebRTC] Initializing PeerConnection with ICE servers:', rtcConfig.iceServers);
 
     this.peerConnection = new RTCPeerConnection(rtcConfig);
 
@@ -80,10 +81,25 @@ export class WebRTCService {
       console.error('[WebRTC] No audio track in local stream!');
     }
 
+    // Log signaling state changes
+    this.peerConnection.onsignalingstatechange = () => {
+      if (!this.peerConnection) return;
+      console.log('[WebRTC] Signaling state:', this.peerConnection.signalingState);
+    };
+
+    // Log ICE gathering state changes
+    this.peerConnection.onicegatheringstatechange = () => {
+      if (!this.peerConnection) return;
+      console.log('[WebRTC] ICE gathering state:', this.peerConnection.iceGatheringState);
+    };
+
     // ICE candidate handler
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate && this.callbacks) {
+        console.log('[WebRTC] Local ICE candidate gathered:', event.candidate.candidate?.slice(0, 60));
         this.callbacks.onIceCandidate(event.candidate.toJSON());
+      } else if (!event.candidate) {
+        console.log('[WebRTC] Local ICE gathering completed.');
       }
     };
 
@@ -91,9 +107,6 @@ export class WebRTCService {
     this.peerConnection.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
         this.remoteStream = event.streams[0];
-        // Diagnostics: a remote audio track that stays `muted` means the
-        // sender is not actually transmitting audio frames (mic issue on
-        // their side), even when ICE is connected.
         const track = event.track;
         console.log('[WebRTC] Remote track received:', {
           kind: track.kind,
@@ -101,8 +114,8 @@ export class WebRTCService {
           muted: track.muted,
           readyState: track.readyState
         });
-        track.onunmute = () => console.log('[WebRTC] Remote track unmuted — audio frames are arriving');
-        track.onmute = () => console.warn('[WebRTC] Remote track muted — NO audio frames arriving from the peer (check their mic)');
+        track.onunmute = () => console.log('[WebRTC] 🔊 Remote track unmuted — audio frames are arriving!');
+        track.onmute = () => console.warn('[WebRTC] 🔇 Remote track muted — waiting for audio frames from peer');
         if (this.callbacks) {
           this.callbacks.onRemoteStream(this.remoteStream);
         }
@@ -110,16 +123,7 @@ export class WebRTCService {
       }
     };
 
-    // ICE connection state change (more granular than connectionState; used
-    // to diagnose NAT/traversal failures in production).
-    //
-    // IMPORTANT: We also forward 'connected'/'completed' to onConnectionStateChange
-    // as a guaranteed cross-browser fallback. `onconnectionstatechange` fires
-    // inconsistently in Safari and Firefox — ICE can complete and audio can flow
-    // while `peerConnection.connectionState` stays at 'connecting', leaving the
-    // UI permanently at "جاري الربط". Forwarding from here resolves it because
-    // `oniceconnectionstatechange` is reliable across all major browsers.
-    // The CallContext handler is idempotent (statusRef guards prevent double runs).
+    // ICE connection state change
     this.peerConnection.oniceconnectionstatechange = () => {
       if (!this.peerConnection) return;
       const iceState = this.peerConnection.iceConnectionState;
@@ -127,15 +131,12 @@ export class WebRTCService {
 
       if (iceState === 'connected' || iceState === 'completed') {
         this.startMediaFlowDiagnostics();
-        // Cross-browser fallback: notify the app layer that the media path is live.
         if (this.callbacks) {
           this.callbacks.onConnectionStateChange('connected');
         }
       }
 
       if (iceState === 'failed') {
-        // Also forward ICE failure so the network-failed banner and 12 s hangup
-        // timer fire even on browsers that don't surface connectionState 'failed'.
         if (this.callbacks) {
           this.callbacks.onConnectionStateChange('failed');
         }
@@ -145,7 +146,6 @@ export class WebRTCService {
         this.callbacks.onIceConnectionStateChange(iceState);
       }
     };
-
 
     // Connection state change
     this.peerConnection.onconnectionstatechange = () => {
@@ -164,20 +164,19 @@ export class WebRTCService {
 
   /**
    * Diagnostics: while connected, sample RTC stats every 3 s and log whether
-   * audio bytes are actually flowing in each direction. This splits
-   * "connected but silent" reports into sender-side vs receiver-side faults.
+   * audio bytes are actually flowing in each direction.
    */
   private statsInterval: any = null;
   private lastInboundBytes = 0;
   private lastOutboundBytes = 0;
 
   private startMediaFlowDiagnostics(): void {
-    if (this.statsInterval) return; // already running
+    if (this.statsInterval) return;
     this.lastInboundBytes = 0;
     this.lastOutboundBytes = 0;
     let ticks = 0;
     this.statsInterval = setInterval(async () => {
-      if (!this.peerConnection || this.peerConnection.connectionState !== 'connected' || ++ticks > 20) {
+      if (!this.peerConnection || (this.peerConnection.connectionState !== 'connected' && this.peerConnection.iceConnectionState !== 'connected' && this.peerConnection.iceConnectionState !== 'completed') || ++ticks > 20) {
         if (this.statsInterval) { clearInterval(this.statsInterval); this.statsInterval = null; }
         return;
       }
@@ -187,13 +186,13 @@ export class WebRTCService {
           if (report.type === 'inbound-rtp' && (report as any).kind === 'audio') {
             const bytes = (report as any).bytesReceived ?? 0;
             const growing = bytes > this.lastInboundBytes;
-            console.log(`[WebRTC] Inbound audio: ${bytes} bytes received ${growing ? '✅ (media arriving)' : '❌ (NOT growing — peer is sending silence or nothing)'}`);
+            console.log(`[WebRTC] Inbound audio: ${bytes} bytes received ${growing ? '✅ (media arriving)' : '❌ (NOT growing)'}`);
             this.lastInboundBytes = bytes;
           }
           if (report.type === 'outbound-rtp' && (report as any).kind === 'audio') {
             const bytes = (report as any).bytesSent ?? 0;
             const growing = bytes > this.lastOutboundBytes;
-            console.log(`[WebRTC] Outbound audio: ${bytes} bytes sent ${growing ? '✅ (your mic is transmitting)' : '❌ (NOT growing — your mic is not capturing!)'}`);
+            console.log(`[WebRTC] Outbound audio: ${bytes} bytes sent ${growing ? '✅ (mic transmitting)' : '❌ (NOT growing)'}`);
             this.lastOutboundBytes = bytes;
           }
         });
@@ -204,30 +203,37 @@ export class WebRTCService {
   }
 
   /**
-   * Build the ICE servers list.
-   * STUN is used for peer discovery, and an optional TURN relay (configured
-   * via env vars) guarantees connectivity when both users sit behind
-   * symmetric / carrier-grade NAT (common on mobile data networks) — in that
-   * case STUN alone cannot establish the audio path.
+   * Build the ICE servers list with robust multi-provider STUN and TURN relays.
    */
   private buildIceServers(): RTCIceServer[] {
     const iceServers: RTCIceServer[] = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' }
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:stun.services.mozilla.com:3478' }
     ];
 
     const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
-    const turnUsername = process.env.NEXT_PUBLIC_TURN_USERNAME;
-    const turnCredential = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+    const turnUsername = process.env.NEXT_PUBLIC_TURN_USERNAME || '';
+    const turnCredential = process.env.NEXT_PUBLIC_TURN_CREDENTIAL || '';
 
     if (turnUrl) {
-      iceServers.push({
-        // Supports a comma-separated list (e.g. "turn:...:3478,turns:...:443")
-        urls: turnUrl.split(',').map(u => u.trim()).filter(Boolean),
-        username: turnUsername || '',
-        credential: turnCredential || ''
-      });
+      const rawUrls = turnUrl.split(',').map(u => u.trim()).filter(Boolean);
+      const stunUrls = rawUrls.filter(u => u.startsWith('stun:'));
+      const turnUrls = rawUrls.filter(u => u.startsWith('turn:') || u.startsWith('turns:'));
+
+      if (stunUrls.length > 0) {
+        iceServers.push({ urls: stunUrls });
+      }
+
+      if (turnUrls.length > 0) {
+        iceServers.push({
+          urls: turnUrls,
+          username: turnUsername,
+          credential: turnCredential
+        });
+      }
     }
 
     return iceServers;
@@ -277,36 +283,40 @@ export class WebRTCService {
   }
 
   public async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
-    // Deduplicate: both the WebSocket signaling path and the HTTP polling fallback
-    // can deliver the same candidate — applying it twice causes a noisy
-    // InvalidStateError. Use the sdp candidate string as the dedup key.
-    const key = candidate.candidate || '';
-    if (key && this.seenCandidates.has(key)) return;
-    if (key) this.seenCandidates.add(key);
+    if (!candidate || !candidate.candidate) return; // skip empty / end-of-candidates entries
+
+    const key = candidate.candidate;
+    if (this.seenCandidates.has(key)) return;
+    this.seenCandidates.add(key);
 
     if (!this.peerConnection || !this.peerConnection.remoteDescription) {
-      // Queue candidate until remote description is set
+      console.log('[WebRTC] Buffering ICE candidate until remote description is set:', key.slice(0, 50));
       this.pendingIceCandidates.push(candidate);
       return;
     }
 
     try {
-      await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      console.log('[WebRTC] Adding remote ICE candidate:', key.slice(0, 50));
+      await this.peerConnection.addIceCandidate(candidate);
     } catch (e) {
-      console.error('Error adding ICE candidate:', e);
+      console.warn('[WebRTC] Error adding ICE candidate:', e, candidate);
     }
   }
 
   private async flushPendingIceCandidates(): Promise<void> {
     if (!this.peerConnection || !this.peerConnection.remoteDescription) return;
 
+    if (this.pendingIceCandidates.length > 0) {
+      console.log(`[WebRTC] Flushing ${this.pendingIceCandidates.length} buffered ICE candidates`);
+    }
+
     while (this.pendingIceCandidates.length > 0) {
       const candidate = this.pendingIceCandidates.shift();
       if (candidate) {
         try {
-          await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          await this.peerConnection.addIceCandidate(candidate);
         } catch (e) {
-          console.error('Error adding flushed ICE candidate:', e);
+          console.warn('[WebRTC] Error adding flushed ICE candidate:', e);
         }
       }
     }
