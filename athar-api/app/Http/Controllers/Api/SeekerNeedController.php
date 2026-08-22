@@ -94,36 +94,37 @@ class SeekerNeedController extends Controller
 
     public function markFulfilled(Request $request, $id)
     {
-        $validated = $request->validate([
-            'fulfilled_by_id' => 'required|exists:users,id',
-        ]);
-
-        return DB::transaction(function () use ($request, $id, $validated) {
+        return DB::transaction(function () use ($request, $id) {
             $need = SeekerNeed::lockForUpdate()->find($id);
 
             if (!$need) {
                 return response()->json(['message' => 'الطلب غير موجود'], 404);
             }
 
-            // Only the owner (seeker) can mark as fulfilled
-            if ($request->user()->id !== $need->user_id) {
+            $user = $request->user();
+
+            // The owner (seeker), the assigned helper (khatma), or an admin can mark as fulfilled
+            if ($user->id !== $need->user_id && $user->id !== $need->fulfilled_by_id && $user->role !== 'admin') {
                 return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا الطلب.'], 403);
             }
+
+            $fulfilledById = $request->input('fulfilled_by_id') ?? $need->fulfilled_by_id ?? $user->id;
 
             $need->update([
                 'status' => 'fulfilled',
                 'fulfilled_at' => now(),
-                'fulfilled_by_id' => $validated['fulfilled_by_id'],
+                'fulfilled_by_id' => $fulfilledById,
             ]);
 
             Log::info('Need marked as fulfilled atomically', [
                 'need_id' => $need->id,
                 'fulfilled_by_id' => $need->fulfilled_by_id,
+                'user_id' => $user->id,
             ]);
 
             return response()->json([
                 'message' => 'تم تحديد الطلب كمكتمل بنجاح',
-                'need' => $need
+                'need' => $need->load(['user', 'gift'])
             ]);
         });
     }

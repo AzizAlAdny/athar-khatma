@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import AppShell from '@/components/ui/AppShell';
 import Hero from '@/components/ui/Hero';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { getSeekerNeeds, SeekerNeed, markNeedInProgress } from '@/services/api';
+import { getSeekerNeeds, SeekerNeed, markNeedInProgress, markNeedFulfilled } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { MapPin, HelpCircle, MessageCircle, AlertCircle, Clock, CheckCircle2, Phone, Loader2 } from 'lucide-react';
@@ -14,6 +14,7 @@ export default function BrowseNeeds() {
   const [needs, setNeeds] = useState<SeekerNeed[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<number | null>(null);
+  const [completingId, setCompletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
@@ -47,6 +48,19 @@ export default function BrowseNeeds() {
     }
   };
 
+  const handleComplete = async (id: number) => {
+    if (!confirm('هل تأكدين إكمال وتلبية هذا الطلب بنجاح؟')) return;
+    setCompletingId(id);
+    try {
+      await markNeedFulfilled(id, user?.id);
+      loadNeeds();
+    } catch (err: any) {
+      alert(err.message || 'فشل تأكيد إكمال الطلب');
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
   const needsHero = (
     <Hero
       title="طلبات تحتاج أثركِ"
@@ -64,7 +78,7 @@ export default function BrowseNeeds() {
   const myActiveHelping = needs.filter(n => n.status === 'in_progress' && n.fulfilled_by_id === user?.id);
   const myCompletedHelp = needs.filter(n => n.status === 'fulfilled' && n.fulfilled_by_id === user?.id);
 
-  const renderNeedItem = (need: SeekerNeed, showChat: boolean, showClaim: boolean, showCall: boolean) => (
+  const renderNeedItem = (need: SeekerNeed, showChat: boolean, showClaim: boolean, showCall: boolean, showComplete: boolean = false) => (
     <div key={need.id} className="group rounded-3xl md:rounded-[40px] border border-secondary-light/30 bg-white p-4 sm:p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
       <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center justify-between">
         <div className="flex items-start gap-3 sm:gap-5 flex-1 min-w-0">
@@ -123,6 +137,16 @@ export default function BrowseNeeds() {
              >
                 <Phone size={14} className="text-secondary" /> مكالمة صوتية
              </Link>
+          )}
+
+          {showComplete && (
+             <Button
+                onClick={() => handleComplete(need.id)}
+                disabled={completingId === need.id}
+                className="flex-1 lg:flex-none bg-green-600 hover:bg-green-700 text-white rounded-2xl px-4 sm:px-6 py-3 text-xs font-black shadow-lg shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
+             >
+                {completingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> تم الإنجاز واكتمال الطلب</>}
+             </Button>
           )}
         </div>
       </div>
@@ -183,7 +207,7 @@ export default function BrowseNeeds() {
                     <h3 className="text-xl font-black text-primary">طلبات قيد التنفيذ (بواسطتكِ)</h3>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {myActiveHelping.map(n => renderNeedItem(n, true, false, true))}
+                    {myActiveHelping.map(n => renderNeedItem(n, true, false, true, true))}
                   </div>
                 </div>
               )}

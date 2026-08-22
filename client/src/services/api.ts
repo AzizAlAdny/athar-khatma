@@ -583,11 +583,11 @@ export const createSeekerNeed = (payload: {
 export const createNeed = createSeekerNeed;
 
 // New endpoints for Rating & Review
-export const markGiftDelivered = (id: number, deliveredToId: number) =>
+export const markGiftDelivered = (id: number, deliveredToId?: number) =>
   fetchJson<{ message: string; gift: KhatmaGift }>(`/khatma-gifts/${id}/delivered`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ delivered_to_id: deliveredToId }),
+    body: JSON.stringify(deliveredToId ? { delivered_to_id: deliveredToId } : {}),
   });
 
 export const markGiftInProgress = (id: number) =>
@@ -595,11 +595,18 @@ export const markGiftInProgress = (id: number) =>
     method: 'POST',
   });
 
-export const markNeedFulfilled = (id: number, fulfilledById: number) =>
+export const orderGift = markGiftInProgress;
+
+export const deleteKhatmaGift = (id: number) =>
+  fetchJson<{ message: string }>(`/khatma-gifts/${id}`, {
+    method: 'DELETE',
+  });
+
+export const markNeedFulfilled = (id: number, fulfilledById?: number) =>
   fetchJson<{ message: string; need: SeekerNeed }>(`/seeker-needs/${id}/fulfilled`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fulfilled_by_id: fulfilledById }),
+    body: JSON.stringify(fulfilledById ? { fulfilled_by_id: fulfilledById } : {}),
   });
 
 export const markNeedInProgress = (id: number) =>

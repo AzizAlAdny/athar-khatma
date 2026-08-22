@@ -73,29 +73,30 @@ class KhatmaGiftController extends Controller
             return response()->json(['message' => 'العطاء غير موجود'], 404);
         }
 
-        // Only the provider (khatma user) can mark as delivered
-        if ($request->user()->id !== $gift->khatma->user_id) {
+        $user = $request->user();
+
+        // The khatma owner, the seeker who ordered it (delivered_to_id), or an admin can mark as delivered
+        if ($user->id !== $gift->khatma->user_id && $user->id !== $gift->delivered_to_id && $user->role !== 'admin') {
             return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا العطاء.'], 403);
         }
 
-        $validated = $request->validate([
-            'delivered_to_id' => 'required|exists:users,id',
-        ]);
+        $deliveredToId = $request->input('delivered_to_id') ?? $gift->delivered_to_id ?? $user->id;
 
         $gift->update([
             'status' => 'delivered',
             'delivered_at' => now(),
-            'delivered_to_id' => $validated['delivered_to_id'],
+            'delivered_to_id' => $deliveredToId,
         ]);
 
         Log::info('Gift marked as delivered', [
             'gift_id' => $gift->id,
             'delivered_to_id' => $gift->delivered_to_id,
+            'user_id' => $user->id,
         ]);
 
         return response()->json([
             'message' => 'تم تحديد العطاء كمسلم بنجاح',
-            'gift' => $gift
+            'gift' => $gift->load(['gift', 'khatma.user'])
         ]);
     }
 
@@ -111,23 +112,53 @@ class KhatmaGiftController extends Controller
             return response()->json(['message' => 'العطاء تم استلامه مسبقاً أو غير متاح.'], 400);
         }
 
-        // Only the owner (khatma user) can mark as in_progress
-        if ($request->user()->id !== $gift->khatma->user_id) {
-            return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا العطاء.'], 403);
-        }
+        $user = $request->user();
+
+        // If the user ordering is not the khatma owner, set delivered_to_id to this seeker
+        $deliveredToId = ($user->id !== $gift->khatma->user_id)
+            ? $user->id
+            : ($request->input('delivered_to_id') ?? $gift->delivered_to_id);
 
         $gift->update([
             'status' => 'in_progress',
+            'delivered_to_id' => $deliveredToId,
         ]);
 
         Log::info('Gift marked as in_progress', [
             'gift_id' => $gift->id,
-            'owner_id' => $request->user()->id,
+            'user_id' => $user->id,
+            'delivered_to_id' => $deliveredToId,
         ]);
 
         return response()->json([
-            'message' => 'تم استلام الطلب بنجاح، يمكنك الآن البدء في التنسيق.',
+            'message' => 'تم طلب العطاء بنجاح، يمكنك الآن البدء في التنسيق والمحادثة.',
             'gift' => $gift->load(['gift', 'khatma.user'])
+        ]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $gift = KhatmaGift::with('khatma')->find($id);
+
+        if (!$gift) {
+            return response()->json(['message' => 'العطاء غير موجود'], 404);
+        }
+
+        $user = $request->user();
+
+        if ($user->id !== $gift->khatma->user_id && $user->role !== 'admin') {
+            return response()->json(['message' => 'غير مصرح لك بحذف هذا العطاء.'], 403);
+        }
+
+        $gift->delete();
+
+        Log::info('KhatmaGift deleted', [
+            'gift_id' => $id,
+            'user_id' => $user->id,
+        ]);
+
+        return response()->json([
+            'message' => 'تم حذف العطاء بنجاح'
         ]);
     }
 }
