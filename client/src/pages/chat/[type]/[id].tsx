@@ -153,13 +153,26 @@ export default function UnifiedChat() {
   const callTarget = (() => {
     if (isOwner) {
       if (!activeParticipant) return null;
+      // Don't allow calling yourself (e.g. owner viewing their own participant slot)
+      if (activeParticipant === user?.id) return null;
       const p = participants.find(part => part.id === activeParticipant);
       return { id: activeParticipant, name: p?.name || 'مستخدم' };
     } else {
       if (!item) return null;
-      const ownerId = item.user_id || item.khatma?.user_id;
-      const ownerName = item.user?.display_name || item.user?.name || item.khatma?.user?.display_name || 'صاحبة الأثر';
+      // Support both flat (user_id) and nested (khatma.user_id) shapes from the API
+      const ownerId: number | undefined =
+        item.user_id ??
+        item.khatma_user_id ??
+        item.khatma?.user_id;
+      const ownerName: string =
+        item.user?.display_name ??
+        item.user?.name ??
+        item.khatma?.user?.display_name ??
+        item.khatma?.user?.name ??
+        'صاحبة الأثر';
       if (!ownerId) return null;
+      // Don't allow calling yourself
+      if (ownerId === user?.id) return null;
       return { id: ownerId, name: ownerName };
     }
   })();
@@ -307,7 +320,7 @@ export default function UnifiedChat() {
                 {/* Delivery/Fulfillment Actions & Voice Call for Owner */}
                 {activeParticipant && item && (
                   <div className="shrink-0 flex items-center gap-3">
-                    {callTarget && (
+                    {callTarget && item.status !== 'fulfilled' && item.status !== 'delivered' && (
                       <VoiceCallButton
                         receiverId={callTarget.id}
                         receiverName={callTarget.name}
@@ -379,7 +392,7 @@ export default function UnifiedChat() {
                   {/* Claim/Review Actions & Voice Call for Recipient/Helper */}
                   {item && (
                     <div className="shrink-0 flex items-center gap-3">
-                      {callTarget && (
+                      {callTarget && item.status !== 'fulfilled' && item.status !== 'delivered' && (
                         <VoiceCallButton
                           receiverId={callTarget.id}
                           receiverName={callTarget.name}

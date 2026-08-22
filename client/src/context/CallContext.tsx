@@ -72,6 +72,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isPollingRef = useRef<boolean>(false);
   const activeCallIdRef = useRef<number | null>(null);
   const pendingLocalCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  // Buffer ICE candidates received via WebSocket before acceptCall creates the peer connection
+  const wsIceCandidateBufferRef = useRef<{ candidate: RTCIceCandidateInit; call_id: number }[]>([]);
 
   const getToken = () => {
     if (typeof window === 'undefined') return null;
@@ -143,14 +145,21 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Shared connection-state handler for caller & receiver.
+  // This is the SINGLE place that promotes status to CONNECTED and plays the
+  // connected tone — it fires when ICE has actually established a media path,
+  // ensuring both sides transition at the correct moment.
   const handleConnectionState = useCallback((state: RTCPeerConnectionState) => {
     if (state === 'connected') {
       setStatus('CONNECTED');
+      statusRef.current = 'CONNECTED';
       setNetworkFailed(false);
       if (networkFailedTimerRef.current) {
         clearTimeout(networkFailedTimerRef.current);
         networkFailedTimerRef.current = null;
       }
+      // Play the connected tone for both caller and receiver at the moment
+      // the actual media path is established.
+      audioToneService.playConnectedTone();
       // Renew the playback attempt now that the media path exists — covers
       // the case where autoplay was rejected before the track arrived.
       const el = remoteAudioRef.current;
@@ -179,6 +188,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     audioToneService.stopAllTones();
     activeCallIdRef.current = null;
     pendingLocalCandidatesRef.current = [];
+    wsIceCandidateBufferRef.current = [];
     setAudioBlocked(false);
     setNetworkFailed(false);
     if (networkFailedTimerRef.current) {
@@ -195,8 +205,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     if (endReasonStatus) {
       setStatus(endReasonStatus);
+      statusRef.current = endReasonStatus;
       setTimeout(() => {
         setStatus('IDLE');
+        statusRef.current = 'IDLE';
         setCall(null);
         setDurationSeconds(0);
         setIsMuted(false);
@@ -205,6 +217,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, 3000);
     } else {
       setStatus('IDLE');
+      statusRef.current = 'IDLE';
       setCall(null);
       setDurationSeconds(0);
       setIsMuted(false);
@@ -241,23 +254,33 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (action === 'call_answered') {
         if (statusRef.current === 'OUTGOING_RINGING' && payload?.sdp_answer) {
           // Flip status immediately (before the async work) so the HTTP polling
-          // fallback cannot race and apply the same answer twice
+          // fallback cannot race and apply the same answer twice.
+          // Do NOT play the connected tone here — handleConnectionState fires
+          // when the ICE media path is actually up and plays it at that point.
           statusRef.current = 'CONNECTING';
           setStatus('CONNECTING');
-          audioToneService.playConnectedTone();
           if (webrtcRef.current) {
             await webrtcRef.current.handleAnswer(payload.sdp_answer);
-            statusRef.current = 'CONNECTED';
-            setStatus('CONNECTED');
+            // Status will be promoted to CONNECTED by handleConnectionState
+            // once the RTCPeerConnection fires connectionState === 'connected'.
           }
         }
       } else if (action === 'call_rejected') {
         audioToneService.playEndTone();
         resetCallState('BUSY');
       } else if (action === 'ice_candidate') {
-        // Guard against candidates from a different/stale call session
-        if (payload?.candidate && webrtcRef.current && payload.call_id === activeCallIdRef.current) {
-          await webrtcRef.current.addIceCandidate(payload.candidate);
+        // Guard against candidates from a different/stale call session.
+        // If the peer connection does not exist yet (receiver hasn't tapped Accept),
+        // buffer the candidate and flush it once acceptCall() initialises webrtcRef.
+        if (payload?.candidate && payload.call_id) {
+          if (webrtcRef.current && payload.call_id === activeCallIdRef.current) {
+            await webrtcRef.current.addIceCandidate(payload.candidate);
+          } else {
+            wsIceCandidateBufferRef.current.push({
+              candidate: payload.candidate,
+              call_id: payload.call_id
+            });
+          }
         }
       } else if (action === 'call_ended') {
         audioToneService.playEndTone();
@@ -366,17 +389,17 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        // Caller detects receiver accepted call
+        // Caller detects receiver accepted call (HTTP polling fallback)
         if (updatedCall.is_caller && updatedCall.status === 'connected' && updatedCall.sdp_answer && statusRef.current === 'OUTGOING_RINGING') {
           // Flip status immediately (before the async work) so a concurrent
-          // WebSocket event or poll tick cannot apply the same answer twice
+          // WebSocket event or poll tick cannot apply the same answer twice.
+          // Do NOT play the connected tone here — handleConnectionState fires
+          // when the ICE media path is actually up and plays it at that point.
           statusRef.current = 'CONNECTING';
           setStatus('CONNECTING');
-          audioToneService.playConnectedTone();
           if (webrtcRef.current) {
             await webrtcRef.current.handleAnswer(updatedCall.sdp_answer);
-            statusRef.current = 'CONNECTED';
-            setStatus('CONNECTED');
+            // Status promoted to CONNECTED by handleConnectionState.
           }
         }
 
@@ -413,15 +436,15 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!token) throw new Error('يرجى تسجيل الدخول أولاً');
 
       setStatus('OUTGOING_RINGING');
+      statusRef.current = 'OUTGOING_RINGING';
       audioToneService.playRingbackTone();
 
-      // Warm the remote <audio> element inside the user gesture so strict
-      // autoplay policies (iOS Safari) don't block the remote stream later.
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.muted = false;
-        remoteAudioRef.current.volume = 1;
-        remoteAudioRef.current.play().catch(() => { });
-      }
+      // Note: the <audio> element is rendered conditionally (only when status !== IDLE),
+      // so it now mounts as a result of the setStatus call above. We do NOT call .play()
+      // here — the browser autoplay policy only allows it from a direct user gesture
+      // with no async gap. connectRemoteStream() will call .play() when the track arrives,
+      // which is always within a real user-gesture context because the call was initiated
+      // by a button click.
 
       const webrtc = new WebRTCService();
       webrtcRef.current = webrtc;
@@ -482,13 +505,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       audioToneService.stopAllTones();
       setStatus('CONNECTING');
+      statusRef.current = 'CONNECTING';
 
-      // Warm the remote <audio> element inside the accept gesture.
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.muted = false;
-        remoteAudioRef.current.volume = 1;
-        remoteAudioRef.current.play().catch(() => { });
-      }
+      // Note: we do NOT call remoteAudioRef.current.play() here.
+      // The <audio> element mounts when status leaves IDLE (above setStatus call).
+      // connectRemoteStream() will call .play() when the remote track arrives.
       const token = getToken();
       activeCallIdRef.current = call.id;
 
@@ -507,6 +528,14 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         onAudioVolumeChange: (vol) => setAudioVolume(vol)
       });
+
+      // Flush any ICE candidates buffered by the WebSocket listener before
+      // the peer connection was created (fixes Bug B3 — candidate drop race).
+      const buffered = wsIceCandidateBufferRef.current.filter(b => b.call_id === call.id);
+      wsIceCandidateBufferRef.current = [];
+      for (const b of buffered) {
+        await webrtc.addIceCandidate(b.candidate);
+      }
 
       const sdpAnswer = await webrtc.handleOfferAndCreateAnswer(call.sdp_offer || '{}');
 
@@ -527,8 +556,9 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await res.json();
       setCall(data.call);
-      setStatus('CONNECTED');
-      audioToneService.playConnectedTone();
+      // Do NOT set status to CONNECTED here — that is handled by handleConnectionState
+      // when RTCPeerConnectionState fires 'connected', ensuring both parties see the
+      // status change only after the actual ICE media path is established.
     } catch (e: any) {
       audioToneService.playEndTone();
       setError(e.message || 'حدث خطأ أثناء الرد');
@@ -606,7 +636,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }}
     >
       {children}
-      <audio ref={remoteAudioRef} autoPlay playsInline />
+      {/* Render the audio element only while a call is active so the browser's
+          autoplay policy does not lock it before the user has made a gesture.
+          When status is IDLE the element is unmounted; as soon as a call starts
+          (OUTGOING_RINGING / INCOMING_RINGING) it mounts fresh, and every
+          subsequent .play() call is traceable to the user's tap/click. */}
+      {status !== 'IDLE' && <audio ref={remoteAudioRef} autoPlay playsInline />}
     </CallContext.Provider>
   );
 };
