@@ -100,19 +100,41 @@ export class WebRTCService {
     };
 
     // ICE connection state change (more granular than connectionState; used
-    // to diagnose NAT/traversal failures in production)
+    // to diagnose NAT/traversal failures in production).
+    //
+    // IMPORTANT: We also forward 'connected'/'completed' to onConnectionStateChange
+    // as a guaranteed cross-browser fallback. `onconnectionstatechange` fires
+    // inconsistently in Safari and Firefox — ICE can complete and audio can flow
+    // while `peerConnection.connectionState` stays at 'connecting', leaving the
+    // UI permanently at "جاري الربط". Forwarding from here resolves it because
+    // `oniceconnectionstatechange` is reliable across all major browsers.
+    // The CallContext handler is idempotent (statusRef guards prevent double runs).
     this.peerConnection.oniceconnectionstatechange = () => {
       if (!this.peerConnection) return;
-      console.log('[WebRTC] ICE connection state:', this.peerConnection.iceConnectionState);
-      // Start byte counters on ICE connected/completed as well — the aggregate
-      // connectionState can lag or never fire in some browsers.
-      if (this.peerConnection.iceConnectionState === 'connected' || this.peerConnection.iceConnectionState === 'completed') {
+      const iceState = this.peerConnection.iceConnectionState;
+      console.log('[WebRTC] ICE connection state:', iceState);
+
+      if (iceState === 'connected' || iceState === 'completed') {
         this.startMediaFlowDiagnostics();
+        // Cross-browser fallback: notify the app layer that the media path is live.
+        if (this.callbacks) {
+          this.callbacks.onConnectionStateChange('connected');
+        }
       }
+
+      if (iceState === 'failed') {
+        // Also forward ICE failure so the network-failed banner and 12 s hangup
+        // timer fire even on browsers that don't surface connectionState 'failed'.
+        if (this.callbacks) {
+          this.callbacks.onConnectionStateChange('failed');
+        }
+      }
+
       if (this.callbacks && this.callbacks.onIceConnectionStateChange) {
-        this.callbacks.onIceConnectionStateChange(this.peerConnection.iceConnectionState);
+        this.callbacks.onIceConnectionStateChange(iceState);
       }
     };
+
 
     // Connection state change
     this.peerConnection.onconnectionstatechange = () => {

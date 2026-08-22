@@ -148,8 +148,14 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // This is the SINGLE place that promotes status to CONNECTED and plays the
   // connected tone — it fires when ICE has actually established a media path,
   // ensuring both sides transition at the correct moment.
+  //
+  // May be called from both oniceconnectionstatechange AND onconnectionstatechange
+  // (we forward both for cross-browser reliability), so the guard on statusRef
+  // ensures the body only runs once.
   const handleConnectionState = useCallback((state: RTCPeerConnectionState) => {
     if (state === 'connected') {
+      // Idempotency guard: skip if we already promoted to CONNECTED
+      if (statusRef.current === 'CONNECTED') return;
       setStatus('CONNECTED');
       statusRef.current = 'CONNECTED';
       setNetworkFailed(false);
