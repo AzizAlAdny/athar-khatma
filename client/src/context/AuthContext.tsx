@@ -10,6 +10,7 @@ import {
   logout as apiLogout,
   User
 } from '@/services/api';
+import { resetEcho } from '@/services/echo';
 
 interface AuthContextType {
   user: User | null;
@@ -79,6 +80,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     apiLogout().catch(() => {});
     setUser(null);
     clearAuthStorage();
+    // Disconnect the WebSocket singleton so the next login gets a fresh
+    // authenticated connection on the new user's private channel.
+    resetEcho();
     router.push('/auth/login');
   };
 

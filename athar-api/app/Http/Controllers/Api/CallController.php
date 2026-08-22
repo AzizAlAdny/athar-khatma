@@ -181,7 +181,10 @@ class CallController extends Controller
 
         $validated = $request->validate([
             'action' => 'required|string|in:accept,reject',
-            'sdp_answer' => 'required_if:action,accept|nullable|string',
+            // sdp_answer is required (not nullable) when accepting a call —
+            // removing `nullable` closes a loophole where an accept with no SDP
+            // would pass validation and store NULL, breaking the caller's handleAnswer.
+            'sdp_answer' => 'required_if:action,accept|string',
         ]);
 
         if ($validated['action'] === 'accept') {
@@ -268,7 +271,7 @@ class CallController extends Controller
         }
 
         return response()->json([
-            'call' => $this->shapeCall($call->fresh(['caller', 'receiver']), $user->id)
+            'call' => $this->shapeCall($call->fresh()->load(['caller', 'receiver']), $user->id)
         ]);
     }
 

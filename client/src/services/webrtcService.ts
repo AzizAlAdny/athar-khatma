@@ -16,6 +16,7 @@ export class WebRTCService {
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
   private pendingIceCandidates: RTCIceCandidateInit[] = [];
+  private seenCandidates = new Set<string>(); // dedup across WebSocket + HTTP poll delivery
   private callbacks: WebRTCCallbacks | null = null;
   private audioContext: AudioContext | null = null;
   private volumeAnalyser: AnalyserNode | null = null;
@@ -31,13 +32,16 @@ export class WebRTCService {
 
     this.peerConnection = new RTCPeerConnection(rtcConfig);
 
-    // Acquire microphone audio stream (high quality for Tajweed & Quran recitation)
+    // Acquire microphone audio stream (high quality for Tajweed & Quran recitation).
+    // Note: sampleRate is intentionally omitted — specifying a hard value (e.g. 48000)
+    // causes OverconstrainedError on devices that do not support that exact rate,
+    // silently preventing the call from starting on some Android / iOS hardware.
+    // The browser always picks the best available rate automatically.
     this.localStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
-        sampleRate: 48000
       },
       video: false
     });
@@ -240,6 +244,13 @@ export class WebRTCService {
   }
 
   public async addIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
+    // Deduplicate: both the WebSocket signaling path and the HTTP polling fallback
+    // can deliver the same candidate — applying it twice causes a noisy
+    // InvalidStateError. Use the sdp candidate string as the dedup key.
+    const key = candidate.candidate || '';
+    if (key && this.seenCandidates.has(key)) return;
+    if (key) this.seenCandidates.add(key);
+
     if (!this.peerConnection || !this.peerConnection.remoteDescription) {
       // Queue candidate until remote description is set
       this.pendingIceCandidates.push(candidate);
@@ -335,6 +346,7 @@ export class WebRTCService {
 
     this.remoteStream = null;
     this.pendingIceCandidates = [];
+    this.seenCandidates.clear();
     this.callbacks = null;
   }
 }
