@@ -18,7 +18,9 @@ class StatsController extends Controller
             'total_khatmas' => Khatma::count(),
             'active_initiatives' => Khatma::where('status', KhatmaConstants::STATUS_ACTIVE)->count(),
             'total_volunteers' => User::where('role', 'khatma')->count(),
-            'impact_hours' => KhatmaGift::count() * KhatmaConstants::IMPACT_HOURS_PER_SERVICE,
+            'total_beneficiaries' => SeekerNeed::where('status', 'fulfilled')->count() + KhatmaGift::where('status', 'delivered')->count(),
+            'impact_hours' => max(KhatmaGift::count() * KhatmaConstants::IMPACT_HOURS_PER_SERVICE, Khatma::count() * 5),
+            'total_impact_points' => Khatma::sum('impact_score'),
         ]);
     }
 

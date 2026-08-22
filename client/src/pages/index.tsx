@@ -21,7 +21,8 @@ import {
   UserPlus,
   Map as MapIcon,
   User as UserIcon,
-  Sparkles
+  Sparkles,
+  Clock
 } from 'lucide-react';
 
 // Human-friendly Arabic relative time for the gifts feed.
@@ -167,32 +168,43 @@ export default function Home() {
           <div className="lg:col-span-3 order-2 lg:order-1">
             <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm h-full flex flex-col justify-between">
               <div>
-                <h3 className="text-base sm:text-lg font-black text-primary mb-5 sm:mb-8">إحصائيات الأثر</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6">
+                <div className="flex items-center gap-2.5 mb-5 sm:mb-8">
+                  <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                    <Sparkles size={18} />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-primary">إحصائيات الأثر</h3>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4 md:gap-5">
                   {[
-                    { name: 'عدد الختمات', val: stats?.total_khatmas || 0, icon: '📖', color: 'bg-background' },
-                    { name: 'عدد المبادرات', val: stats?.active_initiatives || 0, icon: '🎁', color: 'bg-background' },
-                    { name: 'عدد المستفيدين', val: stats?.total_volunteers || 0, icon: '✨', color: 'bg-background' },
-                    { name: 'ساعات التطوع', val: stats?.impact_hours || 0, icon: '🕒', color: 'bg-background' }
-                  ].map((stat, i) => (
-                    <div key={i} className="flex items-center gap-3 sm:gap-4">
-                      <div className={`w-9 h-9 sm:w-10 sm:h-10 ${stat.color} rounded-xl flex items-center justify-center text-base sm:text-lg shadow-sm border border-secondary-light/20 shrink-0`}>{stat.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm text-primary-muted font-bold truncate">{stat.name}</p>
-                        {loading ? (
-                          <div className="h-5 w-14 bg-background rounded-lg animate-pulse mt-1"></div>
-                        ) : (
-                          <h4 className="text-base sm:text-lg font-black text-primary">
-                            {mounted ? (stat.val || 0).toLocaleString() : stat.val}
-                          </h4>
-                        )}
+                    { name: 'عدد الختمات', val: stats?.total_khatmas || 0, icon: BookOpen, color: 'bg-primary/10 text-primary' },
+                    { name: 'مبادرات العطاء', val: stats?.active_initiatives || 0, icon: Gift, color: 'bg-secondary/10 text-secondary' },
+                    { name: 'صانعات الأثر', val: stats?.total_volunteers || 0, icon: Users, color: 'bg-accent/10 text-accent' },
+                    { name: 'ساعات الأثر', val: stats?.impact_hours || 0, icon: Clock, color: 'bg-secondary-light/30 text-primary-muted' }
+                  ].map((stat, i) => {
+                    const IconComponent = stat.icon;
+                    return (
+                      <div key={i} className="flex items-center gap-3 sm:gap-4 p-2 sm:p-2.5 rounded-2xl hover:bg-background/40 transition-colors">
+                        <div className={`w-9 h-9 sm:w-11 sm:h-11 ${stat.color} rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xs shrink-0`}>
+                          <IconComponent size={18} className="sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] sm:text-xs text-primary-muted font-bold truncate">{stat.name}</p>
+                          {loading ? (
+                            <div className="h-5 w-14 bg-background rounded-lg animate-pulse mt-1"></div>
+                          ) : (
+                            <h4 className="text-sm sm:text-base md:text-lg font-black text-primary mt-0.5">
+                              {mounted ? (stat.val || 0).toLocaleString() : stat.val}
+                            </h4>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               {user?.role === 'admin' && (
-                <Link href="/admin" className="block w-full mt-6 sm:mt-8 py-2.5 sm:py-3 bg-background text-primary-muted rounded-2xl text-xs sm:text-sm font-black hover:bg-secondary-light/20 transition-colors text-center">
+                <Link href="/admin" className="block w-full mt-6 sm:mt-8 py-2.5 sm:py-3 bg-background text-primary-muted rounded-2xl text-xs sm:text-sm font-black hover:bg-secondary-light/20 transition-colors text-center active:scale-95">
                   عرض التقارير التفصيلية
                 </Link>
               )}
