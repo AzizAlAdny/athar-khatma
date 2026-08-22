@@ -45,19 +45,19 @@ class DemoDataSeeder extends Seeder
                     [
                         'slug' => 'teaching-children',
                         'description' => 'تقديم جلسات تحفيظ وتجويد أسبوعية للأطفال والناشئة في مسجد الحي.',
-                        'status' => 'completed',
+                        'status' => 'pending',
                         'points_earned' => 25,
                     ],
                     [
                         'slug' => 'zoom-room',
                         'description' => 'استضافة حلقات قرآنية وتسميع عبر منصة زوم أسبوعياً.',
-                        'status' => 'completed',
+                        'status' => 'pending',
                         'points_earned' => 20,
                     ],
                     [
                         'slug' => 'design-media',
                         'description' => 'تصميم مونتاج وإعلانات وبوسترات رقمية للمبادرات القرآنية.',
-                        'status' => 'completed',
+                        'status' => 'pending',
                         'points_earned' => 15,
                     ],
                 ],
@@ -97,13 +97,13 @@ class DemoDataSeeder extends Seeder
                     [
                         'slug' => 'teaching-workers',
                         'description' => 'تعليم سورة الفاتحة وقصار السور ومبادئ القراءة للعاملات المنزليات.',
-                        'status' => 'completed',
+                        'status' => 'pending',
                         'points_earned' => 25,
                     ],
                     [
                         'slug' => 'zoom-room',
                         'description' => 'حلقة مراجعة وتثبيت الحفظ عن بعد لطالبات الجامعة.',
-                        'status' => 'completed',
+                        'status' => 'pending',
                         'points_earned' => 20,
                     ],
                 ],

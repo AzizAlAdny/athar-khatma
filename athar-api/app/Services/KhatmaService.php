@@ -66,7 +66,7 @@ class KhatmaService
                 KhatmaGift::create([
                     'khatma_id' => $khatma->id,
                     'gift_id' => $giftId,
-                    'status' => 'completed',
+                    'status' => 'pending',
                 ]);
             }
 

@@ -288,26 +288,25 @@ export default function UnifiedChat() {
           </div>
         ) : (
           <div
-            className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] border border-secondary-light/20 shadow-[0_30px_60px_rgba(94,32,59,0.05)] overflow-hidden flex flex-col mx-auto max-w-4xl"
-            style={{ height: '70vh', minHeight: '500px', maxHeight: '720px' }}
+            className="bg-white rounded-2xl sm:rounded-[2.5rem] md:rounded-[3.5rem] border border-secondary-light/20 shadow-[0_20px_50px_rgba(94,32,59,0.05)] overflow-hidden flex flex-col mx-auto max-w-4xl h-[78vh] sm:h-[72vh] min-h-[440px] sm:min-h-[500px] max-h-[740px]"
           >
             {/* Header / Participant Switcher for Owners */}
             {isOwner && participants.length > 0 ? (
-              <div className="bg-background/30 px-6 py-4 border-b border-secondary-light/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
-                      <User size={16} />
+              <div className="bg-background/30 px-3.5 sm:px-6 py-3 sm:py-4 border-b border-secondary-light/10 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
+                      <User size={14} className="sm:w-4 sm:h-4" />
                     </div>
-                    <h3 className="text-sm font-black text-primary">المحادثات النشطة</h3>
+                    <h3 className="text-xs sm:text-sm font-black text-primary truncate">المحادثات النشطة</h3>
                   </div>
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                  <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1">
                     {participants.map(p => (
                       <button
                         key={p.id}
                         onClick={() => setActiveParticipant(p.id)}
-                        className={`shrink-0 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 border-2 ${activeParticipant === p.id
-                            ? 'bg-primary text-white border-primary shadow-md scale-105'
+                        className={`shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black transition-all duration-200 border-2 ${activeParticipant === p.id
+                            ? 'bg-primary text-white border-primary shadow-sm scale-102 sm:scale-105'
                             : 'bg-white text-primary-muted border-secondary-light/20 hover:border-primary/30 hover:text-primary'
                           }`}
                       >
@@ -319,7 +318,7 @@ export default function UnifiedChat() {
 
                 {/* Delivery/Fulfillment Actions & Voice Call for Owner */}
                 {activeParticipant && item && (
-                  <div className="shrink-0 flex items-center gap-3">
+                  <div className="shrink-0 flex items-center gap-2 sm:gap-3 justify-end pt-1 md:pt-0 border-t md:border-t-0 border-secondary-light/10">
                     {callTarget && item.status !== 'fulfilled' && item.status !== 'delivered' && (
                       <VoiceCallButton
                         receiverId={callTarget.id}
@@ -329,15 +328,15 @@ export default function UnifiedChat() {
                       />
                     )}
                     {item.status === 'delivered' || item.status === 'fulfilled' ? (
-                      <div className="flex items-center gap-2 bg-green-50 text-green-600 px-4 py-2.5 rounded-2xl border border-green-100">
-                        <CheckCircle2 size={16} />
-                        <span className="text-xs font-black">مكتمل</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 bg-green-50 text-green-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border border-green-100">
+                        <CheckCircle2 size={14} className="sm:w-4 sm:h-4" />
+                        <span className="text-[11px] sm:text-xs font-black">مكتمل</span>
                         {chatType === 'need' && !showReview && (
                            <button
                             onClick={() => setShowReview(true)}
-                            className="mr-2 bg-white text-green-600 border border-green-200 px-3 py-1 rounded-xl hover:bg-green-100 transition-colors"
+                            className="mr-1.5 sm:mr-2 bg-white text-green-600 border border-green-200 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg sm:rounded-xl hover:bg-green-100 transition-colors text-[10px] sm:text-xs font-bold"
                            >
-                            <Star size={12} className="inline ml-1" /> تقييم
+                            <Star size={11} className="inline ml-1" /> تقييم
                            </button>
                         )}
                       </div>
@@ -345,13 +344,13 @@ export default function UnifiedChat() {
                       <button
                         onClick={handleMarkComplete}
                         disabled={marking}
-                        className="w-full md:w-auto bg-accent text-white px-6 py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 hover:bg-accent-dark transition-all shadow-md active:scale-95 disabled:opacity-50"
+                        className="w-full md:w-auto bg-accent text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-accent-dark transition-all shadow-md active:scale-95 disabled:opacity-50 whitespace-nowrap"
                       >
                         {marking ? (
-                          <Loader2 size={14} className="animate-spin" />
+                          <Loader2 size={13} className="animate-spin" />
                         ) : (
                           <>
-                            <CheckCircle2 size={14} />
+                            <CheckCircle2 size={13} className="sm:w-3.5 sm:h-3.5" />
                             {chatType === 'gift' ? 'تأكيد التسليم' : 'تم تلبية الاحتياج'}
                           </>
                         )}
@@ -360,13 +359,13 @@ export default function UnifiedChat() {
                       <button
                         onClick={chatType === 'gift' ? handleMarkInProgress : undefined}
                         disabled={marking || chatType !== 'gift'}
-                        className={`w-full md:w-auto px-6 py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 ${
+                        className={`w-full md:w-auto px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 whitespace-nowrap ${
                             chatType === 'gift' ? 'bg-secondary text-white hover:bg-secondary-dark' : 'bg-background text-primary-muted cursor-not-allowed'
                         }`}
                       >
-                         {marking ? <Loader2 size={14} className="animate-spin" /> : (
+                         {marking ? <Loader2 size={13} className="animate-spin" /> : (
                            <>
-                             <CheckCircle2 size={14} />
+                             <CheckCircle2 size={13} className="sm:w-3.5 sm:h-3.5" />
                              {chatType === 'gift' ? 'بدء تقديم العطاء' : 'في انتظار صانعة أثر'}
                            </>
                          )}
@@ -376,22 +375,22 @@ export default function UnifiedChat() {
                 )}
               </div>
             ) : !isOwner ? (
-                <div className="bg-background/30 px-8 py-5 border-b border-secondary-light/10 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${chatType === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
-                      <User size={20} />
+                <div className="bg-background/30 px-3.5 sm:px-8 py-3 sm:py-5 border-b border-secondary-light/10 flex items-center justify-between gap-2.5 sm:gap-4">
+                  <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${chatType === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
+                      <User size={16} className="sm:w-5 sm:h-5" />
                     </div>
-                    <div>
-                      <h3 className="text-sm font-black text-primary">
+                    <div className="min-w-0">
+                      <h3 className="text-xs sm:text-sm font-black text-primary truncate">
                         {chatType === 'need' ? 'مراسلة صاحبة الطلب' : 'مراسلة مقدمة العطاء'}
                       </h3>
-                      <p className="text-[10px] text-primary-muted font-bold mt-0.5">استفسري عن تفاصيل تقديم الخدمة</p>
+                      <p className="text-[9px] sm:text-[10px] text-primary-muted font-bold mt-0.5 truncate">استفسري عن تفاصيل تقديم الخدمة</p>
                     </div>
                   </div>
 
                   {/* Claim/Review Actions & Voice Call for Recipient/Helper */}
                   {item && (
-                    <div className="shrink-0 flex items-center gap-3">
+                    <div className="shrink-0 flex items-center gap-2 sm:gap-3">
                       {callTarget && item.status !== 'fulfilled' && item.status !== 'delivered' && (
                         <VoiceCallButton
                           receiverId={callTarget.id}
@@ -404,29 +403,29 @@ export default function UnifiedChat() {
                          <button
                            onClick={handleClaim}
                            disabled={marking}
-                           className="bg-accent text-white px-6 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 hover:bg-accent-dark transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                           className="bg-accent text-white px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 hover:bg-accent-dark transition-all shadow-sm active:scale-95 disabled:opacity-50 whitespace-nowrap"
                          >
-                           {marking ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> استلام الطلب</>}
+                           {marking ? <Loader2 size={13} className="animate-spin" /> : <><CheckCircle2 size={13} /> استلام الطلب</>}
                          </button>
                        )}
 
                        {(item.status === 'delivered' || item.status === 'fulfilled') && (
                          showReview ? (
-                           <span className="text-[10px] font-black text-primary-muted bg-white px-3 py-1 rounded-full">جاري التقييم...</span>
+                           <span className="text-[9px] sm:text-[10px] font-black text-primary-muted bg-white px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap">جاري التقييم...</span>
                          ) : (
                            <button
                              onClick={() => setShowReview(true)}
-                             className="bg-yellow-400 hover:bg-yellow-500 text-primary-dark px-5 py-2.5 rounded-2xl font-black text-xs flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                             className="bg-yellow-400 hover:bg-yellow-500 text-primary-dark px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all shadow-sm active:scale-95 whitespace-nowrap"
                            >
-                             <Star size={14} /> تقييم التجربة
+                             <Star size={13} /> تقييم التجربة
                            </button>
                          )
                        )}
 
                        {item.status === 'in_progress' && chatType === 'need' && (
-                         <div className="bg-secondary/10 text-secondary px-4 py-2 rounded-xl border border-secondary/20 flex items-center gap-2">
-                            <Clock size={14} />
-                            <span className="text-[10px] font-black">قيد التنفيذ</span>
+                         <div className="bg-secondary/10 text-secondary px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-secondary/20 flex items-center gap-1.5 sm:gap-2 shrink-0">
+                            <Clock size={12} className="sm:w-3.5 sm:h-3.5" />
+                            <span className="text-[9px] sm:text-[10px] font-black whitespace-nowrap">قيد التنفيذ</span>
                          </div>
                        )}
                     </div>
@@ -435,9 +434,9 @@ export default function UnifiedChat() {
             ) : null}
 
             {/* Message Area or Review Form */}
-            <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-gradient-to-b from-transparent to-background/20 no-scrollbar relative">
+            <div className="flex-1 overflow-y-auto px-3.5 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6 bg-gradient-to-b from-transparent to-background/20 no-scrollbar relative">
               {showReview ? (
-                <div className="max-w-md mx-auto py-4">
+                <div className="max-w-md mx-auto py-2 sm:py-4">
                   <ReviewForm
                     reviewableId={itemId}
                     reviewableType={chatType}
@@ -455,11 +454,11 @@ export default function UnifiedChat() {
                       <Loader2 size={32} className="animate-spin text-primary-muted/20" />
                     </div>
                   ) : visible.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40">
-                      <div className="w-16 h-16 rounded-3xl bg-secondary-light/20 flex items-center justify-center text-secondary">
-                        <MessageCircle size={32} />
+                    <div className="flex flex-col items-center justify-center h-full text-center space-y-3 sm:space-y-4 opacity-40">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-secondary-light/20 flex items-center justify-center text-secondary">
+                        <MessageCircle size={24} className="sm:w-8 sm:h-8" />
                       </div>
-                      <p className="text-sm font-bold text-primary-muted max-w-[200px]">
+                      <p className="text-xs sm:text-sm font-bold text-primary-muted max-w-[200px]">
                         {isOwner ? 'ابدئي بالتواصل مع المهتمات بطلبكِ.' : 'اسألي عن التفاصيل للبدء في الأثر.'}
                       </p>
                     </div>
@@ -468,10 +467,10 @@ export default function UnifiedChat() {
                       const isCallLog = m.body.startsWith('📞');
                       if (isCallLog) {
                         return (
-                          <div key={m.id} className="flex justify-center my-2 animate-fade-in">
-                            <div className="bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm">
+                          <div key={m.id} className="flex justify-center my-1.5 sm:my-2 animate-fade-in">
+                            <div className="bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 shadow-xs">
                               <span>{m.body}</span>
-                              <span className="text-[10px] text-emerald-600/70 font-medium">• {timeAgo(m.created_at)}</span>
+                              <span className="text-[9px] sm:text-[10px] text-emerald-600/70 font-medium">• {timeAgo(m.created_at)}</span>
                             </div>
                           </div>
                         );
@@ -483,19 +482,19 @@ export default function UnifiedChat() {
                       return (
                         <div key={m.id} className={`flex flex-col ${own ? 'items-end' : 'items-start'}`}>
                           {showName && (
-                            <span className="text-[10px] font-black text-primary-muted/60 mb-1.5 mr-2 ml-2">
+                            <span className="text-[9px] sm:text-[10px] font-black text-primary-muted/60 mb-1 mr-1.5 ml-1.5">
                               {m.sender_name}
                             </span>
                           )}
                           <div
-                            className={`group relative max-w-[85%] md:max-w-[70%] px-5 py-3.5 rounded-[1.5rem] text-sm font-semibold leading-relaxed shadow-sm transition-all hover:shadow-md ${own
+                            className={`group relative max-w-[88%] sm:max-w-[80%] md:max-w-[70%] px-3.5 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl sm:rounded-[1.5rem] text-xs sm:text-sm font-semibold leading-relaxed shadow-xs sm:shadow-sm transition-all ${own
                                 ? 'bg-primary text-white rounded-br-none'
                                 : 'bg-white border border-secondary-light/30 text-primary rounded-bl-none'
                               }`}
                           >
                             <p className="whitespace-pre-wrap break-words">{m.body}</p>
                             <p
-                              className={`text-[9px] mt-2 font-bold flex items-center gap-1 ${own ? 'text-white/60 justify-end' : 'text-primary-muted/60'
+                              className={`text-[8px] sm:text-[9px] mt-1.5 sm:mt-2 font-bold flex items-center gap-1 ${own ? 'text-white/60 justify-end' : 'text-primary-muted/60'
                                 }`}
                             >
                               {timeAgo(m.created_at)}
@@ -512,17 +511,17 @@ export default function UnifiedChat() {
 
             {/* Input Area */}
             {!(item?.status === 'fulfilled' || item?.status === 'delivered') && (
-              <div className="p-6 bg-white border-t border-secondary-light/10">
+              <div className="p-3 sm:p-5 md:p-6 bg-white border-t border-secondary-light/10">
                 {error && (
-                  <div className="mb-4 bg-red-50 border border-red-100 text-red-600 text-[10px] font-black p-3 rounded-2xl flex items-center gap-2 animate-in slide-in-from-top-2">
-                    <AlertCircle size={14} />
-                    {error}
+                  <div className="mb-2 sm:mb-4 bg-red-50 border border-red-100 text-red-600 text-[10px] sm:text-xs font-black p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex items-center gap-2 animate-in slide-in-from-top-2">
+                    <AlertCircle size={14} className="shrink-0" />
+                    <span>{error}</span>
                   </div>
                 )}
 
                 <form
                   onSubmit={handleSend}
-                  className="relative flex items-end gap-3"
+                  className="relative flex items-end gap-2 sm:gap-3"
                 >
                   <div className="flex-1 relative group">
                     <textarea
@@ -536,29 +535,29 @@ export default function UnifiedChat() {
                       }}
                       rows={1}
                       placeholder="اكتبي رسالتكِ هنا..."
-                      className="w-full min-h-[56px] max-h-[120px] resize-none bg-background/50 border border-secondary-light/30 rounded-[1.5rem] pr-6 pl-14 py-4 text-sm font-semibold text-primary placeholder:text-primary-muted/50 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all"
+                      className="w-full min-h-[48px] sm:min-h-[56px] max-h-[120px] resize-none bg-background/50 border border-secondary-light/30 rounded-xl sm:rounded-[1.5rem] pr-4 sm:pr-6 pl-12 sm:pl-14 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-primary placeholder:text-primary-muted/50 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary focus:bg-white transition-all"
                     />
-                    <div className="absolute left-3 bottom-3">
+                    <div className="absolute left-2 sm:left-3 bottom-2 sm:bottom-3">
                       <button
                         type="submit"
                         disabled={sending || !body.trim()}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-300 ${
                           body.trim()
-                          ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-100 hover:scale-105 active:scale-95'
+                          ? 'bg-primary text-white shadow-md shadow-primary/20 scale-100 hover:scale-105 active:scale-95'
                           : 'bg-background text-primary-muted scale-90 opacity-50'
                         }`}
                         aria-label="إرسال"
                       >
                         {sending ? (
-                          <Loader2 size={18} className="animate-spin" />
+                          <Loader2 size={16} className="animate-spin" />
                         ) : (
-                          <Send size={18} className="mr-0.5" />
+                          <Send size={16} className="mr-0.5 sm:w-4.5 sm:h-4.5" />
                         )}
                       </button>
                     </div>
                   </div>
                 </form>
-                <p className="mt-3 text-[9px] text-center text-primary-muted font-bold opacity-60">
+                <p className="hidden sm:block mt-2.5 text-[9px] text-center text-primary-muted font-bold opacity-60">
                   اضغطي Enter للإرسال، و Shift + Enter للسطر الجديد
                 </p>
               </div>

@@ -104,44 +104,45 @@ export default function ChatInbox() {
 
           {/* Threads List */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <Loader2 size={40} className="animate-spin text-primary/20" />
-              <p className="text-primary-muted font-bold">جاري تحميل المحادثات...</p>
+            <div className="flex flex-col items-center justify-center py-16 md:py-20 gap-4">
+              <Loader2 size={36} className="animate-spin text-primary/20" />
+              <p className="text-primary-muted font-bold text-sm md:text-base">جاري تحميل المحادثات...</p>
             </div>
           ) : filteredThreads.length === 0 ? (
-            <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-12 md:p-16 text-center border-2 border-dashed border-secondary-light/30">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-background rounded-full flex items-center justify-center mx-auto mb-6 text-secondary-light">
-                <MessageCircle size={32} />
+            <div className="bg-white rounded-2xl md:rounded-[3rem] p-8 md:p-16 text-center border-2 border-dashed border-secondary-light/30">
+              <div className="w-14 h-14 md:w-20 md:h-20 bg-background rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 text-secondary-light">
+                <MessageCircle size={28} className="md:w-8 md:h-8" />
               </div>
-              <p className="text-primary-muted font-bold text-lg">لا توجد محادثات نشطة حالياً</p>
-              <p className="text-secondary-muted text-sm mt-1">ابدئي التواصل من خلال تصفح الطلبات أو العطايا.</p>
+              <p className="text-primary-muted font-bold text-base md:text-lg">لا توجد محادثات نشطة حالياً</p>
+              <p className="text-secondary-muted text-xs md:text-sm mt-1">ابدئي التواصل من خلال تصفح الطلبات أو العطايا.</p>
             </div>
           ) : (
-            <div className="grid gap-3 md:gap-4">
+            <div className="grid gap-2.5 md:gap-4">
               {filteredThreads.map((thread, idx) => (
                 <Link
                   key={idx}
                   href={`/chat/${thread.type}/${thread.item_id}${thread.participant_id !== user?.id ? `?participant=${thread.participant_id}` : ''}`}
+                  className="block focus:outline-none"
                 >
-                  <div className="group bg-white rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 border border-secondary-light/20 shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex items-center justify-between gap-3 md:gap-4">
-                    <div className="flex items-center gap-3 md:gap-5 flex-1 min-w-0">
-                      <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
+                  <div className="group bg-white rounded-2xl md:rounded-[2.5rem] p-3.5 md:p-6 border border-secondary-light/20 shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex items-center justify-between gap-2.5 md:gap-4">
+                    <div className="flex items-center gap-2.5 md:gap-5 flex-1 min-w-0">
+                      <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
                         }`}>
-                        {thread.type === 'gift' ? <Sparkles size={18} /> : <HelpCircle size={18} />}
+                        {thread.type === 'gift' ? <Sparkles size={18} className="md:w-6 md:h-6" /> : <HelpCircle size={18} className="md:w-6 md:h-6" />}
                       </div>
 
                       <div className="text-right flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 md:mb-1">
-                          <h3 className="text-sm md:text-base font-black text-primary truncate">{thread.item_title}</h3>
-                          <span className={`text-[8px] md:text-[9px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
+                          <h3 className="text-xs sm:text-sm md:text-base font-black text-primary truncate max-w-[140px] sm:max-w-[220px] md:max-w-none">{thread.item_title}</h3>
+                          <span className={`text-[8px] md:text-[9px] font-black px-1.5 md:px-2 py-0.5 rounded-full shrink-0 ${thread.type === 'gift' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'
                             }`}>
                             {thread.type === 'gift' ? 'عطاء' : 'طلب'}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-primary-muted font-bold mb-1 md:mb-2">
-                          <User size={10} className="text-secondary" />
-                          <span className="truncate">{thread.other_name}</span>
+                        <div className="flex items-center gap-1 md:gap-2 text-[10px] md:text-xs text-primary-muted font-bold mb-0.5 md:mb-1">
+                          <User size={10} className="text-secondary shrink-0" />
+                          <span className="truncate max-w-[120px] sm:max-w-none">{thread.other_name}</span>
                         </div>
 
                         <p className="text-[10px] md:text-xs text-primary-muted/70 truncate leading-relaxed">
@@ -150,10 +151,10 @@ export default function ChatInbox() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-2 md:gap-3 shrink-0">
-                      <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-bold text-primary-muted opacity-60">
-                        <Clock size={10} />
-                        <span>{timeAgo(thread.updated_at)}</span>
+                    <div className="flex flex-col items-end gap-1.5 md:gap-3 shrink-0">
+                      <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-bold text-primary-muted opacity-75">
+                        <Clock size={10} className="shrink-0" />
+                        <span className="whitespace-nowrap">{timeAgo(thread.updated_at)}</span>
                       </div>
                       <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-background flex items-center justify-center text-primary-muted group-hover:bg-primary group-hover:text-white transition-all">
                         <ChevronLeft size={14} />

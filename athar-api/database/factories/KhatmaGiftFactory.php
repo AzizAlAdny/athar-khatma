@@ -22,7 +22,7 @@ class KhatmaGiftFactory extends Factory
         return [
             'khatma_id' => Khatma::factory(),
             'gift_id' => Gift::factory(),
-            'status' => 'completed',
+            'status' => 'pending',
         ];
     }
 }
