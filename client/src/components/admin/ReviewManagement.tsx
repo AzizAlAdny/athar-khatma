@@ -59,7 +59,7 @@ export default function ReviewManagement() {
   return (
     <div className="space-y-6">
       {/* Control Bar: Search & Rating Filter */}
-      <div className="rounded-[2rem] bg-white p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="rounded-2xl sm:rounded-[2rem] bg-white p-4 sm:p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-stretch md:items-center">
         <div className="relative w-full md:w-80">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-muted" size={18} />
           <input
@@ -70,19 +70,19 @@ export default function ReviewManagement() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-medium text-primary focus:outline-none focus:border-primary"
+            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-medium text-primary focus:outline-none focus:border-primary"
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Filter size={18} className="text-primary-muted" />
+        <div className="flex items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+          <Filter size={18} className="text-primary-muted shrink-0" />
           <select
             value={rating}
             onChange={(e) => {
               setRating(e.target.value);
               setPage(1);
             }}
-            className="w-full md:w-auto px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-bold text-primary focus:outline-none focus:border-primary"
+            className="w-full md:w-auto px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary"
           >
             <option value="">جميع التقييمات</option>
             <option value="5">5 نجوم ⭐⭐⭐⭐⭐</option>
@@ -95,9 +95,9 @@ export default function ReviewManagement() {
       </div>
 
       {/* Main Table / Review Cards */}
-      <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-black text-primary">مراجعة تقييمات المجتمع</h2>
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+          <h2 className="text-xl sm:text-2xl font-black text-primary">مراجعة تقييمات المجتمع</h2>
           {data && (
             <span className="text-xs font-black text-primary-muted bg-background px-3 py-1.5 rounded-full">
               إجمالي التقييمات: {data.total}
@@ -111,7 +111,7 @@ export default function ReviewManagement() {
             <p className="text-primary-muted font-bold text-sm">جاري تحميل التقييمات...</p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-100 text-red-600 p-8 rounded-[2rem] text-center flex flex-col items-center">
+          <div className="bg-red-50 border border-red-100 text-red-600 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] text-center flex flex-col items-center">
             <AlertCircle size={40} className="mb-2" />
             <p className="font-bold text-sm">{error}</p>
           </div>
@@ -120,8 +120,8 @@ export default function ReviewManagement() {
             لا توجد تقييمات مطابقة للبحث.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-right text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b border-background text-primary-muted text-xs font-black">
                   <th className="pb-4 pr-4">المعرف</th>
@@ -136,16 +136,16 @@ export default function ReviewManagement() {
               <tbody className="divide-y divide-background">
                 {data.data.map((review) => (
                   <tr key={review.id} className="group hover:bg-background/30 transition-colors">
-                    <td className="py-5 font-black text-primary pr-4">#{review.id}</td>
-                    <td className="py-5 font-bold text-primary">
+                    <td className="py-4 sm:py-5 font-black text-primary pr-4">#{review.id}</td>
+                    <td className="py-4 sm:py-5 font-bold text-primary">
                       {review.reviewer?.display_name || review.reviewer?.name || `مستخدم #${review.reviewer_id}`}
                       <div className="text-xs text-primary-muted font-normal">{review.reviewer?.email}</div>
                     </td>
-                    <td className="py-5 font-bold text-primary">
+                    <td className="py-4 sm:py-5 font-bold text-primary">
                       {review.reviewee?.display_name || review.reviewee?.name || `مستخدم #${review.reviewee_id}`}
                       <div className="text-xs text-primary-muted font-normal">{review.reviewee?.email}</div>
                     </td>
-                    <td className="py-5">
+                    <td className="py-4 sm:py-5">
                       <div className="flex items-center gap-1">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <Star
@@ -157,17 +157,17 @@ export default function ReviewManagement() {
                         <span className="text-xs font-black text-primary mr-1">({review.rating})</span>
                       </div>
                     </td>
-                    <td className="py-5 text-primary-muted font-medium max-w-sm">
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium max-w-sm">
                       {review.comment ? (
                         <p className="line-clamp-2 text-xs">{review.comment}</p>
                       ) : (
                         <span className="text-xs text-primary-muted italic">بدون تعليق مكتوب</span>
                       )}
                     </td>
-                    <td className="py-5 text-primary-muted font-medium text-xs">
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium text-xs whitespace-nowrap">
                       {review.created_at ? new Date(review.created_at).toLocaleDateString('ar-SA') : '-'}
                     </td>
-                    <td className="py-5 pl-4 text-left">
+                    <td className="py-4 sm:py-5 pl-4 text-left">
                       <button
                         onClick={() => handleDelete(review.id)}
                         disabled={deletingId === review.id}
@@ -184,7 +184,7 @@ export default function ReviewManagement() {
 
             {/* Pagination Controls */}
             {data.last_page > 1 && (
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-background">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t border-background">
                 <p className="text-xs font-bold text-primary-muted">
                   صفحة {data.current_page} من {data.last_page}
                 </p>

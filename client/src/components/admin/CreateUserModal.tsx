@@ -117,22 +117,22 @@ export default function CreateUserModal({ onClose, onSuccess }: CreateUserModalP
   const currentNeighborhoods = CITY_DATA[city] || [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 max-w-xl w-full space-y-6 shadow-2xl border border-secondary-light/40 my-8 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 max-w-xl w-full space-y-5 sm:space-y-6 shadow-2xl border border-secondary-light/40 my-auto max-h-[95vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-background pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-              <Plus size={22} />
+        <div className="flex justify-between items-center border-b border-background pb-3 sm:pb-4">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Plus size={20} />
             </div>
             <div>
-              <h3 className="text-xl font-black text-primary">إضافة مستخدم جديد</h3>
-              <p className="text-xs text-primary-muted font-bold">إنشاء حساب فوري وتفعيله مباشرة في المنصة</p>
+              <h3 className="text-lg sm:text-xl font-black text-primary">إضافة مستخدم جديد</h3>
+              <p className="text-[11px] sm:text-xs text-primary-muted font-bold">إنشاء حساب فوري وتفعيله مباشرة في المنصة</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-background hover:bg-secondary-light/40 flex items-center justify-center text-primary-muted hover:text-primary transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-background hover:bg-secondary-light/40 flex items-center justify-center text-primary-muted hover:text-primary transition-colors cursor-pointer shrink-0"
           >
             <X size={18} />
           </button>
@@ -140,14 +140,14 @@ export default function CreateUserModal({ onClose, onSuccess }: CreateUserModalP
 
         {/* Alerts */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-xs font-bold flex items-center gap-2.5">
+          <div className="p-3.5 sm:p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-xs font-bold flex items-center gap-2.5">
             <AlertCircle size={18} className="shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-black flex items-center gap-2.5">
+          <div className="p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-black flex items-center gap-2.5">
             <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
             <span>{successMessage}</span>
           </div>
@@ -157,7 +157,7 @@ export default function CreateUserModal({ onClose, onSuccess }: CreateUserModalP
           {/* Role Selection */}
           <div>
             <label className="block text-xs font-black text-primary mb-2">نوع الحساب والدور *</label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
               {roleOptions.map((opt) => {
                 const Icon = opt.icon;
                 const isSelected = role === opt.id;
@@ -317,18 +317,18 @@ export default function CreateUserModal({ onClose, onSuccess }: CreateUserModalP
           </div>
 
           {/* Actions */}
-          <div className="pt-2 flex gap-3">
+          <div className="pt-2 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-full border border-secondary-light/40 font-bold text-xs text-primary-muted hover:bg-background transition-colors cursor-pointer"
+              className="w-full sm:flex-1 py-3 rounded-full border border-secondary-light/40 font-bold text-xs text-primary-muted hover:bg-background transition-colors cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
               disabled={submitting || !!successMessage}
-              className="flex-1 py-3 rounded-full bg-primary text-white font-black text-xs hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="w-full sm:flex-1 py-3 rounded-full bg-primary text-white font-black text-xs hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
               تأكيد وإضافة المستخدم

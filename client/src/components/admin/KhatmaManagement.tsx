@@ -114,7 +114,7 @@ export default function KhatmaManagement() {
   return (
     <div className="space-y-6">
       {/* Control Bar: Search & Status Filters */}
-      <div className="rounded-[2rem] bg-white p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="rounded-2xl sm:rounded-[2rem] bg-white p-4 sm:p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-stretch md:items-center">
         <div className="relative w-full md:w-80">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-muted" size={18} />
           <input
@@ -125,19 +125,19 @@ export default function KhatmaManagement() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-medium text-primary focus:outline-none focus:border-primary"
+            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-medium text-primary focus:outline-none focus:border-primary"
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Filter size={18} className="text-primary-muted" />
+        <div className="flex items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+          <Filter size={18} className="text-primary-muted shrink-0" />
           <select
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
               setPage(1);
             }}
-            className="w-full md:w-auto px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-bold text-primary focus:outline-none focus:border-primary"
+            className="w-full md:w-auto px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary"
           >
             <option value="">جميع الحالات</option>
             <option value="active">نشطة</option>
@@ -147,9 +147,9 @@ export default function KhatmaManagement() {
       </div>
 
       {/* Main Table */}
-      <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-black text-primary">إدارة الختمات المنشورة</h2>
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+          <h2 className="text-xl sm:text-2xl font-black text-primary">إدارة الختمات المنشورة</h2>
           {data && (
             <span className="text-xs font-black text-primary-muted bg-background px-3 py-1.5 rounded-full">
               إجمالي الختمات: {data.total}
@@ -163,7 +163,7 @@ export default function KhatmaManagement() {
             <p className="text-primary-muted font-bold text-sm">جاري تحميل الختمات...</p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-100 text-red-600 p-8 rounded-[2rem] text-center flex flex-col items-center">
+          <div className="bg-red-50 border border-red-100 text-red-600 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] text-center flex flex-col items-center">
             <AlertCircle size={40} className="mb-2" />
             <p className="font-bold text-sm">{error}</p>
           </div>
@@ -172,8 +172,8 @@ export default function KhatmaManagement() {
             لا توجد ختمات مطابقة لمعايير البحث.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-right text-sm min-w-[750px]">
               <thead>
                 <tr className="border-b border-background text-primary-muted text-xs font-black">
                   <th className="pb-4 pr-4">المعرف</th>
@@ -189,13 +189,13 @@ export default function KhatmaManagement() {
               <tbody className="divide-y divide-background">
                 {data.data.map((khatma) => (
                   <tr key={khatma.id} className="group hover:bg-background/30 transition-colors">
-                    <td className="py-5 font-black text-primary pr-4">#{khatma.id}</td>
-                    <td className="py-5 font-bold text-primary">
+                    <td className="py-4 sm:py-5 font-black text-primary pr-4">#{khatma.id}</td>
+                    <td className="py-4 sm:py-5 font-bold text-primary">
                       {khatma.user?.display_name || khatma.user?.name || `مستخدم #${khatma.user_id}`}
                       <div className="text-xs text-primary-muted font-normal">{khatma.user?.email}</div>
                     </td>
-                    <td className="py-5 text-primary-muted font-medium">{khatma.user?.city || 'غير محدد'}</td>
-                    <td className="py-5">
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium">{khatma.user?.city || 'غير محدد'}</td>
+                    <td className="py-4 sm:py-5">
                       <div className="flex flex-wrap gap-1.5">
                         {khatma.khatma_gifts && khatma.khatma_gifts.length > 0 ? (
                           khatma.khatma_gifts.map((kg) => (
@@ -203,7 +203,7 @@ export default function KhatmaManagement() {
                               key={kg.id}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-secondary-light/30 text-primary border border-secondary-light/40"
                             >
-                              <Gift size={12} className="text-secondary" />
+                              <Gift size={12} className="text-secondary shrink-0" />
                               <span>{kg.gift?.name || 'عطاء'}</span>
                               <span className="opacity-70 text-[10px]">({kg.status === 'delivered' ? 'مكتمل' : kg.status === 'in_progress' ? 'قيد التنفيذ' : 'انتظار'})</span>
                             </span>
@@ -213,11 +213,11 @@ export default function KhatmaManagement() {
                         )}
                       </div>
                     </td>
-                    <td className="py-5 text-primary-muted font-medium">
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium whitespace-nowrap">
                       {khatma.completion_date ? new Date(khatma.completion_date).toLocaleDateString('ar-SA') : '-'}
                     </td>
-                    <td className="py-5 font-black text-accent">{khatma.impact_score || 0}</td>
-                    <td className="py-5">
+                    <td className="py-4 sm:py-5 font-black text-accent">{khatma.impact_score || 0}</td>
+                    <td className="py-4 sm:py-5">
                       <select
                         value={khatma.status}
                         onChange={(e) => handleKhatmaStatusChange(khatma.id, e.target.value as any)}
@@ -232,8 +232,8 @@ export default function KhatmaManagement() {
                         <option value="completed">مكتملة ✨</option>
                       </select>
                     </td>
-                    <td className="py-5 pl-4 text-left">
-                      <div className="flex justify-end items-center gap-2">
+                    <td className="py-4 sm:py-5 pl-4 text-left">
+                      <div className="flex justify-end items-center gap-1.5 sm:gap-2">
                         <button
                           onClick={() => setSelectedKhatma(khatma)}
                           className="p-2 text-secondary hover:bg-secondary-light/30 rounded-xl transition-colors cursor-pointer"
@@ -258,7 +258,7 @@ export default function KhatmaManagement() {
 
             {/* Pagination Controls */}
             {data.last_page > 1 && (
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-background">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t border-background">
                 <p className="text-xs font-bold text-primary-muted">
                   صفحة {data.current_page} من {data.last_page}
                 </p>
@@ -286,26 +286,26 @@ export default function KhatmaManagement() {
 
       {/* Details & Gift Status Management Modal */}
       {selectedKhatma && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl border border-secondary-light/40 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-background pb-4">
-              <h3 className="text-xl font-black text-primary">تفاصيل وإدارة الختمة #{selectedKhatma.id}</h3>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 max-w-lg w-full space-y-5 sm:space-y-6 shadow-2xl border border-secondary-light/40 max-h-[90vh] overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center border-b border-background pb-3 sm:pb-4">
+              <h3 className="text-lg sm:text-xl font-black text-primary">تفاصيل وإدارة الختمة #{selectedKhatma.id}</h3>
               <button
                 onClick={() => setSelectedKhatma(null)}
-                className="text-primary-muted hover:text-primary font-bold text-sm cursor-pointer"
+                className="w-8 h-8 rounded-full bg-background hover:bg-secondary-light/40 flex items-center justify-center text-primary-muted hover:text-primary transition-colors cursor-pointer text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-xs sm:text-sm">
               <div className="flex justify-between py-2 border-b border-background">
                 <span className="text-primary-muted font-bold">الخاتمة:</span>
                 <span className="font-black text-primary">{selectedKhatma.user?.name || '-'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-background">
                 <span className="text-primary-muted font-bold">البريد الإلكتروني:</span>
-                <span className="font-medium text-primary">{selectedKhatma.user?.email || '-'}</span>
+                <span className="font-medium text-primary break-all">{selectedKhatma.user?.email || '-'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-background">
                 <span className="text-primary-muted font-bold">المدينة:</span>
@@ -321,12 +321,12 @@ export default function KhatmaManagement() {
               </div>
 
               {/* Khatma Status Changer */}
-              <div className="p-3.5 rounded-2xl bg-background/60 flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-background/60 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black text-primary">حالة الختمة:</p>
                   <p className="text-[11px] text-primary-muted">{selectedKhatma.status === 'completed' ? 'مكتملة' : 'نشطة'}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => handleKhatmaStatusChange(selectedKhatma.id, selectedKhatma.status === 'completed' ? 'active' : 'completed')}
                     disabled={updatingKhatmaId === selectedKhatma.id}
@@ -350,9 +350,9 @@ export default function KhatmaManagement() {
                   {selectedKhatma.khatma_gifts && selectedKhatma.khatma_gifts.length > 0 ? (
                     selectedKhatma.khatma_gifts.map((kg) => (
                       <div key={kg.id} className="p-3.5 rounded-2xl bg-secondary/5 border border-secondary/20 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-black text-primary text-sm flex items-center gap-1.5">
-                            <Gift size={14} className="text-secondary" />
+                        <div className="flex justify-between items-center gap-2">
+                          <span className="font-black text-primary text-xs sm:text-sm flex items-center gap-1.5">
+                            <Gift size={14} className="text-secondary shrink-0" />
                             {kg.gift?.name || 'عطاء'}
                           </span>
                           {getGiftStatusBadge(kg.status)}
@@ -399,7 +399,7 @@ export default function KhatmaManagement() {
 
             <button
               onClick={() => setSelectedKhatma(null)}
-              className="w-full py-3 rounded-full bg-primary text-white font-black text-sm cursor-pointer hover:bg-primary/90 transition-colors"
+              className="w-full py-3 rounded-full bg-primary text-white font-black text-xs sm:text-sm cursor-pointer hover:bg-primary/90 transition-colors"
             >
               إغلاق
             </button>

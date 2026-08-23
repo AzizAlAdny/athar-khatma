@@ -90,7 +90,7 @@ export default function NeedManagement() {
   return (
     <div className="space-y-6">
       {/* Search & Filter Bar */}
-      <div className="rounded-[2rem] bg-white p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="rounded-2xl sm:rounded-[2rem] bg-white p-4 sm:p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-stretch md:items-center">
         <div className="relative w-full md:w-80">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-muted" size={18} />
           <input
@@ -101,19 +101,19 @@ export default function NeedManagement() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-medium text-primary focus:outline-none focus:border-primary"
+            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-medium text-primary focus:outline-none focus:border-primary"
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Filter size={18} className="text-primary-muted" />
+        <div className="flex items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+          <Filter size={18} className="text-primary-muted shrink-0" />
           <select
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
               setPage(1);
             }}
-            className="w-full md:w-auto px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-bold text-primary focus:outline-none focus:border-primary"
+            className="w-full md:w-auto px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary"
           >
             <option value="">جميع الحالات</option>
             <option value="open">مفتوحة</option>
@@ -124,9 +124,9 @@ export default function NeedManagement() {
       </div>
 
       {/* Main Table */}
-      <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-black text-primary">إدارة طلبات الاحتياج</h2>
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+          <h2 className="text-xl sm:text-2xl font-black text-primary">إدارة طلبات الاحتياج</h2>
           {data && (
             <span className="text-xs font-black text-primary-muted bg-background px-3 py-1.5 rounded-full">
               إجمالي الطلبات: {data.total}
@@ -140,7 +140,7 @@ export default function NeedManagement() {
             <p className="text-primary-muted font-bold text-sm">جاري تحميل الطلبات...</p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-100 text-red-600 p-8 rounded-[2rem] text-center flex flex-col items-center">
+          <div className="bg-red-50 border border-red-100 text-red-600 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] text-center flex flex-col items-center">
             <AlertCircle size={40} className="mb-2" />
             <p className="font-bold text-sm">{error}</p>
           </div>
@@ -149,8 +149,8 @@ export default function NeedManagement() {
             لا توجد طلبات مطابقة لمعايير البحث.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-right text-sm min-w-[750px]">
               <thead>
                 <tr className="border-b border-background text-primary-muted text-xs font-black">
                   <th className="pb-4 pr-4">المعرف</th>
@@ -166,24 +166,24 @@ export default function NeedManagement() {
               <tbody className="divide-y divide-background">
                 {data.data.map((need) => (
                   <tr key={need.id} className="group hover:bg-background/30 transition-colors">
-                    <td className="py-5 font-black text-primary pr-4">#{need.id}</td>
-                    <td className="py-5">
+                    <td className="py-4 sm:py-5 font-black text-primary pr-4">#{need.id}</td>
+                    <td className="py-4 sm:py-5">
                       <span className="inline-flex items-center gap-1.5 font-bold text-primary">
-                        <Gift size={14} className="text-secondary" />
-                        {need.gift?.name || 'احتياج'}
+                        <Gift size={14} className="text-secondary shrink-0" />
+                        <span>{need.gift?.name || 'احتياج'}</span>
                       </span>
                     </td>
-                    <td className="py-5 font-bold text-primary">
+                    <td className="py-4 sm:py-5 font-bold text-primary">
                       {need.user?.display_name || need.user?.name || `مستخدم #${need.user_id}`}
                       <div className="text-xs text-primary-muted font-normal">{need.user?.email}</div>
                     </td>
-                    <td className="py-5 text-primary-muted font-medium">{need.city || 'الرياض'}</td>
-                    <td className="py-5 text-primary-muted font-medium max-w-xs truncate">
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium">{need.city || 'الرياض'}</td>
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium max-w-xs truncate">
                       {need.description || '-'}
                     </td>
-                    <td className="py-5">
+                    <td className="py-4 sm:py-5">
                       {need.helper ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-accent">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-accent whitespace-nowrap">
                           <UserCheck size={14} />
                           {need.helper.display_name || need.helper.name}
                         </span>
@@ -191,7 +191,7 @@ export default function NeedManagement() {
                         <span className="text-xs text-primary-muted font-normal">بانتظار مبادرة</span>
                       )}
                     </td>
-                    <td className="py-5">
+                    <td className="py-4 sm:py-5">
                       {need.status === 'open' ? (
                         getStatusBadge(need.status)
                       ) : (
@@ -210,8 +210,8 @@ export default function NeedManagement() {
                         </select>
                       )}
                     </td>
-                    <td className="py-5 pl-4 text-left">
-                      <div className="flex justify-end items-center gap-1.5">
+                    <td className="py-4 sm:py-5 pl-4 text-left">
+                      <div className="flex justify-end items-center gap-1.5 sm:gap-2">
                         <button
                           onClick={() => setSelectedNeed(need)}
                           className="p-2 text-secondary hover:bg-secondary-light/30 rounded-xl transition-colors cursor-pointer"
@@ -236,7 +236,7 @@ export default function NeedManagement() {
 
             {/* Pagination Controls */}
             {data.last_page > 1 && (
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-background">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t border-background">
                 <p className="text-xs font-bold text-primary-muted">
                   صفحة {data.current_page} من {data.last_page}
                 </p>
@@ -264,19 +264,19 @@ export default function NeedManagement() {
 
       {/* Details & Status Edit Modal */}
       {selectedNeed && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl border border-secondary-light/40">
-            <div className="flex justify-between items-center border-b border-background pb-4">
-              <h3 className="text-xl font-black text-primary">تفاصيل وإدارة الطلب #{selectedNeed.id}</h3>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 max-w-lg w-full space-y-5 sm:space-y-6 shadow-2xl border border-secondary-light/40 my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-background pb-3 sm:pb-4">
+              <h3 className="text-lg sm:text-xl font-black text-primary">تفاصيل وإدارة الطلب #{selectedNeed.id}</h3>
               <button
                 onClick={() => setSelectedNeed(null)}
-                className="text-primary-muted hover:text-primary font-bold text-sm cursor-pointer"
+                className="w-8 h-8 rounded-full bg-background hover:bg-secondary-light/40 flex items-center justify-center text-primary-muted hover:text-primary transition-colors cursor-pointer text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-xs sm:text-sm">
               <div className="flex justify-between py-2 border-b border-background">
                 <span className="text-primary-muted font-bold">العطاء المطلوب:</span>
                 <span className="font-black text-primary">{selectedNeed.gift?.name || '-'}</span>
@@ -287,7 +287,7 @@ export default function NeedManagement() {
               </div>
               <div className="flex justify-between py-2 border-b border-background">
                 <span className="text-primary-muted font-bold">البريد الإلكتروني:</span>
-                <span className="font-medium text-primary">{selectedNeed.user?.email || '-'}</span>
+                <span className="font-medium text-primary break-all">{selectedNeed.user?.email || '-'}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-background">
                 <span className="text-primary-muted font-bold">المدينة:</span>
@@ -348,7 +348,7 @@ export default function NeedManagement() {
 
             <button
               onClick={() => setSelectedNeed(null)}
-              className="w-full py-3 rounded-full bg-primary text-white font-black text-sm cursor-pointer hover:bg-primary/90 transition-colors"
+              className="w-full py-3 rounded-full bg-primary text-white font-black text-xs sm:text-sm cursor-pointer hover:bg-primary/90 transition-colors"
             >
               إغلاق
             </button>

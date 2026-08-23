@@ -89,18 +89,18 @@ export default function AdminDashboard() {
       <AppShell hero={adminHero}>
         <div className="space-y-8 pb-20">
           {/* Navigation Tab Bar */}
-          <div className="flex flex-wrap gap-2 bg-white rounded-[2rem] p-2 shadow-sm border border-secondary-light/30">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex gap-1.5 sm:gap-2 bg-white rounded-2xl sm:rounded-[2rem] p-1.5 sm:p-2 shadow-sm border border-secondary-light/30">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-[130px] flex items-center justify-center gap-2 px-5 py-3 rounded-[1.5rem] text-sm font-black transition-all cursor-pointer ${activeTab === tab.id
+                className={`flex-1 min-w-0 sm:min-w-[130px] flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-[1.5rem] text-xs sm:text-sm font-black transition-all cursor-pointer ${activeTab === tab.id
                     ? 'bg-primary text-white shadow-md'
                     : 'text-primary-muted hover:bg-background'
                   }`}
               >
-                <tab.icon size={18} />
-                {tab.label}
+                <tab.icon size={18} className="shrink-0" />
+                <span className="truncate">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -135,9 +135,9 @@ export default function AdminDashboard() {
 
 function OverviewTab({ stats }: { stats: AdminStats }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Top 4 KPI Metrics */}
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: 'إجمالي الأعضاء',
@@ -170,28 +170,28 @@ function OverviewTab({ stats }: { stats: AdminStats }) {
         ].map((item) => (
           <div
             key={item.label}
-            className="rounded-[2rem] bg-white p-7 shadow-sm border border-secondary-light/30 hover:shadow-md transition-shadow"
+            className="rounded-2xl sm:rounded-[2rem] bg-white p-5 sm:p-7 shadow-sm border border-secondary-light/30 hover:shadow-md transition-shadow"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <span className="text-xs font-black text-primary-muted">{item.label}</span>
-              <div className={`p-3 rounded-2xl ${item.bg}`}>
-                <item.icon size={22} className={item.color} />
+              <div className={`p-2.5 sm:p-3 rounded-2xl ${item.bg}`}>
+                <item.icon size={20} className={`sm:w-[22px] sm:h-[22px] ${item.color}`} />
               </div>
             </div>
-            <p className={`text-3xl font-black ${item.color}`}>{item.value}</p>
+            <p className={`text-2xl sm:text-3xl font-black ${item.color}`}>{item.value}</p>
           </div>
         ))}
       </div>
 
       {/* Deep Dive Breakdown Cards */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* User Roles Distribution */}
-        <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
-          <h3 className="text-lg font-black text-primary mb-6 flex items-center gap-2">
+        <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-5 sm:p-8 shadow-sm border border-secondary-light/30">
+          <h3 className="text-base sm:text-lg font-black text-primary mb-4 sm:mb-6 flex items-center gap-2">
             <Users size={20} className="text-secondary" />
             توزيع الأعضاء
           </h3>
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             {[
               { label: 'الخاتمات', value: stats.khatma_users, color: 'bg-primary' },
               { label: 'طالبات الاحتياج', value: stats.seeker_users, color: 'bg-accent' },
@@ -219,63 +219,63 @@ function OverviewTab({ stats }: { stats: AdminStats }) {
         </div>
 
         {/* Needs Resolution State */}
-        <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
-          <h3 className="text-lg font-black text-primary mb-6 flex items-center gap-2">
+        <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-5 sm:p-8 shadow-sm border border-secondary-light/30">
+          <h3 className="text-base sm:text-lg font-black text-primary mb-4 sm:mb-6 flex items-center gap-2">
             <HeartHandshake size={20} className="text-secondary" />
             حالة طلبات الاحتياج
           </h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3.5 bg-background/60 rounded-2xl">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-center p-3 sm:p-3.5 bg-background/60 rounded-2xl">
               <div className="flex items-center gap-2">
                 <Clock size={18} className="text-primary" />
                 <span className="font-bold text-xs text-primary">طلبات مفتوحة</span>
               </div>
-              <span className="text-lg font-black text-primary">{stats.pending_needs}</span>
+              <span className="text-base sm:text-lg font-black text-primary">{stats.pending_needs}</span>
             </div>
-            <div className="flex justify-between items-center p-3.5 bg-background/60 rounded-2xl">
+            <div className="flex justify-between items-center p-3 sm:p-3.5 bg-background/60 rounded-2xl">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={18} className="text-accent" />
                 <span className="font-bold text-xs text-primary">تم الإيفاء بها</span>
               </div>
-              <span className="text-lg font-black text-accent">{stats.fulfilled_needs ?? 0}</span>
+              <span className="text-base sm:text-lg font-black text-accent">{stats.fulfilled_needs ?? 0}</span>
             </div>
-            <div className="flex justify-between items-center p-3.5 bg-background/60 rounded-2xl">
+            <div className="flex justify-between items-center p-3 sm:p-3.5 bg-background/60 rounded-2xl">
               <div className="flex items-center gap-2">
                 <HeartHandshake size={18} className="text-secondary" />
                 <span className="font-bold text-xs text-primary">قيد التنفيذ والمتابعة</span>
               </div>
-              <span className="text-lg font-black text-secondary">{stats.in_progress_needs ?? 0}</span>
+              <span className="text-base sm:text-lg font-black text-secondary">{stats.in_progress_needs ?? 0}</span>
             </div>
           </div>
         </div>
 
         {/* Platform Live Quality Indicators */}
-        <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
-          <h3 className="text-lg font-black text-primary mb-6 flex items-center gap-2">
+        <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-5 sm:p-8 shadow-sm border border-secondary-light/30">
+          <h3 className="text-base sm:text-lg font-black text-primary mb-4 sm:mb-6 flex items-center gap-2">
             <Shield size={20} className="text-secondary" />
             جودة النشاط المباشر
           </h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3.5 bg-background/60 rounded-2xl">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-center p-3 sm:p-3.5 bg-background/60 rounded-2xl">
               <div className="flex items-center gap-2">
                 <Star size={18} className="text-secondary fill-secondary" />
                 <span className="font-bold text-xs text-primary">متوسط تقييم المجتمع</span>
               </div>
-              <span className="text-lg font-black text-primary">{stats.average_platform_rating ?? 5.0} / 5.0</span>
+              <span className="text-base sm:text-lg font-black text-primary">{stats.average_platform_rating ?? 5.0} / 5.0</span>
             </div>
-            <div className="flex justify-between items-center p-3.5 bg-background/60 rounded-2xl">
+            <div className="flex justify-between items-center p-3 sm:p-3.5 bg-background/60 rounded-2xl">
               <div className="flex items-center gap-2">
                 <PhoneCall size={18} className="text-accent" />
                 <span className="font-bold text-xs text-primary">مكالمات صوتية جارية</span>
               </div>
-              <span className="text-lg font-black text-accent">{stats.active_calls ?? 0}</span>
+              <span className="text-base sm:text-lg font-black text-accent">{stats.active_calls ?? 0}</span>
             </div>
-            <div className="flex justify-between items-center p-3.5 bg-background/60 rounded-2xl">
+            <div className="flex justify-between items-center p-3 sm:p-3.5 bg-background/60 rounded-2xl">
               <div className="flex items-center gap-2">
                 <FileText size={18} className="text-primary" />
                 <span className="font-bold text-xs text-primary">ختمات نشطة حالياً</span>
               </div>
-              <span className="text-lg font-black text-primary">{stats.active_khatmas}</span>
+              <span className="text-base sm:text-lg font-black text-primary">{stats.active_khatmas}</span>
             </div>
           </div>
         </div>
@@ -324,18 +324,18 @@ function UsersTab() {
   const getRoleBadge = (r: string) => {
     switch (r) {
       case 'admin':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-secondary-light text-primary">مشرفة إدارية</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-secondary-light text-primary whitespace-nowrap">مشرفة إدارية</span>;
       case 'khatma':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-primary/10 text-primary">خاتمة</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-primary/10 text-primary whitespace-nowrap">خاتمة</span>;
       default:
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-accent/10 text-accent">طالبة احتياج</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-accent/10 text-accent whitespace-nowrap">طالبة احتياج</span>;
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Control Bar */}
-      <div className="rounded-[2rem] bg-white p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="rounded-2xl sm:rounded-[2rem] bg-white p-4 sm:p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-stretch md:items-center">
         <div className="relative w-full md:w-80">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-muted" size={18} />
           <input
@@ -346,20 +346,20 @@ function UsersTab() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-medium text-primary focus:outline-none focus:border-primary"
+            className="w-full pl-4 pr-11 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-medium text-primary focus:outline-none focus:border-primary"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-primary-muted" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter size={18} className="text-primary-muted shrink-0" />
             <select
               value={role}
               onChange={(e) => {
                 setRole(e.target.value);
                 setPage(1);
               }}
-              className="px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-sm font-bold text-primary focus:outline-none focus:border-primary"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-full border border-secondary-light/40 bg-background/50 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary"
             >
               <option value="">جميع الأدوار</option>
               <option value="khatma">الخاتمات</option>
@@ -370,7 +370,7 @@ function UsersTab() {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-full text-xs font-black hover:bg-primary/90 transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-primary text-white px-5 py-2.5 rounded-full text-xs font-black hover:bg-primary/90 transition-colors cursor-pointer w-full sm:w-auto"
           >
             <Plus size={16} />
             إضافة مستخدم جديد
@@ -379,9 +379,9 @@ function UsersTab() {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-[2.5rem] bg-white p-8 shadow-sm border border-secondary-light/30">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-black text-primary">سجل مستخدمي المنصة</h2>
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+          <h2 className="text-xl sm:text-2xl font-black text-primary">سجل مستخدمي المنصة</h2>
           {data && (
             <span className="text-xs font-black text-primary-muted bg-background px-3 py-1.5 rounded-full">
               إجمالي المستخدمين: {data.total}
@@ -395,7 +395,7 @@ function UsersTab() {
             <p className="text-primary-muted font-bold text-sm">جاري تحميل المستخدمين...</p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-100 text-red-600 p-8 rounded-[2rem] text-center flex flex-col items-center">
+          <div className="bg-red-50 border border-red-100 text-red-600 p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] text-center flex flex-col items-center">
             <AlertCircle size={40} className="mb-2" />
             <p className="font-bold text-sm">{error}</p>
           </div>
@@ -404,8 +404,8 @@ function UsersTab() {
             لا يوجد مستخدمين مطابقين للبحث.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-right text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b border-background text-primary-muted text-xs font-black">
                   <th className="pb-4 pr-4">المعرف</th>
@@ -420,36 +420,36 @@ function UsersTab() {
               <tbody className="divide-y divide-background">
                 {data.data.map((u) => (
                   <tr key={u.id} className="group hover:bg-background/30 transition-colors">
-                    <td className="py-5 font-black text-primary pr-4">#{u.id}</td>
-                    <td className="py-5 font-bold text-primary">
+                    <td className="py-4 sm:py-5 font-black text-primary pr-4">#{u.id}</td>
+                    <td className="py-4 sm:py-5 font-bold text-primary">
                       {u.display_name || u.name}
                       {u.display_name && u.display_name !== u.name && (
                         <div className="text-xs text-primary-muted font-normal">({u.name})</div>
                       )}
                     </td>
-                    <td className="py-5 text-primary-muted font-medium">{u.email}</td>
-                    <td className="py-5">{getRoleBadge(u.role)}</td>
-                    <td className="py-5 text-primary-muted font-medium">
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium">{u.email}</td>
+                    <td className="py-4 sm:py-5">{getRoleBadge(u.role)}</td>
+                    <td className="py-4 sm:py-5 text-primary-muted font-medium">
                       <div>{u.city || 'الرياض'}</div>
                       {(u as any).neighborhood && (
                         <div className="text-[11px] text-primary-muted/70">{(u as any).neighborhood}</div>
                       )}
                     </td>
-                    <td className="py-5">
+                    <td className="py-4 sm:py-5">
                       <div className="flex gap-2 text-xs font-bold text-primary-muted">
                         {u.role === 'khatma' && (
-                          <span className="px-2 py-0.5 rounded-md bg-background">
+                          <span className="px-2 py-0.5 rounded-md bg-background whitespace-nowrap">
                             {(u as any).khatmas_count || 0} ختمة
                           </span>
                         )}
                         {u.role === 'seeker' && (
-                          <span className="px-2 py-0.5 rounded-md bg-background">
+                          <span className="px-2 py-0.5 rounded-md bg-background whitespace-nowrap">
                             {(u as any).seeker_needs_count || 0} طلب
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-5 pl-4 text-left text-primary-muted font-medium text-xs">
+                    <td className="py-4 sm:py-5 pl-4 text-left text-primary-muted font-medium text-xs whitespace-nowrap">
                       {u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '-'}
                     </td>
                   </tr>
@@ -459,7 +459,7 @@ function UsersTab() {
 
             {/* Pagination Controls */}
             {data.last_page > 1 && (
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-background">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t border-background">
                 <p className="text-xs font-bold text-primary-muted">
                   صفحة {data.current_page} من {data.last_page}
                 </p>
