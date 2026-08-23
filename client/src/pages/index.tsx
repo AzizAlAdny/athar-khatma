@@ -254,7 +254,7 @@ export default function Home() {
           {/* Start Gift Card */}
           <div className="bg-primary rounded-3xl md:rounded-[40px] p-6 sm:p-8 relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[240px] border border-white/10">
             <div className="relative z-10">
-              <h3 className="text-2xl sm:text-3xl font-black mb-2 sm:mb-3 text-secondary">ابدأي بأول عطاء</h3>
+              <h3 className="text-2xl sm:text-3xl font-black mb-2 sm:mb-3 text-secondary">ابدئي بأول عطاء</h3>
               <p className="text-secondary-light text-xs sm:text-sm font-bold leading-relaxed opacity-90">واجعلي ختمتكِ بداية لأثر مبارك يمتد في المجتمع</p>
             </div>
             <div className="absolute -left-10 -bottom-10 opacity-10 pointer-events-none">
@@ -374,7 +374,7 @@ export default function Home() {
                 <UserPlus size={120} color="var(--color-secondary)" />
               </div>
               <h3 className="text-lg sm:text-xl font-black mb-2 sm:mb-4 relative z-10">انضمي إلينا</h3>
-              <p className="text-xs sm:text-sm text-secondary-light mb-5 sm:mb-6 opacity-80 relative z-10 font-bold">أنشئي حسابكِ وابدأي صناعة الأثر اليوم</p>
+              <p className="text-xs sm:text-sm text-secondary-light mb-5 sm:mb-6 opacity-80 relative z-10 font-bold">أنشئي حسابكِ وابدئي صناعة الأثر اليوم</p>
               <Link href="/auth/register" className="bg-white text-primary py-3 px-6 sm:px-8 rounded-2xl text-xs sm:text-sm font-black transition-colors relative z-10 border border-white/20 active:scale-95 shadow-sm">
                 إنشاء حساب جديد
               </Link>

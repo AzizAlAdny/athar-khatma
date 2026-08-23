@@ -328,9 +328,9 @@ export default function MyGifts() {
                 <Gift size={32} className="sm:w-10 sm:h-10" />
               </div>
               <h3 className="text-lg sm:text-xl font-black text-primary mb-2">لا يوجد سجل عطاء حالياً</h3>
-              <p className="text-primary-muted font-bold text-xs sm:text-sm mb-6 sm:mb-8 max-w-sm mx-auto">سجلي ختمتكِ الأولى اليوم واختاري هديتكِ للمجتمع لتبدأي في صناعة الأثر.</p>
+              <p className="text-primary-muted font-bold text-xs sm:text-sm mb-6 sm:mb-8 max-w-sm mx-auto">سجلي ختمتكِ الأولى اليوم واختاري هديتكِ للمجتمع لتبدئي في صناعة الأثر.</p>
               <Link href="/khatma/register">
-                <Button className="btn-gold px-8 sm:px-12 py-3.5 sm:py-4 text-xs sm:text-sm font-black">ابدأ الآن ✨</Button>
+                <Button className="btn-gold px-8 sm:px-12 py-3.5 sm:py-4 text-xs sm:text-sm font-black">ابدئي الآن ✨</Button>
               </Link>
             </div>
           )}
