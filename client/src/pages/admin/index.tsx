@@ -379,7 +379,7 @@ function UsersTab() {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30">
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30 w-full min-w-0 max-w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
           <h2 className="text-xl sm:text-2xl font-black text-primary">سجل مستخدمي المنصة</h2>
           {data && (
@@ -404,7 +404,7 @@ function UsersTab() {
             لا يوجد مستخدمين مطابقين للبحث.
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="overflow-x-auto custom-scrollbar w-full max-w-full pb-3">
             <table className="w-full text-right text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b border-background text-primary-muted text-xs font-black">

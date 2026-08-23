@@ -112,9 +112,9 @@ export default function KhatmaManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full min-w-0 max-w-full">
       {/* Control Bar: Search & Status Filters */}
-      <div className="rounded-2xl sm:rounded-[2rem] bg-white p-4 sm:p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-stretch md:items-center">
+      <div className="rounded-2xl sm:rounded-[2rem] bg-white p-4 sm:p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-stretch md:items-center w-full min-w-0">
         <div className="relative w-full md:w-80">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-muted" size={18} />
           <input
@@ -147,7 +147,7 @@ export default function KhatmaManagement() {
       </div>
 
       {/* Main Table */}
-      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30">
+      <div className="rounded-2xl sm:rounded-[2.5rem] bg-white p-4 sm:p-8 shadow-sm border border-secondary-light/30 w-full min-w-0 max-w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
           <h2 className="text-xl sm:text-2xl font-black text-primary">إدارة الختمات المنشورة</h2>
           {data && (
@@ -172,7 +172,7 @@ export default function KhatmaManagement() {
             لا توجد ختمات مطابقة لمعايير البحث.
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="overflow-x-auto custom-scrollbar w-full max-w-full pb-3">
             <table className="w-full text-right text-sm min-w-[750px]">
               <thead>
                 <tr className="border-b border-background text-primary-muted text-xs font-black">
@@ -286,7 +286,7 @@ export default function KhatmaManagement() {
 
       {/* Details & Gift Status Management Modal */}
       {selectedKhatma && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] w-screen h-screen bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 max-w-lg w-full space-y-5 sm:space-y-6 shadow-2xl border border-secondary-light/40 max-h-[90vh] overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center border-b border-background pb-3 sm:pb-4">
               <h3 className="text-lg sm:text-xl font-black text-primary">تفاصيل وإدارة الختمة #{selectedKhatma.id}</h3>

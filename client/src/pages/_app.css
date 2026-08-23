@@ -123,3 +123,31 @@ textarea {
   background: #f8f7f3 !important;
   border-radius: 50% !important;
 }
+
+/* Custom Scrollbar for Admin Tables & Responsive Containers */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(94, 32, 59, 0.35) rgba(241, 239, 233, 0.8);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 7px;
+  width: 7px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(241, 239, 233, 0.8);
+  border-radius: 9999px;
+  margin: 0 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(94, 32, 59, 0.35);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(94, 32, 59, 0.6);
+}

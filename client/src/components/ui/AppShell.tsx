@@ -14,16 +14,16 @@ export default function AppShell({ hero, children }: AppShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans text-right" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col font-sans text-right w-full overflow-x-hidden" dir="rtl">
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
 
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative w-full min-w-0 max-w-full overflow-x-hidden">
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-        <main className="flex-1 p-4 md:p-8 lg:p-10 mr-0 xl:mr-24 pt-6">
+        <main className="flex-1 min-w-0 w-full max-w-full p-4 md:p-8 lg:p-10 mr-0 xl:mr-24 pt-6">
           {hero}
 
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto w-full min-w-0">
             {children}
           </div>
         </main>
