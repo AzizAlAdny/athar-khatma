@@ -212,6 +212,144 @@ class AdminController extends Controller
     }
 
     /**
+     * Update a seeker need status by admin with atomic locking and data integrity.
+     */
+    public function updateNeedStatus(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'status' => 'required|in:open,in_progress,fulfilled',
+            'fulfilled_by_id' => 'nullable|exists:users,id',
+        ]);
+
+        return DB::transaction(function () use ($request, $id) {
+            $need = SeekerNeed::lockForUpdate()->findOrFail($id);
+            $status = $request->status;
+
+            // When status is pending/open, admin cannot update it until claimed
+            if ($need->status === 'open' || $need->status === 'pending') {
+                return response()->json([
+                    'message' => 'لا يمكن تعديل حالة الطلب وهو في حالة مفتوح/انتظار حتى يتم استلامه والبدء في تنفيذه من قبل صانعة أثر.'
+                ], 422);
+            }
+
+            $updates = [
+                'status' => $status,
+            ];
+
+            if ($status === 'fulfilled') {
+                $updates['fulfilled_at'] = now();
+                if ($request->filled('fulfilled_by_id')) {
+                    $updates['fulfilled_by_id'] = $request->fulfilled_by_id;
+                } elseif (!$need->fulfilled_by_id) {
+                    $updates['fulfilled_by_id'] = auth()->id();
+                }
+            } elseif ($status === 'in_progress') {
+                $updates['fulfilled_at'] = null;
+                if ($request->filled('fulfilled_by_id')) {
+                    $updates['fulfilled_by_id'] = $request->fulfilled_by_id;
+                }
+            } elseif ($status === 'open') {
+                $updates['fulfilled_at'] = null;
+                $updates['fulfilled_by_id'] = null;
+            }
+
+            $need->update($updates);
+
+            Log::info('Need status updated by admin with integrity verification', [
+                'admin_id' => auth()->id(),
+                'need_id' => $id,
+                'new_status' => $status,
+                'fulfilled_by_id' => $need->fulfilled_by_id,
+            ]);
+
+            return response()->json([
+                'message' => 'تم تحديث حالة الطلب بنجاح',
+                'need' => $need->load(['user', 'gift', 'helper']),
+            ]);
+        });
+    }
+
+    /**
+     * Update a khatma gift status by admin with atomic locking and data integrity.
+     */
+    public function updateGiftStatus(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'status' => 'required|in:pending,in_progress,delivered',
+            'delivered_to_id' => 'nullable|exists:users,id',
+        ]);
+
+        return DB::transaction(function () use ($request, $id) {
+            $gift = KhatmaGift::lockForUpdate()->findOrFail($id);
+            $status = $request->status;
+
+            // When status is pending/open, admin cannot update it until ordered
+            if ($gift->status === 'pending' || $gift->status === 'open') {
+                return response()->json([
+                    'message' => 'لا يمكن تعديل حالة العطاء وهو في حالة الانتظار حتى يتم طلبه والبدء في تنفيذه من قبل مستفيدة.'
+                ], 422);
+            }
+
+            $updates = [
+                'status' => $status,
+            ];
+
+            if ($status === 'delivered') {
+                $updates['delivered_at'] = now();
+                if ($request->filled('delivered_to_id')) {
+                    $updates['delivered_to_id'] = $request->delivered_to_id;
+                }
+            } elseif ($status === 'in_progress') {
+                $updates['delivered_at'] = null;
+                if ($request->filled('delivered_to_id')) {
+                    $updates['delivered_to_id'] = $request->delivered_to_id;
+                }
+            } elseif ($status === 'pending') {
+                $updates['delivered_at'] = null;
+                $updates['delivered_to_id'] = null;
+            }
+
+            $gift->update($updates);
+
+            Log::info('Gift status updated by admin with integrity verification', [
+                'admin_id' => auth()->id(),
+                'gift_id' => $id,
+                'new_status' => $status,
+                'delivered_to_id' => $gift->delivered_to_id,
+            ]);
+
+            return response()->json([
+                'message' => 'تم تحديث حالة العطاء بنجاح',
+                'gift' => $gift->load(['gift', 'khatma.user']),
+            ]);
+        });
+    }
+
+    /**
+     * Update a khatma status by admin.
+     */
+    public function updateKhatmaStatus(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'status' => 'required|in:active,completed',
+        ]);
+
+        $khatma = Khatma::findOrFail($id);
+        $khatma->update(['status' => $request->status]);
+
+        Log::info('Khatma status updated by admin', [
+            'admin_id' => auth()->id(),
+            'khatma_id' => $id,
+            'new_status' => $request->status,
+        ]);
+
+        return response()->json([
+            'message' => 'تم تحديث حالة الختمة بنجاح',
+            'khatma' => $khatma->load(['user', 'khatmaGifts.gift']),
+        ]);
+    }
+
+    /**
      * Delete a seeker need by admin.
      */
     public function deleteNeed($id): JsonResponse

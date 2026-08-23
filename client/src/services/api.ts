@@ -463,6 +463,13 @@ export const deleteAdminKhatma = (id: number) =>
     method: 'DELETE',
   });
 
+export const updateAdminKhatmaStatus = (id: number, status: 'active' | 'completed') =>
+  fetchJson<{ message: string; khatma: any }>(`/admin/khatmas/${id}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+
 export const deleteKhatma = deleteAdminKhatma;
 
 export const getAdminNeeds = (params?: { status?: string; search?: string; page?: number; per_page?: number }) => {
@@ -472,6 +479,20 @@ export const getAdminNeeds = (params?: { status?: string; search?: string; page?
   const queryString = new URLSearchParams(cleanParams as any).toString();
   return fetchJson<PaginatedResponse<AdminNeed>>(`/admin/needs${queryString ? `?${queryString}` : ''}`);
 };
+
+export const updateAdminNeedStatus = (id: number, status: 'open' | 'in_progress' | 'fulfilled') =>
+  fetchJson<{ message: string; need: any }>(`/admin/needs/${id}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+
+export const updateAdminGiftStatus = (id: number, status: 'pending' | 'in_progress' | 'delivered') =>
+  fetchJson<{ message: string; gift: any }>(`/admin/khatma-gifts/${id}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
 
 export const deleteAdminNeed = (id: number) =>
   fetchJson<{ message: string }>(`/admin/needs/${id}`, {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Loader2, AlertCircle, Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
-import { getAdminKhatmas, deleteAdminKhatma, type AdminKhatma, type PaginatedResponse } from '@/services/api';
+import { Loader2, AlertCircle, Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight, Gift, CheckCircle2, Clock } from 'lucide-react';
+import { getAdminKhatmas, deleteAdminKhatma, updateAdminKhatmaStatus, updateAdminGiftStatus, type AdminKhatma, type PaginatedResponse } from '@/services/api';
 
 export default function KhatmaManagement() {
   const [data, setData] = useState<PaginatedResponse<AdminKhatma> | null>(null);
@@ -11,6 +11,8 @@ export default function KhatmaManagement() {
   const [page, setPage] = useState(1);
   const [selectedKhatma, setSelectedKhatma] = useState<AdminKhatma | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [updatingKhatmaId, setUpdatingKhatmaId] = useState<number | null>(null);
+  const [updatingGiftId, setUpdatingGiftId] = useState<number | null>(null);
 
   const loadKhatmas = useCallback(async () => {
     setLoading(true);
@@ -57,6 +59,55 @@ export default function KhatmaManagement() {
       alert('فشل حذف الختمة.');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleKhatmaStatusChange = async (id: number, newStatus: 'active' | 'completed') => {
+    setUpdatingKhatmaId(id);
+    try {
+      await updateAdminKhatmaStatus(id, newStatus);
+      if (selectedKhatma?.id === id) {
+        setSelectedKhatma((prev) => prev ? { ...prev, status: newStatus } : null);
+      }
+      loadKhatmas();
+    } catch (err: any) {
+      alert(err.message || 'فشل تحديث حالة الختمة');
+    } finally {
+      setUpdatingKhatmaId(null);
+    }
+  };
+
+  const handleGiftStatusChange = async (giftId: number, newStatus: 'pending' | 'in_progress' | 'delivered') => {
+    setUpdatingGiftId(giftId);
+    try {
+      await updateAdminGiftStatus(giftId, newStatus);
+      if (selectedKhatma) {
+        setSelectedKhatma((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            khatma_gifts: (prev.khatma_gifts || []).map((g) =>
+              g.id === giftId ? { ...g, status: newStatus } : g
+            ),
+          };
+        });
+      }
+      loadKhatmas();
+    } catch (err: any) {
+      alert(err.message || 'فشل تحديث حالة العطاء');
+    } finally {
+      setUpdatingGiftId(null);
+    }
+  };
+
+  const getGiftStatusBadge = (st?: string) => {
+    switch (st) {
+      case 'delivered':
+        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-green-50 text-green-700 border border-green-200 inline-flex items-center gap-1"><CheckCircle2 size={11} /> تم التسليم</span>;
+      case 'in_progress':
+        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-secondary/15 text-secondary border border-secondary/20 inline-flex items-center gap-1"><Clock size={11} /> قيد التنفيذ</span>;
+      default:
+        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-100 inline-flex items-center gap-1"><Clock size={11} /> قيد الانتظار</span>;
     }
   };
 
@@ -131,7 +182,7 @@ export default function KhatmaManagement() {
                   <th className="pb-4">العطاءات المصاحبة</th>
                   <th className="pb-4">تاريخ الإتمام</th>
                   <th className="pb-4">نقاط الأثر</th>
-                  <th className="pb-4">الحالة</th>
+                  <th className="pb-4">حالة الختمة</th>
                   <th className="pb-4 pl-4 text-left">الإجراءات</th>
                 </tr>
               </thead>
@@ -145,15 +196,16 @@ export default function KhatmaManagement() {
                     </td>
                     <td className="py-5 text-primary-muted font-medium">{khatma.user?.city || 'غير محدد'}</td>
                     <td className="py-5">
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {khatma.khatma_gifts && khatma.khatma_gifts.length > 0 ? (
                           khatma.khatma_gifts.map((kg) => (
                             <span
                               key={kg.id}
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary-light/40 text-primary"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-secondary-light/30 text-primary border border-secondary-light/40"
                             >
                               <Gift size={12} className="text-secondary" />
-                              {kg.gift?.name || 'عطاء'}
+                              <span>{kg.gift?.name || 'عطاء'}</span>
+                              <span className="opacity-70 text-[10px]">({kg.status === 'delivered' ? 'مكتمل' : kg.status === 'in_progress' ? 'قيد التنفيذ' : 'انتظار'})</span>
                             </span>
                           ))
                         ) : (
@@ -166,22 +218,26 @@ export default function KhatmaManagement() {
                     </td>
                     <td className="py-5 font-black text-accent">{khatma.impact_score || 0}</td>
                     <td className="py-5">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-black ${
+                      <select
+                        value={khatma.status}
+                        onChange={(e) => handleKhatmaStatusChange(khatma.id, e.target.value as any)}
+                        disabled={updatingKhatmaId === khatma.id}
+                        className={`text-xs font-black px-3 py-1.5 rounded-full border cursor-pointer transition-colors focus:outline-none ${
                           khatma.status === 'completed'
-                            ? 'bg-accent/10 text-accent'
-                            : 'bg-primary/10 text-primary'
+                            ? 'bg-accent/10 text-accent border-accent/30'
+                            : 'bg-primary/10 text-primary border-primary/20'
                         }`}
                       >
-                        {khatma.status === 'completed' ? 'مكتملة' : 'نشطة'}
-                      </span>
+                        <option value="active">نشطة</option>
+                        <option value="completed">مكتملة ✨</option>
+                      </select>
                     </td>
                     <td className="py-5 pl-4 text-left">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end items-center gap-2">
                         <button
                           onClick={() => setSelectedKhatma(khatma)}
                           className="p-2 text-secondary hover:bg-secondary-light/30 rounded-xl transition-colors cursor-pointer"
-                          title="عرض التفاصيل"
+                          title="عرض وتعديل التفاصيل والعطايا"
                         >
                           <Eye size={18} />
                         </button>
@@ -228,12 +284,12 @@ export default function KhatmaManagement() {
         )}
       </div>
 
-      {/* Details Modal */}
+      {/* Details & Gift Status Management Modal */}
       {selectedKhatma && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl border border-secondary-light/40">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl border border-secondary-light/40 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-background pb-4">
-              <h3 className="text-xl font-black text-primary">تفاصيل الختمة #{selectedKhatma.id}</h3>
+              <h3 className="text-xl font-black text-primary">تفاصيل وإدارة الختمة #{selectedKhatma.id}</h3>
               <button
                 onClick={() => setSelectedKhatma(null)}
                 className="text-primary-muted hover:text-primary font-bold text-sm cursor-pointer"
@@ -264,20 +320,78 @@ export default function KhatmaManagement() {
                 <span className="font-black text-accent">{selectedKhatma.impact_score || 0}</span>
               </div>
 
+              {/* Khatma Status Changer */}
+              <div className="p-3.5 rounded-2xl bg-background/60 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-black text-primary">حالة الختمة:</p>
+                  <p className="text-[11px] text-primary-muted">{selectedKhatma.status === 'completed' ? 'مكتملة' : 'نشطة'}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleKhatmaStatusChange(selectedKhatma.id, selectedKhatma.status === 'completed' ? 'active' : 'completed')}
+                    disabled={updatingKhatmaId === selectedKhatma.id}
+                    className="px-3 py-1.5 rounded-xl text-xs font-black bg-primary text-white hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {updatingKhatmaId === selectedKhatma.id ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : selectedKhatma.status === 'completed' ? (
+                      'تحويل لنشطة'
+                    ) : (
+                      'تحديد كمكتملة'
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Individual Khatma Gifts Status Changer */}
               <div>
-                <p className="text-primary-muted font-bold mb-2">العطاءات المصاحبة:</p>
-                <div className="space-y-2">
+                <p className="text-primary-muted font-bold mb-2">إدارة حالات العطاءات المصاحبة:</p>
+                <div className="space-y-3">
                   {selectedKhatma.khatma_gifts && selectedKhatma.khatma_gifts.length > 0 ? (
                     selectedKhatma.khatma_gifts.map((kg) => (
-                      <div key={kg.id} className="flex justify-between items-center p-3 rounded-2xl bg-background/50">
-                        <span className="font-bold text-primary">{kg.gift?.name || 'عطاء'}</span>
-                        <span className="text-xs font-black px-2.5 py-1 rounded-full bg-secondary-light/40 text-primary">
-                          {kg.status}
-                        </span>
+                      <div key={kg.id} className="p-3.5 rounded-2xl bg-secondary/5 border border-secondary/20 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-black text-primary text-sm flex items-center gap-1.5">
+                            <Gift size={14} className="text-secondary" />
+                            {kg.gift?.name || 'عطاء'}
+                          </span>
+                          {getGiftStatusBadge(kg.status)}
+                        </div>
+
+                        {kg.status === 'pending' ? (
+                          <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-[11px] font-bold text-blue-700 text-center">
+                            العطاء قيد الانتظار بانتظار طلبه من إحدى المستفيدات للبدء في تنفيذه.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-secondary/10">
+                            <button
+                              onClick={() => handleGiftStatusChange(kg.id, 'in_progress')}
+                              disabled={updatingGiftId === kg.id || kg.status === 'in_progress'}
+                              className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                                kg.status === 'in_progress'
+                                  ? 'bg-secondary text-white'
+                                  : 'bg-white border border-secondary-light/40 text-secondary hover:bg-background'
+                              }`}
+                            >
+                              قيد التنفيذ
+                            </button>
+                            <button
+                              onClick={() => handleGiftStatusChange(kg.id, 'delivered')}
+                              disabled={updatingGiftId === kg.id || kg.status === 'delivered'}
+                              className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                                kg.status === 'delivered'
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-white border border-green-200 text-green-700 hover:bg-green-50'
+                              }`}
+                            >
+                              تم التسليم ✨
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-primary-muted">لا توجد عطاءات مسجلة لهذه الختمة.</p>
+                    <p className="text-xs text-primary-muted p-3 bg-background/50 rounded-2xl">لا توجد عطاءات مسجلة لهذه الختمة.</p>
                   )}
                 </div>
               </div>

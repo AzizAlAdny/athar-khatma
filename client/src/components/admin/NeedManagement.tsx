@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Loader2, AlertCircle, Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight, Gift, UserCheck } from 'lucide-react';
-import { getAdminNeeds, deleteAdminNeed, type AdminNeed, type PaginatedResponse } from '@/services/api';
+import { Loader2, AlertCircle, Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight, Gift, UserCheck, CheckCircle2, Clock } from 'lucide-react';
+import { getAdminNeeds, deleteAdminNeed, updateAdminNeedStatus, type AdminNeed, type PaginatedResponse } from '@/services/api';
 
 export default function NeedManagement() {
   const [data, setData] = useState<PaginatedResponse<AdminNeed> | null>(null);
@@ -11,6 +11,7 @@ export default function NeedManagement() {
   const [page, setPage] = useState(1);
   const [selectedNeed, setSelectedNeed] = useState<AdminNeed | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const loadNeeds = useCallback(async () => {
     setLoading(true);
@@ -60,14 +61,29 @@ export default function NeedManagement() {
     }
   };
 
+  const handleStatusChange = async (id: number, newStatus: 'open' | 'in_progress' | 'fulfilled') => {
+    setUpdatingId(id);
+    try {
+      const res = await updateAdminNeedStatus(id, newStatus);
+      if (selectedNeed?.id === id) {
+        setSelectedNeed((prev) => prev ? { ...prev, status: newStatus } : null);
+      }
+      loadNeeds();
+    } catch (err: any) {
+      alert(err.message || 'فشل تحديث حالة الطلب');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const getStatusBadge = (st: string) => {
     switch (st) {
       case 'fulfilled':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-accent/10 text-accent">تم الإيفاء</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-accent/10 text-accent inline-flex items-center gap-1"><CheckCircle2 size={12} /> تم الإيفاء</span>;
       case 'in_progress':
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-secondary-light text-primary">قيد التنفيذ</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-secondary/15 text-secondary inline-flex items-center gap-1"><Clock size={12} /> قيد التنفيذ</span>;
       default:
-        return <span className="px-3 py-1 rounded-full text-xs font-black bg-primary/10 text-primary">مفتوح</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-primary/10 text-primary inline-flex items-center gap-1"><Clock size={12} /> مفتوح</span>;
     }
   };
 
@@ -175,13 +191,31 @@ export default function NeedManagement() {
                         <span className="text-xs text-primary-muted font-normal">بانتظار مبادرة</span>
                       )}
                     </td>
-                    <td className="py-5">{getStatusBadge(need.status)}</td>
+                    <td className="py-5">
+                      {need.status === 'open' ? (
+                        getStatusBadge(need.status)
+                      ) : (
+                        <select
+                          value={need.status}
+                          onChange={(e) => handleStatusChange(need.id, e.target.value as any)}
+                          disabled={updatingId === need.id}
+                          className={`text-xs font-black px-3 py-1.5 rounded-full border cursor-pointer transition-colors focus:outline-none ${
+                            need.status === 'fulfilled'
+                              ? 'bg-accent/10 text-accent border-accent/30'
+                              : 'bg-secondary/15 text-secondary border-secondary/30'
+                          }`}
+                        >
+                          <option value="in_progress">قيد التنفيذ</option>
+                          <option value="fulfilled">تم الإيفاء (مكتمل) ✨</option>
+                        </select>
+                      )}
+                    </td>
                     <td className="py-5 pl-4 text-left">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end items-center gap-1.5">
                         <button
                           onClick={() => setSelectedNeed(need)}
                           className="p-2 text-secondary hover:bg-secondary-light/30 rounded-xl transition-colors cursor-pointer"
-                          title="عرض التفاصيل"
+                          title="عرض وتعديل التفاصيل والحالة"
                         >
                           <Eye size={18} />
                         </button>
@@ -228,12 +262,12 @@ export default function NeedManagement() {
         )}
       </div>
 
-      {/* Details Modal */}
+      {/* Details & Status Edit Modal */}
       {selectedNeed && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full space-y-6 shadow-2xl border border-secondary-light/40">
             <div className="flex justify-between items-center border-b border-background pb-4">
-              <h3 className="text-xl font-black text-primary">تفاصيل طلب الاحتياج #{selectedNeed.id}</h3>
+              <h3 className="text-xl font-black text-primary">تفاصيل وإدارة الطلب #{selectedNeed.id}</h3>
               <button
                 onClick={() => setSelectedNeed(null)}
                 className="text-primary-muted hover:text-primary font-bold text-sm cursor-pointer"
@@ -259,8 +293,8 @@ export default function NeedManagement() {
                 <span className="text-primary-muted font-bold">المدينة:</span>
                 <span className="font-bold text-primary">{selectedNeed.city || '-'}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-background">
-                <span className="text-primary-muted font-bold">الحالة:</span>
+              <div className="flex justify-between py-2 border-b border-background items-center">
+                <span className="text-primary-muted font-bold">الحالة الحالية:</span>
                 <div>{getStatusBadge(selectedNeed.status)}</div>
               </div>
               {selectedNeed.helper && (
@@ -274,6 +308,41 @@ export default function NeedManagement() {
                 <p className="p-4 rounded-2xl bg-background/60 text-primary font-medium text-xs leading-relaxed">
                   {selectedNeed.description || 'لا يوجد وصف تفصيلي.'}
                 </p>
+              </div>
+
+              {/* Admin Status Changer Controls */}
+              <div className="p-4 rounded-2xl bg-secondary/5 border border-secondary/20 space-y-2">
+                <p className="text-xs font-black text-primary">تغيير حالة الطلب إدارياً:</p>
+                {selectedNeed.status === 'open' ? (
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-[11px] font-bold text-blue-700">
+                    الطلب مفتوح بانتظار استلامه من إحدى صانعات الأثر. لا يمكن تعديل حالته حتى يتم استلامه والبدء في تنفيذه.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleStatusChange(selectedNeed.id, 'in_progress')}
+                      disabled={updatingId === selectedNeed.id || selectedNeed.status === 'in_progress'}
+                      className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        selectedNeed.status === 'in_progress'
+                          ? 'bg-secondary text-white'
+                          : 'bg-white border border-secondary-light/40 text-secondary hover:bg-background'
+                      }`}
+                    >
+                      قيد التنفيذ
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange(selectedNeed.id, 'fulfilled')}
+                      disabled={updatingId === selectedNeed.id || selectedNeed.status === 'fulfilled'}
+                      className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        selectedNeed.status === 'fulfilled'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white border border-green-200 text-green-700 hover:bg-green-50'
+                      }`}
+                    >
+                      تم الإيفاء ✨
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
