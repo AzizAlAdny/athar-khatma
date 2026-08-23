@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Loader2, AlertCircle, Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight, Gift, UserCheck, CheckCircle2, Clock } from 'lucide-react';
 import { getAdminNeeds, deleteAdminNeed, updateAdminNeedStatus, type AdminNeed, type PaginatedResponse } from '@/services/api';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function NeedManagement() {
   const [data, setData] = useState<PaginatedResponse<AdminNeed> | null>(null);
@@ -11,6 +12,7 @@ export default function NeedManagement() {
   const [page, setPage] = useState(1);
   const [selectedNeed, setSelectedNeed] = useState<AdminNeed | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const loadNeeds = useCallback(async () => {
@@ -42,8 +44,6 @@ export default function NeedManagement() {
   }, [loadNeeds]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('هل أنتِ متأكدة من رغبتك في حذف هذا الطلب نهائياً؟')) return;
-
     setDeletingId(id);
     try {
       await deleteAdminNeed(id);
@@ -51,6 +51,7 @@ export default function NeedManagement() {
         setSelectedNeed(null);
       }
       loadNeeds();
+      setConfirmDeleteId(null);
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Delete error:', err);
@@ -220,7 +221,7 @@ export default function NeedManagement() {
                           <Eye size={18} />
                         </button>
                         <button
-                          onClick={() => handleDelete(need.id)}
+                          onClick={() => setConfirmDeleteId(need.id)}
                           disabled={deletingId === need.id}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                           title="حذف الطلب"
@@ -322,24 +323,38 @@ export default function NeedManagement() {
                     <button
                       onClick={() => handleStatusChange(selectedNeed.id, 'in_progress')}
                       disabled={updatingId === selectedNeed.id || selectedNeed.status === 'in_progress'}
-                      className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
                         selectedNeed.status === 'in_progress'
                           ? 'bg-secondary text-white'
                           : 'bg-white border border-secondary-light/40 text-secondary hover:bg-background'
                       }`}
                     >
-                      قيد التنفيذ
+                      {updatingId === selectedNeed.id ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" />
+                          <span>جاري التحديث...</span>
+                        </>
+                      ) : (
+                        'قيد التنفيذ'
+                      )}
                     </button>
                     <button
                       onClick={() => handleStatusChange(selectedNeed.id, 'fulfilled')}
                       disabled={updatingId === selectedNeed.id || selectedNeed.status === 'fulfilled'}
-                      className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
                         selectedNeed.status === 'fulfilled'
                           ? 'bg-green-600 text-white'
                           : 'bg-white border border-green-200 text-green-700 hover:bg-green-50'
                       }`}
                     >
-                      تم الإيفاء ✨
+                      {updatingId === selectedNeed.id ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" />
+                          <span>جاري التحديث...</span>
+                        </>
+                      ) : (
+                        'تم الإيفاء ✨'
+                      )}
                     </button>
                   </div>
                 )}
@@ -355,6 +370,19 @@ export default function NeedManagement() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); }}
+        title="تأكيد حذف الطلب"
+        message="هل أنتِ متأكدة من رغبتك في حذف هذا الطلب نهائياً من النظام؟"
+        variant="danger"
+        confirmText="نعم، حذف الطلب"
+        isLoading={deletingId !== null}
+        loadingText="جاري الحذف..."
+      />
     </div>
   );
 }

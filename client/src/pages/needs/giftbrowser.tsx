@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { getRecentGifts, KhatmaGift, orderGift, markGiftDelivered } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import {
   MapPin,
   Gift,
@@ -63,6 +64,7 @@ export default function GiftBrowser() {
   const [loading, setLoading] = useState(true);
   const [orderingId, setOrderingId] = useState<number | null>(null);
   const [completingId, setCompletingId] = useState<number | null>(null);
+  const [confirmGiftId, setConfirmGiftId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
@@ -74,8 +76,8 @@ export default function GiftBrowser() {
         setLoading(false);
       })
       .catch(err => {
-        console.error('Gifts fetch error:', err);
-        setError('تعذر تحميل قائمة العطايا، يرجى المحاولة لاحقاً.');
+        console.error('Gift browser fetch error:', err);
+        setError('تعذر تحميل العطايا، يرجى المحاولة لاحقاً.');
         setLoading(false);
       });
   };
@@ -98,12 +100,12 @@ export default function GiftBrowser() {
   };
 
   const handleComplete = async (id: number) => {
-    if (!confirm('هل تأكدين استلام هذا العطاء واكتماله بنجاح؟')) return;
     setCompletingId(id);
     setError(null);
     try {
       await markGiftDelivered(id, user?.id);
       loadGifts();
+      setConfirmGiftId(null);
     } catch (err: any) {
       alert(err.message || 'تعذر تأكيد استلام العطاء');
     } finally {
@@ -214,7 +216,10 @@ export default function GiftBrowser() {
                             className="w-full bg-accent hover:bg-accent-dark text-white rounded-xl sm:rounded-2xl py-3 text-xs font-black shadow-lg shadow-accent/10 transition-all active:scale-95 flex items-center justify-center gap-2"
                           >
                             {orderingId === gift.id ? (
-                              <Loader2 size={16} className="animate-spin" />
+                              <>
+                                <Loader2 size={16} className="animate-spin" />
+                                <span>جاري التحديث...</span>
+                              </>
                             ) : (
                               <>
                                 <HandHeart size={16} /> طلب العطاء
@@ -304,12 +309,15 @@ export default function GiftBrowser() {
                                 </Link>
                               </div>
                               <Button
-                                onClick={() => handleComplete(gift.id)}
+                                onClick={() => setConfirmGiftId(gift.id)}
                                 disabled={completingId === gift.id}
                                 className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                               >
                                 {completingId === gift.id ? (
-                                  <Loader2 size={14} className="animate-spin" />
+                                  <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    <span>جاري التحديث...</span>
+                                  </>
                                 ) : (
                                   <>
                                     <CheckCircle2 size={14} /> تأكيد الاستلام واكتمال العطاء
@@ -376,6 +384,19 @@ export default function GiftBrowser() {
             </div>
           )}
         </div>
+
+        {/* Custom Confirmation Modal for Gift Receipt */}
+        <ConfirmModal
+          isOpen={confirmGiftId !== null}
+          onClose={() => setConfirmGiftId(null)}
+          onConfirm={() => { if (confirmGiftId) handleComplete(confirmGiftId); }}
+          title="تأكيد استلام العطاء"
+          message="هل تأكدين استلام هذا العطاء واكتماله بنجاح من صانعة الأثر؟"
+          variant="success"
+          confirmText="نعم، تم الاستلام بنجاح ✨"
+          isLoading={completingId !== null}
+          loadingText="جاري التحديث..."
+        />
       </AppShell>
     </ProtectedRoute>
   );

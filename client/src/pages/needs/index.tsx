@@ -9,6 +9,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getSeekerNeeds, deleteMySeekerNeed, markNeedFulfilled, SeekerNeed } from '@/services/api';
 import { Plus, MapPin, HelpCircle, Trash2, AlertCircle, Loader2, MessageCircle, Clock, CheckCircle2, Phone, Star } from 'lucide-react';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function MyNeeds() {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ export default function MyNeeds() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [completingId, setCompletingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmCompleteId, setConfirmCompleteId] = useState<number | null>(null);
 
   const loadNeeds = () => {
     setLoading(true);
@@ -56,12 +58,12 @@ export default function MyNeeds() {
   };
 
   const handleComplete = async (id: number) => {
-    if (!confirm('هل تأكدين استلام وتلبية هذا الاحتياج بنجاح؟')) return;
     setCompletingId(id);
     setError(null);
     try {
       await markNeedFulfilled(id);
       loadNeeds();
+      setConfirmCompleteId(null);
     } catch (err: any) {
       setError(err.message || 'فشل تأكيد اكتمال الطلب.');
     } finally {
@@ -176,41 +178,36 @@ export default function MyNeeds() {
                 )}
               </div>
               <Button
-                onClick={() => handleComplete(need.id)}
+                onClick={() => setConfirmCompleteId(need.id)}
                 disabled={completingId === need.id}
                 className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
               >
-                {completingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> تأكيد الاستلام واكتمال الطلب</>}
+                {completingId === need.id ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>جاري التحديث...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={14} /> تأكيد الاستلام واكتمال الطلب
+                  </>
+                )}
               </Button>
             </>
           ) : showDelete ? (
-            confirmDeleteId === need.id ? (
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                  onClick={() => handleDelete(need.id)}
-                  disabled={deletingId === need.id}
-                >
-                  {deletingId === need.id ? (
-                    <span className="flex items-center gap-1.5"><Loader2 size={14} className="animate-spin" /> جاري الحذف...</span>
-                  ) : 'تأكيد الحذف'}
-                </Button>
-                <Button
-                  className="bg-background text-primary-muted rounded-xl py-2.5 text-xs font-black hover:text-primary transition-all active:scale-95"
-                  onClick={() => setConfirmDeleteId(null)}
-                  disabled={deletingId === need.id}
-                >
-                  إلغاء
-                </Button>
-              </div>
-            ) : (
-              <Button
-                className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                onClick={() => setConfirmDeleteId(need.id)}
-              >
-                <Trash2 size={14} /> حذف الطلب
-              </Button>
-            )
+            <Button
+              className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              onClick={() => setConfirmDeleteId(need.id)}
+              disabled={deletingId === need.id}
+            >
+              {deletingId === need.id ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <>
+                  <Trash2 size={14} /> حذف الطلب
+                </>
+              )}
+            </Button>
           ) : (
             showChat && (
               <Link
@@ -313,6 +310,32 @@ export default function MyNeeds() {
             </div>
           )}
         </div>
+
+        {/* Delete Need Confirmation Modal */}
+        <ConfirmModal
+          isOpen={confirmDeleteId !== null}
+          onClose={() => setConfirmDeleteId(null)}
+          onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); }}
+          title="تأكيد حذف الطلب"
+          message="هل أنتِ متأكدة من رغبتك في حذف هذا الطلب؟ لا يمكن التراجع عن هذه الخطوة."
+          variant="danger"
+          confirmText="نعم، حذف الطلب"
+          isLoading={deletingId !== null}
+          loadingText="جاري الحذف..."
+        />
+
+        {/* Complete Need Confirmation Modal */}
+        <ConfirmModal
+          isOpen={confirmCompleteId !== null}
+          onClose={() => setConfirmCompleteId(null)}
+          onConfirm={() => { if (confirmCompleteId) handleComplete(confirmCompleteId); }}
+          title="تأكيد استلام الاحتياج"
+          message="هل تأكدين استلام وتلبية هذا الاحتياج بنجاح؟ سيتم تحويل حالة الطلب إلى مكتمل."
+          variant="success"
+          confirmText="نعم، تأكيد الاكتمال ✨"
+          isLoading={completingId !== null}
+          loadingText="جاري التحديث..."
+        />
       </AppShell>
     </ProtectedRoute>
   );

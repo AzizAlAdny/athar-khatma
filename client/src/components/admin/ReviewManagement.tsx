@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Loader2, AlertCircle, Trash2, Star, Search, Filter, ChevronLeft, ChevronRight, MessageSquare, ShieldAlert } from 'lucide-react';
 import { getAdminReviews, deleteAdminReview, type AdminReview, type PaginatedResponse } from '@/services/api';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function ReviewManagement() {
   const [data, setData] = useState<PaginatedResponse<AdminReview> | null>(null);
@@ -10,6 +11,7 @@ export default function ReviewManagement() {
   const [rating, setRating] = useState<string>('');
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const loadReviews = useCallback(async () => {
     setLoading(true);
@@ -40,12 +42,11 @@ export default function ReviewManagement() {
   }, [loadReviews]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('هل أنتِ متأكدة من رغبتك في حذف هذا التقييم؟ سيتم إعادة احتساب نقاط الأثر تلقائياً.')) return;
-
     setDeletingId(id);
     try {
       await deleteAdminReview(id);
       loadReviews();
+      setConfirmDeleteId(null);
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Delete review error:', err);
@@ -169,7 +170,7 @@ export default function ReviewManagement() {
                     </td>
                     <td className="py-4 sm:py-5 pl-4 text-left">
                       <button
-                        onClick={() => handleDelete(review.id)}
+                        onClick={() => setConfirmDeleteId(review.id)}
                         disabled={deletingId === review.id}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                         title="حذف التقييم المخالف"
@@ -209,6 +210,19 @@ export default function ReviewManagement() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); }}
+        title="تأكيد حذف التقييم"
+        message="هل أنتِ متأكدة من رغبتك في حذف هذا التقييم؟ سيتم إعادة احتساب نقاط الأثر تلقائياً."
+        variant="danger"
+        confirmText="نعم، حذف التقييم"
+        isLoading={deletingId !== null}
+        loadingText="جاري الحذف..."
+      />
     </div>
   );
 }

@@ -9,12 +9,14 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { MapPin, HelpCircle, MessageCircle, AlertCircle, Clock, CheckCircle2, Phone, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function BrowseNeeds() {
   const [needs, setNeeds] = useState<SeekerNeed[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<number | null>(null);
   const [completingId, setCompletingId] = useState<number | null>(null);
+  const [confirmNeedId, setConfirmNeedId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
@@ -49,11 +51,11 @@ export default function BrowseNeeds() {
   };
 
   const handleComplete = async (id: number) => {
-    if (!confirm('هل تأكدين إكمال وتلبية هذا الطلب بنجاح؟')) return;
     setCompletingId(id);
     try {
       await markNeedFulfilled(id, user?.id);
       loadNeeds();
+      setConfirmNeedId(null);
     } catch (err: any) {
       alert(err.message || 'فشل تأكيد إكمال الطلب');
     } finally {
@@ -161,11 +163,20 @@ export default function BrowseNeeds() {
                 )}
               </div>
               <Button
-                onClick={() => handleComplete(need.id)}
+                onClick={() => setConfirmNeedId(need.id)}
                 disabled={completingId === need.id}
                 className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
               >
-                {completingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> تم الإنجاز واكتمال الطلب</>}
+                {completingId === need.id ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>جاري التحديث...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={14} /> تم الإنجاز واكتمال الطلب
+                  </>
+                )}
               </Button>
             </>
           ) : showClaim ? (
@@ -183,7 +194,16 @@ export default function BrowseNeeds() {
                 disabled={claimingId === need.id}
                 className="bg-secondary hover:bg-secondary-dark text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-secondary/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
               >
-                {claimingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> استلام الطلب</>}
+                {claimingId === need.id ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>جاري التحديث...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={14} /> استلام الطلب
+                  </>
+                )}
               </Button>
             </div>
           ) : (
@@ -277,6 +297,19 @@ export default function BrowseNeeds() {
             </div>
           )}
         </div>
+
+        {/* Custom Confirmation Modal for Need Completion */}
+        <ConfirmModal
+          isOpen={confirmNeedId !== null}
+          onClose={() => setConfirmNeedId(null)}
+          onConfirm={() => { if (confirmNeedId) handleComplete(confirmNeedId); }}
+          title="تأكيد إكمال الطلب"
+          message="هل تأكدين إكمال وتلبية هذا الاحتياج بنجاح وتسليمه للمستفيدة؟"
+          variant="success"
+          confirmText="نعم، تم الإنجاز ✨"
+          isLoading={completingId !== null}
+          loadingText="جاري التحديث..."
+        />
       </AppShell>
     </ProtectedRoute>
   );

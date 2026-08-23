@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Loader2, AlertCircle, Trash2, Eye, Search, Filter, ChevronLeft, ChevronRight, Gift, CheckCircle2, Clock } from 'lucide-react';
 import { getAdminKhatmas, deleteAdminKhatma, updateAdminKhatmaStatus, updateAdminGiftStatus, type AdminKhatma, type PaginatedResponse } from '@/services/api';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function KhatmaManagement() {
   const [data, setData] = useState<PaginatedResponse<AdminKhatma> | null>(null);
@@ -11,6 +12,7 @@ export default function KhatmaManagement() {
   const [page, setPage] = useState(1);
   const [selectedKhatma, setSelectedKhatma] = useState<AdminKhatma | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [updatingKhatmaId, setUpdatingKhatmaId] = useState<number | null>(null);
   const [updatingGiftId, setUpdatingGiftId] = useState<number | null>(null);
 
@@ -43,8 +45,6 @@ export default function KhatmaManagement() {
   }, [loadKhatmas]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('هل أنتِ متأكدة من رغبتك في حذف هذه الختمة نهائياً؟')) return;
-
     setDeletingId(id);
     try {
       await deleteAdminKhatma(id);
@@ -52,6 +52,7 @@ export default function KhatmaManagement() {
         setSelectedKhatma(null);
       }
       loadKhatmas();
+      setConfirmDeleteId(null);
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Delete error:', err);
@@ -242,7 +243,7 @@ export default function KhatmaManagement() {
                           <Eye size={18} />
                         </button>
                         <button
-                          onClick={() => handleDelete(khatma.id)}
+                          onClick={() => setConfirmDeleteId(khatma.id)}
                           disabled={deletingId === khatma.id}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                           title="حذف الختمة"
@@ -330,10 +331,13 @@ export default function KhatmaManagement() {
                   <button
                     onClick={() => handleKhatmaStatusChange(selectedKhatma.id, selectedKhatma.status === 'completed' ? 'active' : 'completed')}
                     disabled={updatingKhatmaId === selectedKhatma.id}
-                    className="px-3 py-1.5 rounded-xl text-xs font-black bg-primary text-white hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-xl text-xs font-black bg-primary text-white hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
                   >
                     {updatingKhatmaId === selectedKhatma.id ? (
-                      <Loader2 size={12} className="animate-spin" />
+                      <>
+                        <Loader2 size={12} className="animate-spin" />
+                        <span>جاري التحديث...</span>
+                      </>
                     ) : selectedKhatma.status === 'completed' ? (
                       'تحويل لنشطة'
                     ) : (
@@ -367,24 +371,38 @@ export default function KhatmaManagement() {
                             <button
                               onClick={() => handleGiftStatusChange(kg.id, 'in_progress')}
                               disabled={updatingGiftId === kg.id || kg.status === 'in_progress'}
-                              className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                              className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center inline-flex items-center justify-center gap-1 ${
                                 kg.status === 'in_progress'
                                   ? 'bg-secondary text-white'
                                   : 'bg-white border border-secondary-light/40 text-secondary hover:bg-background'
                               }`}
                             >
-                              قيد التنفيذ
+                              {updatingGiftId === kg.id ? (
+                                <>
+                                  <Loader2 size={11} className="animate-spin" />
+                                  <span>جاري التحديث...</span>
+                                </>
+                              ) : (
+                                'قيد التنفيذ'
+                              )}
                             </button>
                             <button
                               onClick={() => handleGiftStatusChange(kg.id, 'delivered')}
                               disabled={updatingGiftId === kg.id || kg.status === 'delivered'}
-                              className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                              className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center inline-flex items-center justify-center gap-1 ${
                                 kg.status === 'delivered'
                                   ? 'bg-green-600 text-white'
                                   : 'bg-white border border-green-200 text-green-700 hover:bg-green-50'
                               }`}
                             >
-                              تم التسليم ✨
+                              {updatingGiftId === kg.id ? (
+                                <>
+                                  <Loader2 size={11} className="animate-spin" />
+                                  <span>جاري التحديث...</span>
+                                </>
+                              ) : (
+                                'تم التسليم ✨'
+                              )}
                             </button>
                           </div>
                         )}
@@ -406,6 +424,19 @@ export default function KhatmaManagement() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); }}
+        title="تأكيد حذف الختمة"
+        message="هل أنتِ متأكدة من رغبتك في حذف هذه الختمة نهائياً؟ سيتم حذف جميع العطاءات ونقاط الأثر المرتبطة بها."
+        variant="danger"
+        confirmText="نعم، حذف الختمة نهائياً"
+        isLoading={deletingId !== null}
+        loadingText="جاري الحذف..."
+      />
     </div>
   );
 }

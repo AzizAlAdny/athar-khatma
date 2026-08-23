@@ -23,12 +23,15 @@ import {
   Check
 } from 'lucide-react';
 import Link from 'next/link';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function MyGifts() {
   const [data, setData] = useState<{ khatmas: any[], total_impact_score: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingGiftId, setDeletingGiftId] = useState<number | null>(null);
   const [completingGiftId, setCompletingGiftId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [confirmCompleteId, setConfirmCompleteId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadData = () => {
@@ -50,11 +53,11 @@ export default function MyGifts() {
   }, []);
 
   const handleDeleteGift = async (id: number) => {
-    if (!confirm('هل أنتِ متأكدة من حذف هذا العطاء؟')) return;
     setDeletingGiftId(id);
     try {
       await deleteKhatmaGift(id);
       loadData();
+      setConfirmDeleteId(null);
     } catch (err: any) {
       alert(err.message || 'فشل حذف العطاء');
     } finally {
@@ -63,11 +66,11 @@ export default function MyGifts() {
   };
 
   const handleCompleteGift = async (id: number) => {
-    if (!confirm('هل تأكدين إكمال وتسليم هذا العطاء للمستفيدة؟')) return;
     setCompletingGiftId(id);
     try {
       await markGiftDelivered(id);
       loadData();
+      setConfirmCompleteId(null);
     } catch (err: any) {
       alert(err.message || 'فشل تأكيد تسليم العطاء');
     } finally {
@@ -187,12 +190,15 @@ export default function MyGifts() {
                             </Link>
                           </div>
                           <Button
-                            onClick={() => handleCompleteGift(gift.id)}
+                            onClick={() => setConfirmCompleteId(gift.id)}
                             disabled={completingGiftId === gift.id}
                             className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                           >
                             {completingGiftId === gift.id ? (
-                              <Loader2 size={14} className="animate-spin" />
+                              <>
+                                <Loader2 size={14} className="animate-spin" />
+                                <span>جاري التحديث...</span>
+                              </>
                             ) : (
                               <>
                                 <Check size={14} /> تم الإنجاز واكتمال التسليم
@@ -245,7 +251,7 @@ export default function MyGifts() {
                         {/* Pending Action: ONLY Delete button */}
                         <div className="pt-3 border-t border-secondary-light/10">
                           <button
-                            onClick={() => handleDeleteGift(gift.id)}
+                            onClick={() => setConfirmDeleteId(gift.id)}
                             disabled={deletingGiftId === gift.id}
                             className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-2"
                           >
@@ -335,6 +341,32 @@ export default function MyGifts() {
             </div>
           )}
         </div>
+
+        {/* Delete Gift Confirmation Modal */}
+        <ConfirmModal
+          isOpen={confirmDeleteId !== null}
+          onClose={() => setConfirmDeleteId(null)}
+          onConfirm={() => { if (confirmDeleteId) handleDeleteGift(confirmDeleteId); }}
+          title="تأكيد حذف العطاء"
+          message="هل أنتِ متأكدة من رغبتك في حذف هذا العطاء من المنصة؟"
+          variant="danger"
+          confirmText="نعم، حذف العطاء"
+          isLoading={deletingGiftId !== null}
+          loadingText="جاري الحذف..."
+        />
+
+        {/* Complete Gift Confirmation Modal */}
+        <ConfirmModal
+          isOpen={confirmCompleteId !== null}
+          onClose={() => setConfirmCompleteId(null)}
+          onConfirm={() => { if (confirmCompleteId) handleCompleteGift(confirmCompleteId); }}
+          title="تأكيد تسليم العطاء"
+          message="هل تأكدين إكمال وتسليم هذا العطاء للمستفيدة بنجاح؟"
+          variant="success"
+          confirmText="نعم، تم التسليم بنجاح ✨"
+          isLoading={completingGiftId !== null}
+          loadingText="جاري التحديث..."
+        />
       </AppShell>
     </ProtectedRoute>
   );
