@@ -94,79 +94,109 @@ export default function MyNeeds() {
   const completed = needs.filter(n => n.status === 'fulfilled');
 
   const renderNeedItem = (need: SeekerNeed, showChat: boolean, showDelete: boolean, showCall: boolean, showComplete: boolean = false) => (
-    <div key={need.id} className="group rounded-3xl md:rounded-[40px] border border-secondary-light/30 bg-white p-4 sm:p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
-      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center justify-between">
-        <div className="flex items-start gap-3 sm:gap-5 flex-1 min-w-0">
-          <div className="flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl sm:rounded-3xl bg-background text-accent shadow-sm text-xl sm:text-2xl group-hover:scale-105 transition-transform">
-            {need.gift?.icon === 'book-open' ? '📖' : <MapPin size={22} className="sm:w-6 sm:h-6" />}
-          </div>
-          <div className="text-right flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-black text-primary truncate">{need.gift?.name || 'طلب مساعدة'}</h3>
-              {(need.messages_count ?? 0) > 0 && (
-                <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent animate-pulse shrink-0">
-                  <MessageCircle size={10} />
-                </div>
-              )}
+    <div key={need.id} className="group rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] border border-secondary-light/20 bg-white p-5 sm:p-6 md:p-7 shadow-sm transition-all hover:shadow-md flex flex-col justify-between h-full w-full min-w-0">
+      <div>
+        {/* Top: Icon + Title & Location + Status Badge */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-xs">
+              {need.gift?.icon === 'book-open' ? '📖' : <MapPin size={22} />}
             </div>
-            <p className="text-primary-muted text-xs sm:text-sm font-medium mt-1 leading-relaxed line-clamp-2">{need.description}</p>
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-primary-muted font-bold mt-2.5 sm:mt-3">
-              <MapPin size={12} className="text-secondary shrink-0" />
-              <span>{need.city || 'الرياض'}</span>
-              {need.neighborhood && (
-                <>
-                  <span className="opacity-50">•</span>
-                  <span>{need.neighborhood}</span>
-                </>
-              )}
-              <span className="opacity-50">•</span>
-              <span>منذ {need.created_at_human || 'قليل'}</span>
+            <div className="text-right min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-primary truncate">{need.gift?.name || 'طلب مساعدة'}</h3>
+                {(need.messages_count ?? 0) > 0 && (
+                  <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent animate-pulse shrink-0">
+                    <MessageCircle size={10} />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-primary-muted font-bold mt-0.5">
+                <MapPin size={11} className="text-secondary shrink-0" />
+                <span>{need.city || 'الرياض'}</span>
+                {need.neighborhood && (
+                  <>
+                    <span className="opacity-40">•</span>
+                    <span>{need.neighborhood}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Status Badge */}
+          {need.status === 'fulfilled' ? (
+            <span className="bg-green-50 text-green-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-green-200 shrink-0 flex items-center gap-1">
+              <CheckCircle2 size={11} /> مكتمل
+            </span>
+          ) : need.status === 'in_progress' ? (
+            <span className="bg-secondary/10 text-secondary text-[10px] font-black px-2.5 py-1 rounded-full border border-secondary/20 shrink-0 flex items-center gap-1">
+              <Clock size={11} /> قيد التنفيذ
+            </span>
+          ) : (
+            <span className="bg-blue-50 text-blue-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-blue-100 shrink-0 flex items-center gap-1">
+              <Clock size={11} /> قيد الانتظار
+            </span>
+          )}
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full lg:w-auto pt-2 lg:pt-0 border-t border-secondary-light/10 lg:border-t-0">
-          {showChat && (
-            <Link href={`/chat/need/${need.id}`} className="flex-1 lg:flex-none">
-              <Button className="w-full bg-secondary/5 hover:bg-secondary/10 text-primary rounded-2xl px-4 py-3 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5">
-                <MessageCircle size={14} /> المحادثات
-              </Button>
-            </Link>
-          )}
+        {/* Description */}
+        <p className="text-primary-muted text-xs sm:text-sm font-medium leading-relaxed mb-4 line-clamp-3 text-right">
+          {need.description}
+        </p>
+      </div>
 
-          {showCall && (
-             <Link
-                href={`/chat/need/${need.id}`}
-                className="flex-1 lg:flex-none bg-white border border-secondary-light/40 text-primary hover:bg-background rounded-2xl px-4 py-3 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap"
-             >
-                <Phone size={14} className="text-secondary" /> مكالمة
-             </Link>
-          )}
+      {/* Footer / Actions Bar */}
+      <div className="pt-4 border-t border-secondary-light/10 mt-auto space-y-3">
+        <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-primary-muted font-bold">
+          <span>منذ {need.created_at_human || 'قليل'}</span>
+          {need.fulfilled_by && <span className="opacity-80">صانعة الأثر: {need.fulfilled_by.name}</span>}
+        </div>
 
-          {showComplete && (
-             <Button
+        {/* Button Actions Grid */}
+        <div className="space-y-2">
+          {showComplete ? (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {showChat && (
+                  <Link
+                    href={`/chat/need/${need.id}`}
+                    className="bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <MessageCircle size={13} /> المحادثات
+                  </Link>
+                )}
+                {showCall && (
+                  <Link
+                    href={`/chat/need/${need.id}`}
+                    className="bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/20 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <Phone size={13} /> مكالمة
+                  </Link>
+                )}
+              </div>
+              <Button
                 onClick={() => handleComplete(need.id)}
                 disabled={completingId === need.id}
-                className="flex-1 lg:flex-none bg-green-600 hover:bg-green-700 text-white rounded-2xl px-4 sm:px-6 py-3 text-xs font-black shadow-lg shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap"
-             >
+                className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2.5 text-xs font-black shadow-md shadow-green-600/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              >
                 {completingId === need.id ? <Loader2 size={14} className="animate-spin" /> : <><CheckCircle2 size={14} /> تأكيد الاستلام واكتمال الطلب</>}
-             </Button>
-          )}
-
-          {showDelete && (
+              </Button>
+            </>
+          ) : showDelete ? (
             confirmDeleteId === need.id ? (
-              <div className="flex items-center gap-2 w-full lg:w-auto">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
-                  className="flex-1 lg:flex-none bg-red-600 hover:bg-red-700 text-white rounded-2xl px-4 sm:px-5 py-3 text-xs font-black transition-all active:scale-95 whitespace-nowrap"
+                  className="bg-red-600 hover:bg-red-700 text-white rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
                   onClick={() => handleDelete(need.id)}
                   disabled={deletingId === need.id}
                 >
                   {deletingId === need.id ? (
-                    <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> جاري الحذف...</span>
+                    <span className="flex items-center gap-1.5"><Loader2 size={14} className="animate-spin" /> جاري الحذف...</span>
                   ) : 'تأكيد الحذف'}
                 </Button>
                 <Button
-                  className="bg-background text-primary-muted rounded-2xl px-4 py-3 text-xs font-black hover:text-primary transition-all active:scale-95"
+                  className="bg-background text-primary-muted rounded-xl py-2.5 text-xs font-black hover:text-primary transition-all active:scale-95"
                   onClick={() => setConfirmDeleteId(null)}
                   disabled={deletingId === need.id}
                 >
@@ -175,11 +205,20 @@ export default function MyNeeds() {
               </div>
             ) : (
               <Button
-                className="flex-1 lg:flex-none bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl px-4 sm:px-6 py-3 text-xs font-black shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap"
+                className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl py-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
                 onClick={() => setConfirmDeleteId(need.id)}
               >
-                <Trash2 size={14} /> حذف
+                <Trash2 size={14} /> حذف الطلب
               </Button>
+            )
+          ) : (
+            showChat && (
+              <Link
+                href={`/chat/need/${need.id}`}
+                className="block w-full bg-background hover:bg-secondary-light/20 text-primary rounded-xl py-2.5 text-xs font-black transition-all text-center"
+              >
+                <span className="flex items-center justify-center gap-1.5"><MessageCircle size={13} /> سجل المحادثة</span>
+              </Link>
             )
           )}
         </div>
@@ -213,17 +252,17 @@ export default function MyNeeds() {
               <p className="text-primary-muted font-bold text-xs sm:text-sm">جاري تحميل طلباتكِ...</p>
             </div>
           ) : needs.length > 0 ? (
-            <div className="space-y-10 sm:space-y-16">
+            <div className="space-y-12 sm:space-y-16">
               {/* 1. Pending Section */}
               {pending.length > 0 && (
                 <div className="space-y-4 sm:space-y-6">
                   <div className="flex items-center gap-2.5 sm:gap-3 px-2">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/5 flex items-center justify-center text-accent">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
                       <Clock size={18} />
                     </div>
                     <h3 className="text-lg sm:text-xl font-black text-primary">طلبات قيد الانتظار ({pending.length})</h3>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {pending.map(n => renderNeedItem(n, false, true, false, false))}
                   </div>
                 </div>
@@ -232,13 +271,13 @@ export default function MyNeeds() {
               {/* 2. In Progress Section */}
               {inProgress.length > 0 && (
                 <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center gap-2.5 sm:gap-3 px-2">
+                  <div className="flex items-center gap-2.5 sm:gap-3 px-2 border-t border-background pt-8 sm:pt-12">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-secondary/5 flex items-center justify-center text-secondary">
                       <Clock size={18} />
                     </div>
                     <h3 className="text-lg sm:text-xl font-black text-primary">طلبات قيد التنفيذ ({inProgress.length})</h3>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {inProgress.map(n => renderNeedItem(n, true, false, true, true))}
                   </div>
                 </div>
@@ -247,13 +286,13 @@ export default function MyNeeds() {
               {/* 3. Completed Section */}
               {completed.length > 0 && (
                 <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center gap-2.5 sm:gap-3 px-2">
+                  <div className="flex items-center gap-2.5 sm:gap-3 px-2 border-t border-background pt-8 sm:pt-12">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
                       <CheckCircle2 size={18} />
                     </div>
                     <h3 className="text-lg sm:text-xl font-black text-primary">طلبات مكتملة ({completed.length})</h3>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {completed.map(n => renderNeedItem(n, true, false, false, false))}
                   </div>
                 </div>
