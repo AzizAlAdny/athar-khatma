@@ -13,11 +13,12 @@ interface HeroAction {
 
 interface HeroProps {
   title: React.ReactNode;
-  subtitle: string;
+  subtitle?: React.ReactNode;
   variant?: 'primary' | 'accent' | 'secondary' | 'simple';
   actions?: React.ReactNode;
   graphic?: React.ReactNode;
   centered?: boolean;
+  badge?: React.ReactNode;
 }
 
 export default function Hero({
@@ -26,7 +27,8 @@ export default function Hero({
   variant = 'primary',
   actions,
   graphic,
-  centered = false
+  centered = false,
+  badge
 }: HeroProps) {
   const getVariantStyles = () => {
     switch (variant) {
@@ -75,12 +77,19 @@ export default function Hero({
 
       <div className={`flex flex-col ${centered ? 'items-center text-center' : 'md:flex-row items-center justify-between'} gap-8 relative z-10`}>
         <div className={`space-y-4 md:space-y-6 ${centered ? 'text-center flex flex-col items-center' : 'text-right flex-1'}`}>
+          {badge && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md border border-secondary-light/30 shadow-xs text-primary font-bold text-xs sm:text-sm">
+              {badge}
+            </div>
+          )}
           <h1 className={`text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight ${centered ? '' : 'max-w-2xl'} ${styles.title}`}>
             {title}
           </h1>
-          <p className={`max-w-xl text-sm md:text-lg font-bold leading-relaxed ${styles.subtitle}`}>
-            {subtitle}
-          </p>
+          {subtitle && (
+            <p className={`max-w-xl text-sm md:text-lg font-bold leading-relaxed ${styles.subtitle}`}>
+              {subtitle}
+            </p>
+          )}
 
           {actions && (
             <div className={`flex flex-wrap gap-4 mt-8 md:mt-12 ${centered ? 'justify-center' : ''}`}>

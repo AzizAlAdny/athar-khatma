@@ -119,8 +119,23 @@ export default function Home() {
     </Link>
   );
 
+  const isSeeker = user?.role === 'seeker';
+
+  const welcomeMessage = isSeeker ? (
+    <span className="flex items-center gap-1.5">
+      <span>🌸</span>
+      <span>رسالة لكل صاحبة احتياج حددي احتياجك و نحن نلبيه</span>
+    </span>
+  ) : (
+    <span className="flex items-center gap-1.5">
+      <span>مرحبًا أهلاً و سعدًا بالمسجلات الجدد</span>
+      <span>💐</span>
+    </span>
+  );
+
   const landingHero = (
     <Hero
+      badge={welcomeMessage}
       title={<>كل ختمة .. <span className="text-accent">تثمر أثراً</span></>}
       subtitle="حولي ختمة القُرآن إلى عطاء مبارك للمجتمع وكوني جزءاً من صناعة الأثر."
       variant="primary"
