@@ -96,8 +96,9 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
 NEXT_PUBLIC_APP_NAME=ختمة وأثر
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Google Maps API (Optional: MapLibre is used as fallback if left empty)
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+# Google Maps API (Uses KEY_SECOND first; falls back to KEY on error; MapLibre used if both unavailable)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY_SECOND=your_primary_google_maps_api_key
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_fallback_google_maps_api_key
 
 # Real-Time WebSockets (Pusher / Laravel Echo)
 NEXT_PUBLIC_PUSHER_APP_KEY=your_pusher_key

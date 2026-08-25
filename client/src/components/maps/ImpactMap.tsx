@@ -15,7 +15,9 @@ import { ChevronDown, MapPin, Filter, X, Gift } from 'lucide-react';
 
 import { themeColors } from '@/constants/theme';
 
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const PRIMARY_GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY_SECOND || '';
+const FALLBACK_GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const INITIAL_MAP_KEY = PRIMARY_GOOGLE_MAPS_KEY || FALLBACK_GOOGLE_MAPS_KEY;
 
 const CITY_COORDINATES: Record<string, { lat: number; lng: number; zoom: number }> = {
   all: { lat: 24.0, lng: 45.0, zoom: 5 },
@@ -31,10 +33,46 @@ const ImpactMap = () => {
   const [filteredPins, setFilteredPins] = useState<KhatmaPin[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [infoWindowData, setInfoWindowData] = useState<KhatmaPin | null>(null);
+  const [currentKey, setCurrentKey] = useState<string>(INITIAL_MAP_KEY);
+  const [triedFallbackKey, setTriedFallbackKey] = useState<boolean>(!PRIMARY_GOOGLE_MAPS_KEY);
   const [mapError, setMapError] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string>('الرياض');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
+
+  const handleMapError = (err?: unknown) => {
+    console.warn('Google Maps error with current key:', currentKey, err);
+    if (!triedFallbackKey && FALLBACK_GOOGLE_MAPS_KEY && FALLBACK_GOOGLE_MAPS_KEY !== currentKey) {
+      console.info('Switching to secondary fallback Google Maps key (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY):', FALLBACK_GOOGLE_MAPS_KEY);
+      setTriedFallbackKey(true);
+      setCurrentKey(FALLBACK_GOOGLE_MAPS_KEY);
+    } else {
+      console.warn('All Google Maps keys exhausted or error occurred, switching to OSM fallback.');
+      setMapError(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!currentKey) {
+      setMapError(true);
+      return;
+    }
+
+    if (typeof window === 'undefined') return;
+
+    const prevAuthFailure = (window as any).gm_authFailure;
+    (window as any).gm_authFailure = () => {
+      console.error('Google Maps gm_authFailure detected for key:', currentKey);
+      handleMapError('gm_authFailure');
+      if (typeof prevAuthFailure === 'function') {
+        prevAuthFailure();
+      }
+    };
+
+    return () => {
+      (window as any).gm_authFailure = prevAuthFailure;
+    };
+  }, [currentKey, triedFallbackKey]);
 
   useEffect(() => {
     getMapPins()
@@ -148,8 +186,8 @@ const ImpactMap = () => {
       </div>
 
       <div className="relative flex-1 min-h-[380px] sm:min-h-[480px] md:min-h-[560px]">
-        <MapsErrorBoundary onError={() => setMapError(true)}>
-        <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+        <MapsErrorBoundary onError={handleMapError} key={currentKey}>
+        <APIProvider apiKey={currentKey} onError={handleMapError} key={currentKey}>
           <Map
             style={{ width: '100%', height: '100%' }}
             defaultCenter={{ lat: 24.7136, lng: 46.6753 }}

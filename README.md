@@ -171,7 +171,8 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
 NEXT_PUBLIC_APP_NAME=ختمة وأثر
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Optional Google Maps Key (MapLibre is used as automatic fallback)
+# Optional Google Maps Keys (Uses KEY_SECOND as primary, falls back to KEY on error, then MapLibre)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY_SECOND=
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 
 # Pusher / WebSocket Configuration
