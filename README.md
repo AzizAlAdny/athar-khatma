@@ -13,6 +13,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
 [![WebRTC](https://img.shields.io/badge/WebRTC-Audio_Calls-333333?style=for-the-badge&logo=webrtc&logoColor=white)](https://webrtc.org)
+[![GitHub Actions CI](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](.github/workflows)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](render.yaml)
+[![Security Scan](https://img.shields.io/badge/Security-Trivy_%26_CodeQL-critical?style=for-the-badge&logo=securityscorecards&logoColor=white)](.github/workflows/security.yml)
 
 </div>
 
@@ -82,7 +85,8 @@ graph TD
 | **Real-Time WebSockets** | Pusher Channels + Laravel Echo (`pusher-js`) |
 | **Voice Calling** | WebRTC PeerConnection + Web Audio API Synthesizer |
 | **Email & Delivery** | Resend API (`resend/resend-laravel`) |
-| **Testing & Quality** | PHPUnit 11 (99 tests), Laravel Pint, ESLint, Prettier |
+| **CI/CD & DevOps** | GitHub Actions, Docker, Render Blueprint (`render.yaml`), Vercel |
+| **Testing & Security** | PHPUnit 11 (99 tests), Laravel Pint, ESLint, Prettier, CodeQL, Trivy SAST |
 
 ---
 
@@ -210,6 +214,40 @@ npm run lint
 # Format frontend code
 npm run format
 ```
+
+---
+
+## 🔄 CI/CD & DevOps Pipeline
+
+The platform incorporates automated GitHub Actions pipelines, SAST security scanners, and infrastructure-as-code deployment configurations to guarantee code health, type safety, and zero-downtime releases:
+
+```mermaid
+flowchart LR
+    subgraph CI["GitHub Actions CI"]
+        direction TB
+        F_CI["Frontend CI<br/>(Node 22, tsc, ESLint, Prettier, npm audit, Next.js Build)"]
+        B_CI["Backend CI<br/>(PHP 8.2, Composer, SQLite Migrations, 99 PHPUnit Tests, Pint)"]
+        SEC["Security Scan<br/>(Trivy Filesystem SAST + GitHub CodeQL Analysis)"]
+    end
+
+    subgraph CD["Automated CD & Cloud Infrastructure"]
+        direction TB
+        Render["Render Web Service<br/>(Dockerized PHP 8.3 + Nginx via render.yaml)"]
+        Vercel["Vercel Frontend<br/>(Next.js Production Edge Serverless)"]
+        DB_Cloud[("Supabase PostgreSQL<br/>(Connection Pooling + SSL)")]
+    end
+
+    CI -->|Push / PR Passed| CD
+```
+
+### GitHub Actions Workflows
+
+| Workflow | File Path | Triggers | Key Automated Steps |
+| :--- | :--- | :--- | :--- |
+| 🚀 **Frontend CI** | [`.github/workflows/frontend-ci.yml`](.github/workflows/frontend-ci.yml) | Push / PR on `client/**` | Dependency install (`npm ci`), TypeScript type-check (`tsc --noEmit`), ESLint linting, Prettier formatting check, `npm audit`, production Next.js build compilation (`npm run build`) |
+| ⚙️ **Backend CI** | [`athar-api/.github/workflows/ci.yml`](athar-api/.github/workflows/ci.yml) | Push / PR on `main`, `develop` | PHP 8.2 matrix, Composer install, SQLite in-memory test migrations, **PHPUnit test suite (99 tests)**, Laravel Pint style check, PHP syntax validation, Security check |
+| 🛡️ **Security & SAST** | [`.github/workflows/security.yml`](.github/workflows/security.yml) | Push / PR, Weekly Cron | **Trivy Vulnerability Scanner** (Backend & Frontend), **GitHub CodeQL Analysis** (JS/TS), Composer audit, SARIF security reports upload to GitHub Security tab |
+| 🐳 **Cloud Deployment** | [`render.yaml`](render.yaml) | Push to `main` branch | **Dockerized Laravel 8.3-FPM + Nginx** API deployment on Render, connected to Supabase PostgreSQL with automated health checks (`/api/health`) |
 
 ---
 
