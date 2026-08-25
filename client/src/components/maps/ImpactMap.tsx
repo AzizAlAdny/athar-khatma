@@ -41,9 +41,9 @@ const ImpactMap = () => {
   const [cities, setCities] = useState<string[]>([]);
 
   const handleMapError = (err?: unknown) => {
-    console.warn('Google Maps error with current key:', currentKey, err);
+    console.warn('Google Maps error encountered:', err);
     if (!triedFallbackKey && FALLBACK_GOOGLE_MAPS_KEY && FALLBACK_GOOGLE_MAPS_KEY !== currentKey) {
-      console.info('Switching to secondary fallback Google Maps key (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY):', FALLBACK_GOOGLE_MAPS_KEY);
+      console.info('Switching to secondary fallback Google Maps key.');
       setTriedFallbackKey(true);
       setCurrentKey(FALLBACK_GOOGLE_MAPS_KEY);
     } else {
@@ -62,7 +62,7 @@ const ImpactMap = () => {
 
     const prevAuthFailure = (window as any).gm_authFailure;
     (window as any).gm_authFailure = () => {
-      console.error('Google Maps gm_authFailure detected for key:', currentKey);
+      console.error('Google Maps gm_authFailure detected.');
       handleMapError('gm_authFailure');
       if (typeof prevAuthFailure === 'function') {
         prevAuthFailure();
@@ -77,7 +77,6 @@ const ImpactMap = () => {
   useEffect(() => {
     getMapPins()
       .then(data => {
-        console.log('Map pins received:', data);
         setPins(data);
         // Apply initial filter (Riyadh)
         const initialFiltered = data.filter(p => p.city === 'الرياض');

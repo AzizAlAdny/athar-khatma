@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="athar-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5e203b" />
+      <stop offset="100%" stop-color="#4a1a2f" />
+    </linearGradient>
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f3dfb5" />
+      <stop offset="50%" stop-color="#d0a45f" />
+      <stop offset="100%" stop-color="#b88b43" />
+    </linearGradient>
+  </defs>
+  <!-- Background rounded box -->
+  <rect width="64" height="64" rx="16" fill="url(#athar-grad)" />
+  
+  <!-- Quran / Book Spine & Pages -->
+  <path d="M16 22C16 18.5 19.5 17 23 17H31C31.5 17 32 17.5 32 18V47C32 47.5 31.5 48 31 48H23C19 48 16 45 16 42V22Z" fill="url(#gold-grad)" />
+  <path d="M48 22C48 18.5 44.5 17 41 17H33C32.5 17 32 17.5 32 18V47C32 47.5 32.5 48 33 48H41C45 48 48 45 48 42V22Z" fill="#f8f7f3" />
+  
+  <!-- Ribbon -->
+  <path d="M32 17V32L35.5 29L39 32V17H32Z" fill="#154a32" />
+  
+  <!-- Sparkles -->
+  <path d="M49 14L50.5 18L54.5 19.5L50.5 21L49 25L47.5 21L43.5 19.5L47.5 18Z" fill="url(#gold-grad)" />
+</svg>
