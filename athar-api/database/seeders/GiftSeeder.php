@@ -14,11 +14,11 @@ class GiftSeeder extends Seeder
     {
         $gifts = [
             [
-                'name' => 'تحفيظ كبيرات السن',
+                'name' => 'تحفيظ الكبار',
                 'slug' => 'teaching-elderly',
                 'category' => 'teaching',
                 'icon' => 'user-round',
-                'description' => 'تقديم جلسات تحفيظ ومراجعة للقرآن الكريم لكبيرات السن.',
+                'description' => 'تقديم جلسات تحفيظ ومراجعة للقرآن الكريم للكبار.',
             ],
             [
                 'name' => 'تحفيظ صغار',

@@ -96,7 +96,7 @@ class NeedSeeder extends Seeder
             ],
             [
                 'gift_slug' => 'teaching-elderly',
-                'description' => 'نبحث عن خاتمة متطوعة لتصحيح التلاوة وتلقين القرآن الكريم لكبيرات السن في دار التحفيظ.',
+                'description' => 'نبحث عن خاتمة متطوعة لتصحيح التلاوة وتلقين القرآن الكريم للكبار في دار التحفيظ.',
                 'city' => 'الرياض',
                 'neighborhood' => 'حي النرجس',
                 'status' => 'open',

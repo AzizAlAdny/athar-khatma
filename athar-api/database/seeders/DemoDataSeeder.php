@@ -70,7 +70,7 @@ class DemoDataSeeder extends Seeder
                 'gifts' => [
                     [
                         'slug' => 'teaching-elderly',
-                        'description' => 'جلسات تحفيظ وتلقين وتصحيح التلاوة لكبيرات السن في دار التحفيظ.',
+                        'description' => 'جلسات تحفيظ وتلقين وتصحيح التلاوة للكبار في دار التحفيظ.',
                         'status' => 'completed',
                         'points_earned' => 30,
                     ],
