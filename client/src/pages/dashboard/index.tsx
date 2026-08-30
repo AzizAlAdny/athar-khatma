@@ -20,7 +20,14 @@ import {
   CheckCircle2,
   MessageCircle,
   Award,
-  Users
+  Users,
+  Heart,
+  LayoutGrid,
+  Video,
+  PenTool,
+  FileText,
+  User as UserIcon,
+  GraduationCap
 } from 'lucide-react';
 
 const khatmaOptions = [
@@ -134,6 +141,32 @@ const UserDashboard = () => {
                   </div>
                   <span className="text-xs sm:text-sm md:text-base font-black text-primary text-center leading-tight">{label}</span>
                 </button>
+              </Link>
+            ))}
+          </section>
+
+          {/* Service Grid */}
+          <section className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 sm:gap-4 py-1 sm:py-2">
+            {[
+              { label: 'إهداء مصحف', icon: BookOpen, color: 'bg-background text-secondary' },
+              { label: 'تحفيظ الأطفال', icon: Users, color: 'bg-background text-primary' },
+              { label: 'تحفيظ كبار السن', icon: UserIcon, color: 'bg-background text-secondary' },
+              { label: 'تعليم الدين للخادمات', icon: Heart, color: 'bg-background text-accent' },
+              { label: 'القاعدة النورانية', icon: GraduationCap, color: 'bg-background text-primary' },
+              { label: 'تقديم غرفة زوم', icon: Video, color: 'bg-background text-secondary-dark' },
+              { label: 'تصميم إعلان', icon: PenTool, color: 'bg-background text-secondary-muted' },
+              { label: 'كتابة محتوى', icon: FileText, color: 'bg-background text-primary-muted' },
+              { label: 'المزيد', icon: LayoutGrid, color: 'bg-background text-primary-muted' },
+            ].map(({ label, icon: Icon, color }) => (
+              <Link
+                key={label}
+                href="/needs/giftbrowser"
+                className="group flex flex-col items-center gap-2.5 sm:gap-3 p-3.5 sm:p-4 rounded-2xl sm:rounded-[32px] bg-white border border-secondary-light/10 shadow-sm transition-all hover:shadow-md active:scale-95"
+              >
+                <div className={`w-11 h-11 sm:w-12 sm:h-12 ${color} rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
+                  <Icon size={20} />
+                </div>
+                <span className="text-xs sm:text-sm font-black text-primary text-center leading-tight">{label}</span>
               </Link>
             ))}
           </section>

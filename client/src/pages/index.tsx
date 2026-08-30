@@ -22,7 +22,8 @@ import {
   Map as MapIcon,
   User as UserIcon,
   Sparkles,
-  Clock
+  Clock,
+  GraduationCap
 } from 'lucide-react';
 
 // Human-friendly Arabic relative time for the gifts feed.
@@ -153,12 +154,13 @@ export default function Home() {
     <AppShell hero={landingHero}>
       <div className="space-y-8 sm:space-y-12">
         {/* Service Grid */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 py-2 sm:py-4">
+        <section className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 sm:gap-4 py-2 sm:py-4">
           {[
             { label: 'إهداء مصحف', icon: BookOpen, color: 'bg-background text-secondary' },
             { label: 'تحفيظ الأطفال', icon: Users, color: 'bg-background text-primary' },
             { label: 'تحفيظ كبار السن', icon: UserIcon, color: 'bg-background text-secondary' },
             { label: 'تعليم الدين للخادمات', icon: Heart, color: 'bg-background text-accent' },
+            { label: 'القاعدة النورانية', icon: GraduationCap, color: 'bg-background text-primary' },
             { label: 'تقديم غرفة زوم', icon: Video, color: 'bg-background text-secondary-dark' },
             { label: 'تصميم إعلان', icon: PenTool, color: 'bg-background text-secondary-muted' },
             { label: 'كتابة محتوى', icon: FileText, color: 'bg-background text-primary-muted' },
