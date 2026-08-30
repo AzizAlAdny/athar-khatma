@@ -158,7 +158,7 @@ export default function Home() {
           {[
             { label: 'إهداء مصحف', icon: BookOpen, color: 'bg-background text-secondary' },
             { label: 'تحفيظ الأطفال', icon: Users, color: 'bg-background text-primary' },
-            { label: 'تحفيظ كبار السن', icon: UserIcon, color: 'bg-background text-secondary' },
+            { label: 'تحفيظ الكبار', icon: UserIcon, color: 'bg-background text-secondary' },
             { label: 'تعليم الدين للخادمات', icon: Heart, color: 'bg-background text-accent' },
             { label: 'القاعدة النورانية', icon: GraduationCap, color: 'bg-background text-primary' },
             { label: 'تقديم غرفة زوم', icon: Video, color: 'bg-background text-secondary-dark' },
