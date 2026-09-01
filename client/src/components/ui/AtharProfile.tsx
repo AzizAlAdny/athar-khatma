@@ -9,6 +9,7 @@ interface Achievement {
   status: string;
   description: string;
   date: string;
+  points_earned?: number;
 }
 
 interface Review {
@@ -26,6 +27,7 @@ interface Need {
   gift_name: string;
   status: string;
   date: string;
+  points_earned?: number;
 }
 
 interface ProfileProps {
@@ -72,7 +74,13 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
              <span>{data.user.city}</span>
           </div>
           <p className="text-sm text-primary-muted/80 max-w-xs mx-auto leading-relaxed">
-            {data.user.bio || "صانعة أثر ومحبة للخير، تسعى لترك بصمة في مجتمعها من خلال ختمات القرآن الكريم."}
+            {data.user.bio || (
+              data.user.role === 'seeker'
+                ? "مستفيدة في مجتمع أثر تسعى للتعلم والاستفادة من مبادرات القرآن الكريم."
+                : data.user.role === 'admin'
+                ? "مشرفة في منصة أثر، تدير المنظومة وتتابع جودة الخدمات ومبادرات المجتمع."
+                : "صانعة أثر ومحبة للخير، تسعى لترك بصمة في مجتمعها من خلال ختمات القرآن الكريم."
+            )}
           </p>
         </div>
 
@@ -159,11 +167,18 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
               data.achievements.map((ach, idx) => (
                 <div key={idx} className="group bg-white p-5 rounded-[2rem] border border-secondary-light/30 shadow-sm hover:shadow-md hover:border-secondary/30 transition-all duration-300">
                   <div className="flex justify-between items-start mb-3">
-                    <span className={`px-3 py-1 text-[10px] font-black rounded-full border uppercase tracking-tight ${
-                      ach.status === 'delivered' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-background text-primary-muted border-secondary-light/20'
-                    }`}>
-                      {ach.category} • {ach.status === 'delivered' ? 'تم التسليم' : 'متوفر'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 text-[10px] font-black rounded-full border uppercase tracking-tight ${
+                        ach.status === 'delivered' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-background text-primary-muted border-secondary-light/20'
+                      }`}>
+                        {ach.category} • {ach.status === 'delivered' ? 'تم التسليم' : 'متوفر'}
+                      </span>
+                      {ach.status === 'delivered' && (
+                        <span className="bg-secondary/10 text-secondary text-[9px] font-black px-2 py-0.5 rounded-full border border-secondary/20">
+                          +{ach.points_earned || 10} نقاط أثر ✨
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] text-primary-muted/60 font-bold">{ach.date}</span>
                   </div>
                   <h5 className="font-black text-primary text-lg group-hover:text-secondary transition-colors">{ach.gift_name}</h5>
@@ -195,13 +210,20 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
               data.needs.map((need, idx) => (
                 <div key={idx} className="group bg-white p-5 rounded-[2rem] border border-secondary-light/30 shadow-sm hover:shadow-md transition-all duration-300">
                   <div className="flex justify-between items-start mb-3">
-                    <span className={`px-3 py-1 text-[10px] font-black rounded-full border uppercase tracking-tight ${
-                      need.status === 'fulfilled' ? 'bg-green-50 text-green-600 border-green-100' :
-                      need.status === 'in_progress' ? 'bg-secondary/10 text-secondary border-secondary/20' :
-                      'bg-background text-primary-muted border-secondary-light/20'
-                    }`}>
-                      {need.status === 'fulfilled' ? 'مكتمل' : need.status === 'in_progress' ? 'قيد التنفيذ' : 'قيد الانتظار'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 text-[10px] font-black rounded-full border uppercase tracking-tight ${
+                        need.status === 'fulfilled' ? 'bg-green-50 text-green-600 border-green-100' :
+                        need.status === 'in_progress' ? 'bg-secondary/10 text-secondary border-secondary/20' :
+                        'bg-background text-primary-muted border-secondary-light/20'
+                      }`}>
+                        {need.status === 'fulfilled' ? 'مكتمل' : need.status === 'in_progress' ? 'قيد التنفيذ' : 'قيد الانتظار'}
+                      </span>
+                      {need.status === 'fulfilled' && (
+                        <span className="bg-secondary/10 text-secondary text-[9px] font-black px-2 py-0.5 rounded-full border border-secondary/20">
+                          +{need.points_earned || 10} نقاط أثر ✨
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] text-primary-muted/60 font-bold">{need.date}</span>
                   </div>
                   <h5 className="font-black text-primary text-lg">{need.gift_name || 'طلب مساعدة'}</h5>

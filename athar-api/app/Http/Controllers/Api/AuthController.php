@@ -397,6 +397,21 @@ class AuthController extends Controller
             ->where('status', 'fulfilled')
             ->sum('points_earned');
 
+        $achievements = $user->role === 'khatma'
+            ? $user->khatmas->flatMap->khatmaGifts->sortByDesc('created_at')->map(function ($gift) {
+                return [
+                    'id' => $gift->id,
+                    'gift_name' => $gift->gift?->name ?? 'عطاء',
+                    'category' => $gift->gift?->category ?? 'عام',
+                    'status' => $gift->status,
+                    'description' => $gift->description,
+                    'average_rating' => $gift->average_rating,
+                    'points_earned' => (int) ($gift->points_earned ?? 10),
+                    'date' => $gift->created_at ? $gift->created_at->format('Y-m-d') : null,
+                ];
+            })->values()
+            : null;
+
         return response()->json([
             'id' => $user->id,
             'user' => [
@@ -407,22 +422,13 @@ class AuthController extends Controller
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
-            'achievements' => $user->role === 'khatma' ? ($khatma ? $khatma->khatmaGifts->map(function ($gift) {
-                return [
-                    'id' => $gift->id,
-                    'gift_name' => $gift->gift->name,
-                    'category' => $gift->gift->category,
-                    'status' => $gift->status,
-                    'description' => $gift->description,
-                    'average_rating' => $gift->average_rating,
-                    'date' => $gift->created_at->format('Y-m-d'),
-                ];
-            }) : []) : null,
+            'achievements' => $achievements,
             'needs' => $user->seekerNeeds->map(function ($need) {
                 return [
                     'gift_name' => $need->gift?->name,
                     'status' => $need->status,
-                    'date' => $need->created_at->format('Y-m-d'),
+                    'points_earned' => (int) $need->points_earned,
+                    'date' => $need->created_at ? $need->created_at->format('Y-m-d') : null,
                 ];
             }),
         ]);
@@ -430,7 +436,7 @@ class AuthController extends Controller
 
     public function publicProfile($id)
     {
-        $user = User::with(['khatmas.khatmaGifts.gift'])->findOrFail($id);
+        $user = User::with(['khatmas.khatmaGifts.gift', 'seekerNeeds.gift'])->findOrFail($id);
 
         // Get the latest khatma if it exists
         $khatma = $user->khatmas->sortByDesc('created_at')->first();
@@ -438,6 +444,20 @@ class AuthController extends Controller
         $fulfilledNeedsPoints = \App\Models\SeekerNeed::where('fulfilled_by_id', $user->id)
             ->where('status', 'fulfilled')
             ->sum('points_earned');
+
+        $achievements = $user->role === 'khatma'
+            ? $user->khatmas->flatMap->khatmaGifts->sortByDesc('created_at')->map(function ($gift) {
+                return [
+                    'id' => $gift->id,
+                    'gift_name' => $gift->gift?->name ?? 'عطاء',
+                    'category' => $gift->gift?->category ?? 'عام',
+                    'status' => $gift->status,
+                    'average_rating' => $gift->average_rating,
+                    'points_earned' => (int) ($gift->points_earned ?? 10),
+                    'date' => $gift->created_at ? $gift->created_at->format('Y-m-d') : null,
+                ];
+            })->values()
+            : null;
 
         return response()->json([
             'id' => $user->id,
@@ -448,21 +468,13 @@ class AuthController extends Controller
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
-            'achievements' => $user->role === 'khatma' ? ($khatma ? $khatma->khatmaGifts->map(function ($gift) {
-                return [
-                    'id' => $gift->id,
-                    'gift_name' => $gift->gift->name,
-                    'category' => $gift->gift->category,
-                    'status' => $gift->status,
-                    'average_rating' => $gift->average_rating,
-                    'date' => $gift->created_at->format('Y-m-d'),
-                ];
-            }) : []) : null,
+            'achievements' => $achievements,
             'needs' => $user->role === 'seeker' ? $user->seekerNeeds->map(function ($need) {
                 return [
                     'gift_name' => $need->gift?->name,
                     'status' => $need->status,
-                    'date' => $need->created_at->format('Y-m-d'),
+                    'points_earned' => (int) $need->points_earned,
+                    'date' => $need->created_at ? $need->created_at->format('Y-m-d') : null,
                 ];
             }) : null,
         ]);

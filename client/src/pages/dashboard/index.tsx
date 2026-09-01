@@ -125,7 +125,7 @@ const UserDashboard = () => {
   const activeOptions = isSeeker ? seekerOptions : khatmaOptions;
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['khatma', 'seeker']}>
       <AppShell hero={dashboardHero}>
         <div className="space-y-6 sm:space-y-8">
           {/* Quick Action Grid */}

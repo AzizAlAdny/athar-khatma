@@ -17,6 +17,7 @@ interface AuthContextType {
   loading: boolean;
   login: (userData: User, token?: string) => void;
   logout: () => void;
+  updateUser: (userData: Partial<User> | User) => void;
   isAuthenticated: boolean;
   isVerified: boolean;
 }
@@ -75,6 +76,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUser = (userData: Partial<User> | User) => {
+    setUser((prev) => {
+      const updated = prev ? { ...prev, ...userData } : (userData as User);
+      saveAuthUser(updated);
+      return updated;
+    });
+  };
+
   const logout = () => {
     // Best-effort server-side token revocation; clear local state regardless.
     apiLogout().catch(() => {});
@@ -94,6 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loading,
       login,
       logout,
+      updateUser,
       isAuthenticated: !!user,
       isVerified
     }}>

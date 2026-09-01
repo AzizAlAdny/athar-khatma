@@ -13,7 +13,8 @@ import {
   Settings,
   LogOut,
   X,
-  MessageCircle
+  MessageCircle,
+  LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -53,12 +54,8 @@ const khatmaNav: NavItem[] = [
 ];
 
 const adminNav: NavItem[] = [
+  { label: 'لوحة التحكم', href: '/admin', activePath: '/admin', Icon: LayoutDashboard },
   { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
-  { label: 'الرسائل', href: '/chat', activePath: '/chat', Icon: MessageCircle },
-  { label: 'تسجيل ختمة', href: '/khatma/register', activePath: '/khatma/register', Icon: Plus },
-  { label: 'طلبات المحتاجين', href: '/needs/browse', activePath: '/needs/browse', Icon: HelpCircle },
-  { label: 'هداياي', href: '/my-gifts', activePath: '/my-gifts', Icon: Gift },
-  { label: 'التقارير', href: '/admin', activePath: '/admin', Icon: BarChart3 },
 ];
 
 function getNavItems(role?: string, isAuthenticated = false): NavItem[] {

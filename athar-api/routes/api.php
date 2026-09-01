@@ -143,11 +143,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
         // Write routes require a verified email + the role-based token ability.
-        Route::middleware('role:khatma,admin', 'ability:khatma:create')->group(function () {
+        Route::middleware('role:khatma', 'ability:khatma:create')->group(function () {
             Route::post('/khatmas', [KhatmaController::class, 'store']);
         });
 
-        Route::middleware('role:seeker,admin', 'ability:need:create')->group(function () {
+        Route::middleware('role:seeker', 'ability:need:create')->group(function () {
             Route::post('/seeker-needs', [SeekerNeedController::class, 'store']);
             // Seekers can delete their own needs (ownership checked in the controller).
             Route::delete('/seeker-needs/{id}', [SeekerNeedController::class, 'destroy']);

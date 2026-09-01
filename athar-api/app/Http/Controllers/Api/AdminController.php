@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\KhatmaConstants;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Khatma;
@@ -37,7 +38,7 @@ class AdminController extends Controller
             'admin_users' => User::where('role', 'admin')->count(),
             'total_reviews' => Review::count(),
             'average_platform_rating' => round((float) (Review::avg('rating') ?? 5.0), 1),
-            'total_impact_points' => (int) Khatma::sum('impact_score'),
+            'total_impact_points' => (int) Khatma::sum('impact_score') + (int) SeekerNeed::where('status', 'fulfilled')->sum('points_earned'),
             'active_calls' => Call::whereIn('status', ['OUTGOING_RINGING', 'CONNECTING', 'CONNECTED'])->count(),
         ];
 
@@ -238,6 +239,7 @@ class AdminController extends Controller
 
             if ($status === 'fulfilled') {
                 $updates['fulfilled_at'] = now();
+                $updates['points_earned'] = max((int) $need->points_earned, KhatmaConstants::IMPACT_POINTS_PER_GIFT);
                 if ($request->filled('fulfilled_by_id')) {
                     $updates['fulfilled_by_id'] = $request->fulfilled_by_id;
                 } elseif (!$need->fulfilled_by_id) {
@@ -245,12 +247,14 @@ class AdminController extends Controller
                 }
             } elseif ($status === 'in_progress') {
                 $updates['fulfilled_at'] = null;
+                $updates['points_earned'] = 0;
                 if ($request->filled('fulfilled_by_id')) {
                     $updates['fulfilled_by_id'] = $request->fulfilled_by_id;
                 }
             } elseif ($status === 'open') {
                 $updates['fulfilled_at'] = null;
                 $updates['fulfilled_by_id'] = null;
+                $updates['points_earned'] = 0;
             }
 
             $need->update($updates);
@@ -260,6 +264,7 @@ class AdminController extends Controller
                 'need_id' => $id,
                 'new_status' => $status,
                 'fulfilled_by_id' => $need->fulfilled_by_id,
+                'points_earned' => $need->points_earned,
             ]);
 
             return response()->json([
@@ -296,26 +301,35 @@ class AdminController extends Controller
 
             if ($status === 'delivered') {
                 $updates['delivered_at'] = now();
+                $updates['points_earned'] = max((int) $gift->points_earned, KhatmaConstants::IMPACT_POINTS_PER_GIFT);
                 if ($request->filled('delivered_to_id')) {
                     $updates['delivered_to_id'] = $request->delivered_to_id;
                 }
             } elseif ($status === 'in_progress') {
                 $updates['delivered_at'] = null;
+                $updates['points_earned'] = 0;
                 if ($request->filled('delivered_to_id')) {
                     $updates['delivered_to_id'] = $request->delivered_to_id;
                 }
             } elseif ($status === 'pending') {
                 $updates['delivered_at'] = null;
                 $updates['delivered_to_id'] = null;
+                $updates['points_earned'] = 0;
             }
 
             $gift->update($updates);
+
+            if ($gift->khatma) {
+                $totalImpact = $gift->khatma->khatmaGifts()->sum('points_earned');
+                $gift->khatma->update(['impact_score' => $totalImpact]);
+            }
 
             Log::info('Gift status updated by admin with integrity verification', [
                 'admin_id' => auth()->id(),
                 'gift_id' => $id,
                 'new_status' => $status,
                 'delivered_to_id' => $gift->delivered_to_id,
+                'points_earned' => $gift->points_earned,
             ]);
 
             return response()->json([
@@ -413,10 +427,11 @@ class AdminController extends Controller
 
             $review->delete();
 
-            // Recalculate remaining points for the item
+            // Recalculate remaining points for the item (base 10 points + remaining review bonus)
             if ($item) {
                 $avgRating = $item->reviews()->avg('rating') ?? 0;
-                $points = round($avgRating * 2);
+                $bonus = $avgRating > 0 ? round($avgRating * 2) : 0;
+                $points = KhatmaConstants::IMPACT_POINTS_PER_GIFT + $bonus;
                 $item->update(['points_earned' => $points]);
 
                 if ($review->reviewable_type === KhatmaGift::class && $item->khatma) {

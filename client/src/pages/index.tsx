@@ -23,7 +23,8 @@ import {
   User as UserIcon,
   Sparkles,
   Clock,
-  GraduationCap
+  GraduationCap,
+  LayoutDashboard
 } from 'lucide-react';
 
 // Human-friendly Arabic relative time for the gifts feed.
@@ -96,6 +97,10 @@ export default function Home() {
     <Link href="/auth/register" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
       <UserPlus size={18} /> إنشاء حساب جديد
     </Link>
+  ) : user?.role === 'admin' ? (
+    <Link href="/admin" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
+      <LayoutDashboard size={18} /> لوحة التحكم والإشراف
+    </Link>
   ) : user?.role === 'seeker' ? (
     <Link href="/needs/register" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
       <Plus size={18} /> سجلي احتياجكِ
@@ -110,6 +115,10 @@ export default function Home() {
     <Link href="/auth/login" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
       <LogIn size={18} /> تسجيل الدخول
     </Link>
+  ) : user?.role === 'admin' ? (
+    <Link href="/admin" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
+      <Info size={18} /> إحصائيات المنصة
+    </Link>
   ) : user?.role === 'seeker' ? (
     <Link href="/needs" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
       <Info size={18} /> طلباتي
@@ -122,7 +131,12 @@ export default function Home() {
 
   const isSeeker = user?.role === 'seeker';
 
-  const welcomeMessage = isSeeker ? (
+  const welcomeMessage = user?.role === 'admin' ? (
+    <span className="flex items-center gap-1.5">
+      <span>🛡️</span>
+      <span>مرحباً بكِ في لوحة التحكم والإشراف الإداري</span>
+    </span>
+  ) : isSeeker ? (
     <span className="flex items-center gap-1.5">
       <span>🌸</span>
       <span>رسالة لكل صاحبة احتياج حددي احتياجك و نحن نلبيه</span>

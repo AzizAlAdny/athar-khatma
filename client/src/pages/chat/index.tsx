@@ -74,7 +74,7 @@ export default function ChatInbox() {
   );
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['khatma', 'seeker']}>
       <AppShell hero={hero}>
         <div className="max-w-4xl mx-auto space-y-8 pb-20">
           {/* Tabs */}

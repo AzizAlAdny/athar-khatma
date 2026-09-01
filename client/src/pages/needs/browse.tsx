@@ -113,9 +113,14 @@ export default function BrowseNeeds() {
 
           {/* Status Badge */}
           {need.status === 'fulfilled' ? (
-            <span className="bg-green-50 text-green-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-green-200 shrink-0 flex items-center gap-1">
-              <CheckCircle2 size={11} /> تمت التلبية
-            </span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="bg-green-50 text-green-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-green-200 shrink-0 flex items-center gap-1">
+                <CheckCircle2 size={11} /> تمت التلبية
+              </span>
+              <span className="bg-secondary/10 text-secondary text-[9px] font-black px-2 py-0.5 rounded-full border border-secondary/20">
+                +{need.points_earned || 10} نقاط أثر ✨
+              </span>
+            </div>
           ) : need.status === 'in_progress' ? (
             <span className="bg-secondary/10 text-secondary text-[10px] font-black px-2.5 py-1 rounded-full border border-secondary/20 shrink-0 flex items-center gap-1">
               <Clock size={11} /> قيد التنفيذ
@@ -222,7 +227,7 @@ export default function BrowseNeeds() {
   );
 
   return (
-    <ProtectedRoute allowedRoles={['khatma', 'admin']}>
+    <ProtectedRoute allowedRoles={['khatma']}>
       <AppShell hero={needsHero}>
         <div className="space-y-8 sm:space-y-12 pb-20">
           <div className="flex flex-col gap-2 sm:gap-4 md:flex-row md:items-center md:justify-between px-2">

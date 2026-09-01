@@ -116,7 +116,7 @@ export default function MyGifts() {
   const deliveredGifts = allGifts.filter(g => g.status === 'delivered');
 
   return (
-    <ProtectedRoute allowedRoles={['khatma', 'admin']}>
+    <ProtectedRoute allowedRoles={['khatma']}>
       <AppShell hero={giftsHero}>
         <div className="space-y-8 sm:space-y-12 pb-20">
           <div className="flex justify-between items-center px-2">
@@ -295,9 +295,14 @@ export default function MyGifts() {
                             <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-600">
                               <CheckCircle2 size={22} />
                             </div>
-                            <span className="bg-green-50 text-green-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-green-200 flex items-center gap-1">
-                              <CheckCircle2 size={10} /> تم التسليم ✨
-                            </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="bg-green-50 text-green-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-green-200 flex items-center gap-1">
+                                <CheckCircle2 size={10} /> تم التسليم ✨
+                              </span>
+                              <span className="bg-secondary/10 text-secondary text-[9px] font-black px-2 py-0.5 rounded-full border border-secondary/20">
+                                +{gift.points_earned || 10} نقاط أثر ✨
+                              </span>
+                            </div>
                           </div>
 
                           <div className="text-right mb-4">

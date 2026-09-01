@@ -135,7 +135,7 @@ export default function GiftBrowser() {
   const myCompleted = myOrderedGifts.filter(g => g.status === 'delivered');
 
   return (
-    <ProtectedRoute allowedRoles={['seeker', 'admin']}>
+    <ProtectedRoute allowedRoles={['seeker']}>
       <AppShell hero={hero}>
         <div className="space-y-8 sm:space-y-12 pb-20">
           <div className="px-2">

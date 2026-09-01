@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\KhatmaConstants;
 use App\Http\Controllers\Controller;
 use App\Models\KhatmaGift;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class KhatmaGiftController extends Controller
@@ -67,37 +69,49 @@ class KhatmaGiftController extends Controller
 
     public function markDelivered(Request $request, $id)
     {
-        $gift = KhatmaGift::with('khatma')->find($id);
+        return DB::transaction(function () use ($request, $id) {
+            $gift = KhatmaGift::with('khatma')->lockForUpdate()->find($id);
 
-        if (!$gift) {
-            return response()->json(['message' => 'العطاء غير موجود'], 404);
-        }
+            if (!$gift) {
+                return response()->json(['message' => 'العطاء غير موجود'], 404);
+            }
 
-        $user = $request->user();
+            $user = $request->user();
 
-        // The khatma owner, the seeker who ordered it (delivered_to_id), or an admin can mark as delivered
-        if ($user->id !== $gift->khatma->user_id && $user->id !== $gift->delivered_to_id && $user->role !== 'admin') {
-            return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا العطاء.'], 403);
-        }
+            // The khatma owner, the seeker who ordered it (delivered_to_id), or an admin can mark as delivered
+            if ($user->id !== $gift->khatma->user_id && $user->id !== $gift->delivered_to_id && $user->role !== 'admin') {
+                return response()->json(['message' => 'غير مصرح لك بتغيير حالة هذا العطاء.'], 403);
+            }
 
-        $deliveredToId = $request->input('delivered_to_id') ?? $gift->delivered_to_id ?? $user->id;
+            $deliveredToId = $request->input('delivered_to_id') ?? $gift->delivered_to_id ?? $user->id;
 
-        $gift->update([
-            'status' => 'delivered',
-            'delivered_at' => now(),
-            'delivered_to_id' => $deliveredToId,
-        ]);
+            $pointsEarned = max((int) $gift->points_earned, KhatmaConstants::IMPACT_POINTS_PER_GIFT);
 
-        Log::info('Gift marked as delivered', [
-            'gift_id' => $gift->id,
-            'delivered_to_id' => $gift->delivered_to_id,
-            'user_id' => $user->id,
-        ]);
+            $gift->update([
+                'status' => 'delivered',
+                'delivered_at' => now(),
+                'delivered_to_id' => $deliveredToId,
+                'points_earned' => $pointsEarned,
+            ]);
 
-        return response()->json([
-            'message' => 'تم تحديد العطاء كمسلم بنجاح',
-            'gift' => $gift->load(['gift', 'khatma.user'])
-        ]);
+            // Synchronize parent Khatma impact score
+            if ($gift->khatma) {
+                $totalImpact = $gift->khatma->khatmaGifts()->sum('points_earned');
+                $gift->khatma->update(['impact_score' => $totalImpact]);
+            }
+
+            Log::info('Gift marked as delivered with impact points', [
+                'gift_id' => $gift->id,
+                'delivered_to_id' => $gift->delivered_to_id,
+                'points_earned' => $gift->points_earned,
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'message' => 'تم تحديد العطاء كمسلم بنجاح',
+                'gift' => $gift->load(['gift', 'khatma.user'])
+            ]);
+        });
     }
 
     public function markInProgress(Request $request, $id)

@@ -224,7 +224,7 @@ export default function MyNeeds() {
   );
 
   return (
-    <ProtectedRoute allowedRoles={['seeker', 'admin']}>
+    <ProtectedRoute allowedRoles={['seeker']}>
       <AppShell hero={needsHero}>
         <div className="space-y-8 sm:space-y-12 pb-20">
           <div className="flex flex-col gap-2 sm:gap-4 md:flex-row md:items-center md:justify-between px-2">

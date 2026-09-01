@@ -57,7 +57,7 @@ class KhatmaService
                 'user_id' => $userId,
                 'completion_date' => $sanitizedData['completion_date'],
                 'status' => KhatmaConstants::STATUS_ACTIVE,
-                'impact_score' => count($sanitizedData['gift_ids']) * KhatmaConstants::IMPACT_POINTS_PER_GIFT,
+                'impact_score' => 0,
             ];
 
             $khatma = $this->khatmaRepository->create($khatmaData);
@@ -67,6 +67,7 @@ class KhatmaService
                     'khatma_id' => $khatma->id,
                     'gift_id' => $giftId,
                     'status' => 'pending',
+                    'points_earned' => 0,
                 ]);
             }
 

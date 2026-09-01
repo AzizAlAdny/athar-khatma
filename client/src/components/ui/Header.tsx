@@ -44,8 +44,8 @@ const timeAgo = (value?: string): string => {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, isAuthenticated } = useAuth();
-  const userName = user?.name || 'زائرة';
-  const roleLabel = user?.role === 'seeker' ? 'طالبة عون' : user?.role === 'admin' ? 'مشرفة' : 'ختماتي';
+  const userName = user?.display_name || user?.name || 'زائرة';
+  const roleLabel = user?.role === 'seeker' ? 'طالبة عون' : user?.role === 'admin' ? 'مشرفة النظام' : 'ختماتي';
 
   const router = useRouter();
   const [bellOpen, setBellOpen] = useState(false);
@@ -95,7 +95,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         .then((r) => {
           if (mounted) setUnread(r.unread);
         })
-        .catch(() => {});
+        .catch(() => { });
     load();
     const timer = setInterval(load, 30000);
     return () => {
@@ -180,7 +180,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       {/* Left Side: Profile / Auth and Notifications */}
       <div className="flex items-center gap-2 md:gap-6 order-3">
         {isAuthenticated ? (
-          <Link href="/profile" className="flex items-center gap-2 md:gap-3 group cursor-pointer hover:bg-background p-1 rounded-2xl transition-colors">
+          <Link href={user?.role === 'admin' ? '/admin' : '/profile'} className="flex items-center gap-2 md:gap-3 group cursor-pointer hover:bg-background p-1 rounded-2xl transition-colors">
             <div className="relative">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-secondary/10 border-2 border-accent flex items-center justify-center text-accent">
                 <User className="w-4 h-4 md:w-5 md:h-5" />
@@ -215,13 +215,15 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="flex gap-1.5 md:gap-3 pr-1.5 md:pr-4 border-r border-secondary-light/30 items-center">
           {isAuthenticated && (
             <div className="flex items-center gap-1.5 md:gap-3">
-              <Link
-                href="/chat"
-                aria-label="الرسائل"
-                className="text-primary-muted hover:text-primary p-1.5 md:p-2 rounded-xl bg-background transition-colors"
-              >
-                <MessageSquare size={16} />
-              </Link>
+              {user?.role !== 'admin' && (
+                <Link
+                  href="/chat"
+                  aria-label="الرسائل"
+                  className="text-primary-muted hover:text-primary p-1.5 md:p-2 rounded-xl bg-background transition-colors"
+                >
+                  <MessageSquare size={16} />
+                </Link>
+              )}
 
               <div className="relative">
                 <button

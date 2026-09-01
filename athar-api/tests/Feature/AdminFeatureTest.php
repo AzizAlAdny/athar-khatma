@@ -294,8 +294,8 @@ class AdminFeatureTest extends TestCase
 
         $deleteResponse->assertStatus(200);
         $this->assertDatabaseMissing('reviews', ['id' => $review->id]);
-        $this->assertSame(0, $khatmaGift->fresh()->points_earned);
-        $this->assertSame(0, $khatma->fresh()->impact_score);
+        $this->assertSame(10, $khatmaGift->fresh()->points_earned);
+        $this->assertSame(10, $khatma->fresh()->impact_score);
     }
 
     public function test_non_admin_users_are_strictly_forbidden_from_admin_routes()

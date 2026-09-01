@@ -231,7 +231,7 @@ export default function RegisterNeed() {
   );
 
   return (
-    <ProtectedRoute allowedRoles={['seeker', 'admin']}>
+    <ProtectedRoute allowedRoles={['seeker']}>
       <AppShell hero={registerHero}>
         <div className="max-w-4xl mx-auto space-y-10 pb-20">
           {/* Section 1: Need Category */}

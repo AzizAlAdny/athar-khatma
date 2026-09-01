@@ -280,7 +280,7 @@ export default function UnifiedChat() {
   );
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['khatma', 'seeker']}>
       <AppShell hero={hero}>
         {!item && !loadingItem ? (
           <div className="py-12 text-center text-primary-muted font-bold">

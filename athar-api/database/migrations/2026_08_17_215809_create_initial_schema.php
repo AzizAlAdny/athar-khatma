@@ -135,7 +135,7 @@ return new class extends Migration
             $table->foreignId('gift_id')->constrained()->onDelete('cascade');
             $table->text('description')->nullable();
             $table->string('status')->default('pending');
-            $table->integer('points_earned')->default(10);
+            $table->integer('points_earned')->default(0);
             $table->timestamp('delivered_at')->nullable();
             $table->foreignId('delivered_to_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();

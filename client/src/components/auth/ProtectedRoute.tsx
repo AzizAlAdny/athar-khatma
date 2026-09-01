@@ -24,7 +24,11 @@ export default function ProtectedRoute({ children, allowedRoles, requireVerified
         router.push('/auth/verify');
       } else if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {
         // Redirect if user doesn't have the required role
-        router.push('/dashboard');
+        if (user.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/dashboard');
+        }
       }
     }
   }, [loading, isAuthenticated, user, router, allowedRoles, requireVerified]);

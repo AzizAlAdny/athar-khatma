@@ -2,6 +2,7 @@
 
 namespace App\Actions\Reviews;
 
+use App\Constants\KhatmaConstants;
 use App\Models\Review;
 use App\Models\KhatmaGift;
 use App\Models\SeekerNeed;
@@ -83,8 +84,9 @@ class SubmitReviewAction
                 'comment' => isset($data['comment']) ? strip_tags($data['comment']) : null,
             ]);
 
-            // Recalculate impact points
-            $points = $review->rating * 2;
+            // Recalculate impact points (base 10 points + rating bonus)
+            $bonus = $review->rating * 2;
+            $points = KhatmaConstants::IMPACT_POINTS_PER_GIFT + $bonus;
             $item->update([
                 'points_earned' => $points,
             ]);

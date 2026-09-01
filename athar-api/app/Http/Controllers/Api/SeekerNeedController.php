@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\KhatmaConstants;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSeekerNeedRequest;
 use App\Models\SeekerNeed;
@@ -114,11 +115,13 @@ class SeekerNeedController extends Controller
                 'status' => 'fulfilled',
                 'fulfilled_at' => now(),
                 'fulfilled_by_id' => $fulfilledById,
+                'points_earned' => max((int) $need->points_earned, KhatmaConstants::IMPACT_POINTS_PER_GIFT),
             ]);
 
-            Log::info('Need marked as fulfilled atomically', [
+            Log::info('Need marked as fulfilled atomically with impact points', [
                 'need_id' => $need->id,
                 'fulfilled_by_id' => $need->fulfilled_by_id,
+                'points_earned' => $need->points_earned,
                 'user_id' => $user->id,
             ]);
 
