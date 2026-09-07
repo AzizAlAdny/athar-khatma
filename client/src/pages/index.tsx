@@ -193,10 +193,59 @@ export default function Home() {
           ))}
         </section>
 
-        {/* Map and Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-          {/* Stats Card */}
-          <div className="lg:col-span-3 order-2 lg:order-1">
+        {/* Row 1: 1) كيف تعمل المنصة + 2) ابدئي بأول عطاء */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          {/* 1) Journey Card: كيف تعمل المنصة */}
+          <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm h-full flex flex-col justify-between">
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-primary mb-6 sm:mb-8">كيف تعمل المنصة</h3>
+              <div className="space-y-6 sm:space-y-8 relative flex-1">
+                <div className="absolute right-[15px] sm:right-[17px] top-2 bottom-2 w-0.5 bg-secondary-light/60"></div>
+                {[
+                  { step: 1, title: 'ختم القرآن', desc: 'سجلي ختمتكِ بسهولة', status: 'completed' },
+                  { step: 2, title: 'اختاري هديتكِ', desc: 'حددي الهدية التي تودين تقديمها', status: 'completed' },
+                  { step: 3, title: 'قدمي الأثر', desc: 'نفذي الهدية وشاركي الأثر', status: 'completed' },
+                  { step: 4, title: 'يظهر أثركِ', desc: 'تضاف هديتكِ على خريطة الأثر', status: 'completed' }
+                ].map((s, i) => (
+                  <div key={i} className="flex items-start gap-3 sm:gap-4 relative z-10">
+                    <div className="flex flex-col items-center shrink-0">
+                      {s.status === 'completed' ? (
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-primary rounded-full flex items-center justify-center text-white shadow-sm border-2 sm:border-4 border-white">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-background bg-white shadow-sm"></div>
+                      )}
+                    </div>
+                    <div className="bg-white pr-1.5 sm:pr-2 py-0.5 text-right">
+                      <h4 className="text-sm sm:text-base font-black text-primary">{s.title}</h4>
+                      <p className="text-xs sm:text-sm text-primary-muted mt-0.5 sm:mt-1 font-bold leading-relaxed">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 2) Start Gift Card: ابدئي بأول عطاء */}
+          <div className="bg-primary rounded-3xl md:rounded-[40px] p-6 sm:p-8 relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[240px] border border-white/10 h-full">
+            <div className="relative z-10">
+              <h3 className="text-2xl sm:text-3xl font-black mb-2 sm:mb-3 text-secondary">ابدئي بأول عطاء</h3>
+              <p className="text-secondary-light text-xs sm:text-sm font-bold leading-relaxed opacity-90">واجعلي ختمتكِ بداية لأثر مبارك يمتد في المجتمع</p>
+            </div>
+            <div className="absolute -left-10 -bottom-10 opacity-10 pointer-events-none">
+              <Gift size={200} color="var(--color-secondary)" />
+            </div>
+            <Link href="/khatma/register" className="bg-secondary text-white py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm z-10 w-full hover:bg-secondary-dark transition-all mt-6 sm:mt-8 active:scale-95 shadow-lg shadow-secondary/20 text-center">
+              سجلي ختمتكِ وعطائكِ ✨
+            </Link>
+          </div>
+        </section>
+
+        {/* Row 2: 3) إحصائيات الأثر + 4) الخريطة */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+          {/* 3) Stats Card: إحصائيات الأثر */}
+          <div className="lg:col-span-4">
             <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm h-full flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2.5 mb-5 sm:mb-8">
@@ -242,60 +291,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Map Area */}
-          <div className="lg:col-span-6 order-1 lg:order-2">
+          {/* 4) Map Area: خريطة الأثر */}
+          <div className="lg:col-span-8">
             <ImpactMap />
           </div>
+        </section>
 
-          {/* Journey Card */}
-          <div className="lg:col-span-3 order-3">
-            <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm h-full flex flex-col">
-              <h3 className="text-base sm:text-lg font-black text-primary mb-6 sm:mb-8">كيف تعمل المنصة</h3>
-              <div className="space-y-6 sm:space-y-8 relative flex-1">
-                <div className="absolute right-[15px] sm:right-[17px] top-2 bottom-2 w-0.5 bg-secondary-light/60"></div>
-                {[
-                  { step: 1, title: 'ختم القرآن', desc: 'سجلي ختمتكِ بسهولة', status: 'completed' },
-                  { step: 2, title: 'اختاري هديتكِ', desc: 'حددي الهدية التي تودين تقديمها', status: 'completed' },
-                  { step: 3, title: 'قدمي الأثر', desc: 'نفذي الهدية وشاركي الأثر', status: 'completed' },
-                  { step: 4, title: 'يظهر أثركِ', desc: 'تضاف هديتكِ على خريطة الأثر', status: 'completed' }
-                ].map((s, i) => (
-                  <div key={i} className="flex items-start gap-3 sm:gap-4 relative z-10">
-                    <div className="flex flex-col items-center shrink-0">
-                      {s.status === 'completed' ? (
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-primary rounded-full flex items-center justify-center text-white shadow-sm border-2 sm:border-4 border-white">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-background bg-white shadow-sm"></div>
-                      )}
-                    </div>
-                    <div className="bg-white pr-1.5 sm:pr-2 py-0.5 text-right">
-                      <h4 className="text-sm sm:text-base font-black text-primary">{s.title}</h4>
-                      <p className="text-xs sm:text-sm text-primary-muted mt-0.5 sm:mt-1 font-bold leading-relaxed">{s.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-8 sm:pb-10">
-          {/* Start Gift Card */}
-          <div className="bg-primary rounded-3xl md:rounded-[40px] p-6 sm:p-8 relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[240px] border border-white/10">
-            <div className="relative z-10">
-              <h3 className="text-2xl sm:text-3xl font-black mb-2 sm:mb-3 text-secondary">ابدئي بأول عطاء</h3>
-              <p className="text-secondary-light text-xs sm:text-sm font-bold leading-relaxed opacity-90">واجعلي ختمتكِ بداية لأثر مبارك يمتد في المجتمع</p>
-            </div>
-            <div className="absolute -left-10 -bottom-10 opacity-10 pointer-events-none">
-              <Gift size={200} color="var(--color-secondary)" />
-            </div>
-            <Link href="/khatma/register" className="bg-secondary text-white py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm z-10 w-full hover:bg-secondary-dark transition-all mt-6 sm:mt-8 active:scale-95 shadow-lg shadow-secondary/20 text-center">
-              سجلي ختمتكِ وعطائكِ ✨
-            </Link>
-          </div>
-
+        {/* Row 3: Feeds (العطايا والطلبات) */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 pb-4">
           {/* Recent Gifts */}
           <div className="bg-white p-5 sm:p-7 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm flex flex-col justify-between">
             <div>
@@ -371,7 +374,7 @@ export default function Home() {
               عرض جميع الطلبات
             </Link>
           </div>
-        </div>
+        </section>
 
         {/* Inspiring Initiatives Card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 pb-10">
