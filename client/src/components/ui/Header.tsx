@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bell, CheckCheck, MessageSquare, Search, Menu, LogIn, UserPlus, User, Loader2 } from 'lucide-react';
+import { Bell, CheckCheck, MessageSquare, Menu, LogIn, UserPlus, User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   ApiNotification,
@@ -165,17 +165,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </div>
       </div>
 
-      {/* Center: Search Bar */}
-      <div className="flex-1 max-w-xl mx-4 md:mx-8 hidden lg:block order-2">
-        <div className="relative group">
-          <input
-            type="text"
-            placeholder="ابحثي عن خدمة ..."
-            className="w-full bg-background border border-secondary-light/30 rounded-2xl px-12 py-2.5 text-xs text-right focus:outline-none focus:ring-2 focus:ring-secondary-light transition-all shadow-inner group-hover:bg-white"
-          />
-          <Search className="absolute left-4 top-3 text-primary-muted" size={14} />
-        </div>
-      </div>
 
       {/* Left Side: Profile / Auth and Notifications */}
       <div className="flex items-center gap-2 md:gap-6 order-3">
