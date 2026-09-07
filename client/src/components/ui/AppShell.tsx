@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, ExternalLink, Phone } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
+import { LuInstagram } from 'react-icons/lu';
 import Sidebar from '@/components/ui/Sidebar';
 import Header from '@/components/ui/Header';
 
@@ -35,35 +36,32 @@ export default function AppShell({ hero, children }: AppShellProps) {
           <p className="text-xs font-black text-primary opacity-70">
             ختمة وأثر — منصة صناعة الأثر المجتمعي
           </p>
-          <div className="flex flex-row flex-wrap items-center gap-2 text-xs font-bold text-primary-muted">
-            <span className="flex items-center gap-2">
-              <Mail size={14} className="text-secondary" />
-              <span className="hidden sm:inline">للتواصل والاستفسار:</span>
-            </span>
+          <div className="flex flex-row flex-wrap items-center justify-center md:justify-end gap-2.5 sm:gap-3 text-xs font-bold text-primary-muted">
+            <span className="hidden sm:inline text-primary-muted">للتواصل والاستفسار:</span>
             <a
               href="mailto:katmaweb@outlook.com"
-              className="text-primary hover:text-secondary transition-colors"
+              className="inline-flex items-center gap-1.5 text-primary hover:text-secondary transition-colors"
             >
-              katmaweb@outlook.com
+              <Mail size={14} className="text-secondary shrink-0" />
+              <span dir="ltr">katmaweb@outlook.com</span>
             </a>
             <span className="opacity-40">•</span>
             <a
               href="tel:+966500060229"
-              dir="ltr"
-              className="flex items-center gap-1.5 text-primary hover:text-secondary transition-colors"
+              className="inline-flex items-center gap-1.5 text-primary hover:text-secondary transition-colors"
             >
-              <Phone size={14} className="text-secondary" />
-              +966 50 006 0229
+              <Phone size={14} className="text-secondary shrink-0" />
+              <span dir="ltr">+966 50 006 0229</span>
             </a>
             <span className="opacity-40">•</span>
             <a
               href="https://instagram.com/Khatmaweb"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-primary hover:text-secondary transition-colors"
+              className="inline-flex items-center gap-1.5 text-primary hover:text-secondary transition-colors"
             >
-              <ExternalLink size={14} className="text-secondary" />
-              @Khatmaweb
+              <LuInstagram size={14} className="text-secondary shrink-0" />
+              <span dir="ltr">@Khatmaweb</span>
             </a>
           </div>
         </div>
