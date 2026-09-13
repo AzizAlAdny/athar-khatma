@@ -17,6 +17,8 @@ export default function VerifyEmail() {
   const [resending, setResending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
+  const [resendCooldown, setResendCooldown] = useState(120); // 2 minutes cooldown
+  const [resendCount, setResendCount] = useState(0);
 
   useEffect(() => {
     // Get email from localStorage if user is not authenticated
@@ -53,6 +55,15 @@ export default function VerifyEmail() {
     }, 1000);
     return () => clearInterval(timer);
   }, [timeLeft]);
+
+  // Countdown timer for resend cooldown (2 minutes)
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -108,12 +119,21 @@ export default function VerifyEmail() {
       return;
     }
 
+    if (resendCount >= 3) {
+      setError('لقد تجاوزت الحد الأقصى لإعادة إرسال رمز التحقق (3 مرات). يرجى التحقق من صندوق الوارد أو مجلد الرسائل غير المرغوب فيها.');
+      return;
+    }
+
+    if (resendCooldown > 0) {
+      setError(`يرجى الانتظار ${resendCooldown} ثانية قبل إعادة إرسال الرمز.`);
+      return;
+    }
+
     setError(null);
     setMessage(null);
     setResending(true);
-    setTimeLeft(15 * 60); // Reset timer
     try {
-      let data;
+      let data: any;
       if (user) {
         // User is authenticated, use the protected endpoint
         data = await resendEmailVerification();
@@ -121,8 +141,17 @@ export default function VerifyEmail() {
         // User is not authenticated, use the public endpoint
         data = await resendVerificationCodePublic(email);
       }
-      setMessage(data.message || 'تم إرسال رمز التحقق الجديد من support@athar-khatma.online');
+      setTimeLeft(15 * 60); // Reset expiration timer
+      setResendCooldown(data.cooldown_seconds || 120);
+      setResendCount((prev) => (data.resend_count !== undefined ? data.resend_count : prev + 1));
+      setMessage(data.message || 'تم إرسال رمز التحقق الجديد بنجاح.');
     } catch (err: any) {
+      if (err.data?.remaining_seconds) {
+        setResendCooldown(err.data.remaining_seconds);
+      }
+      if (err.data?.resend_count !== undefined) {
+        setResendCount(err.data.resend_count);
+      }
       setError(err.message || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً.');
     } finally {
       setResending(false);
@@ -223,11 +252,19 @@ export default function VerifyEmail() {
             <div className="text-center">
               <button
                 type="button"
-                disabled={resending}
+                disabled={resending || resendCooldown > 0 || resendCount >= 3}
                 onClick={handleResend}
                 className="text-sm font-black text-primary-muted hover:text-primary transition-colors disabled:opacity-50 underline underline-offset-4 decoration-primary/30"
               >
-                {resending ? 'جاري إرسال رمز جديد...' : 'لم يصلكِ الرمز؟ أرسلي مرة أخرى'}
+                {resending ? (
+                  'جاري إرسال رمز جديد...'
+                ) : resendCount >= 3 ? (
+                  'تم استنفاد الحد الأقصى لإعادة الإرسال (3 مرات)'
+                ) : resendCooldown > 0 ? (
+                  `إعادة الإرسال متاحة بعد (${formatTime(resendCooldown)})`
+                ) : (
+                  `لم يصلكِ الرمز؟ أرسلي مرة أخرى (${3 - resendCount} محاولات متبقية)`
+                )}
               </button>
             </div>
           </div>

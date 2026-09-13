@@ -8,9 +8,11 @@ use App\Mail\PasswordResetEmail;
 use App\Mail\VerificationCodeEmail;
 use App\Models\User;
 use App\Services\AuthAuditService;
+use App\Services\HunterVerifierService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +20,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -32,10 +35,28 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        // Step 1: Check Unique email in users table
+        $request->validate([
+            'email' => 'required|string|email|max:255|unique:users,email',
+        ], [
+            'email.unique' => 'البريد الإلكتروني مسجل بالفعل لدينا.',
+            'email.email' => 'صيغة البريد الإلكتروني غير صحيحة.',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+        ]);
+
+        // Step 2: Check email is real via Hunter.io
+        $hunter = app(HunterVerifierService::class);
+        [$isReal, $hunterError] = $hunter->verify($request->email);
+        if (!$isReal) {
+            throw ValidationException::withMessages([
+                'email' => [$hunterError ?? 'البريد الإلكتروني المدخل غير حقيقي أو غير صالح للاستخدام.'],
+            ]);
+        }
+
+        // Step 3: Then other steps (validate remaining fields & create user)
         $request->validate([
             'name' => 'required|string|max:255',
             'display_name' => 'nullable|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:khatma,seeker',
             'city' => 'nullable|string|max:255',
@@ -84,6 +105,11 @@ class AuthController extends Controller
                 // We still let registration finish, but logs will show why mail failed
             }
 
+            // Initialize resend tracking cache: last_sent = now, count = 0
+            $emailHash = sha1(strtolower(trim($user->email)));
+            Cache::put("verification_last_sent:{$emailHash}", now()->timestamp, now()->addHours(2));
+            Cache::put("verification_resend_count:{$emailHash}", 0, now()->addHours(2));
+
             $this->auditService->record('register', $user, $request);
             $this->notificationService->notifyAdminNewUser($user);
 
@@ -92,6 +118,8 @@ class AuthController extends Controller
                 'message' => 'تم التسجيل بنجاح. تم إرسال رمز التحقق إلى بريدك الإلكتروني.',
                 'user' => new UserResource($user),
                 'email' => $user->email, // Include email for verify page
+                'cooldown_seconds' => (int) config('services.verification.resend_cooldown', 120),
+                'remaining_resends' => (int) config('services.verification.max_resends', 3),
             ], 201);
         });
     }
@@ -227,6 +255,11 @@ class AuthController extends Controller
         $user->verification_code_expires_at = null;
         $user->save();
 
+        // Clear verification resend throttling tracking
+        $emailHash = sha1(strtolower(trim($user->email)));
+        Cache::forget("verification_last_sent:{$emailHash}");
+        Cache::forget("verification_resend_count:{$emailHash}");
+
         $this->auditService->record('email_verified', $user, $request);
 
         // Issue a token after successful verification
@@ -259,6 +292,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'البريد الإلكتروني مفعل بالفعل.'], 200);
         }
 
+        if ($throttleResponse = $this->checkAndThrottleVerificationResend($user->email)) {
+            return $throttleResponse;
+        }
+
         // Generate new 6-digit verification code
         $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $user->verification_code = $verificationCode;
@@ -278,7 +315,11 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json(['message' => 'تم إرسال رمز التحقق الجديد.']);
+        $meta = $this->recordVerificationResend($user->email);
+
+        return response()->json(array_merge([
+            'message' => 'تم إرسال رمز التحقق الجديد.',
+        ], $meta));
     }
 
     /**
@@ -290,6 +331,10 @@ class AuthController extends Controller
 
         if ($user->hasVerifiedEmail()) {
             return response()->json(['message' => 'البريد الإلكتروني مفعل بالفعل.'], 200);
+        }
+
+        if ($throttleResponse = $this->checkAndThrottleVerificationResend($user->email)) {
+            return $throttleResponse;
         }
 
         // Generate new 6-digit verification code
@@ -311,7 +356,67 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json(['message' => 'تم إرسال رمز التحقق الجديد.']);
+        $meta = $this->recordVerificationResend($user->email);
+
+        return response()->json(array_merge([
+            'message' => 'تم إرسال رمز التحقق الجديد.',
+        ], $meta));
+    }
+
+    /**
+     * Check rate limiting for verification code resend (max attempts & 2-min cooldown).
+     */
+    protected function checkAndThrottleVerificationResend(string $email): ?\Illuminate\Http\JsonResponse
+    {
+        $emailHash = sha1(strtolower(trim($email)));
+        $maxResends = (int) config('services.verification.max_resends', 3);
+        $cooldown = (int) config('services.verification.resend_cooldown', 120);
+
+        $currentCount = (int) Cache::get("verification_resend_count:{$emailHash}", 0);
+        if ($currentCount >= $maxResends) {
+            return response()->json([
+                'message' => "لقد تجاوزت الحد الأقصى لإعادة إرسال رمز التحقق ({$maxResends} مرات). يرجى التحقق من صندوق الوارد أو مجلد الرسائل غير المرغوب فيها (Spam).",
+                'resend_count' => $currentCount,
+                'max_resends' => $maxResends,
+            ], 429);
+        }
+
+        $lastSent = Cache::get("verification_last_sent:{$emailHash}");
+        if ($lastSent) {
+            $elapsed = now()->timestamp - (int) $lastSent;
+            if ($elapsed < $cooldown) {
+                $remainingSeconds = $cooldown - $elapsed;
+                return response()->json([
+                    'message' => "يرجى الانتظار {$remainingSeconds} ثانية قبل إعادة إرسال الرمز.",
+                    'remaining_seconds' => $remainingSeconds,
+                    'cooldown_seconds' => $cooldown,
+                ], 429);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Record verification resend timestamp and increment attempt counter.
+     */
+    protected function recordVerificationResend(string $email): array
+    {
+        $emailHash = sha1(strtolower(trim($email)));
+        $maxResends = (int) config('services.verification.max_resends', 3);
+        $cooldown = (int) config('services.verification.resend_cooldown', 120);
+
+        $currentCount = (int) Cache::get("verification_resend_count:{$emailHash}", 0);
+        $newCount = $currentCount + 1;
+
+        Cache::put("verification_last_sent:{$emailHash}", now()->timestamp, now()->addHours(2));
+        Cache::put("verification_resend_count:{$emailHash}", $newCount, now()->addHours(2));
+
+        return [
+            'resend_count' => $newCount,
+            'remaining_resends' => max(0, $maxResends - $newCount),
+            'cooldown_seconds' => $cooldown,
+        ];
     }
 
     /**

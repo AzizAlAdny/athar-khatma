@@ -89,7 +89,11 @@ export default function Register() {
       // Redirect to verification page with email verification required
       router.push('/auth/verify');
     } catch (err: any) {
-      setErrors({ general: err.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً.' });
+      if (err.errors?.email?.[0]) {
+        setErrors({ email: err.errors.email[0], general: err.message });
+      } else {
+        setErrors({ general: err.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً.' });
+      }
     } finally {
       setIsSubmitting(false);
     }

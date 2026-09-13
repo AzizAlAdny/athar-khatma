@@ -39,4 +39,15 @@ return [
         'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    'hunter' => [
+        'api_key' => env('HUNTER_API_KEY'),
+        'enabled' => env('HUNTER_ENABLED', true),
+        'timeout' => (int) env('HUNTER_TIMEOUT', 6),
+    ],
+
+    'verification' => [
+        'resend_cooldown' => (int) env('VERIFICATION_CODE_RESEND_COOLDOWN', 120),
+        'max_resends' => (int) env('VERIFICATION_CODE_MAX_RESENDS', 3),
+    ],
+
 ];

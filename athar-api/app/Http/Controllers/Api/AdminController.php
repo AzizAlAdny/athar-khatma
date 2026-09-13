@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use App\Services\HunterVerifierService;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
@@ -76,10 +78,28 @@ class AdminController extends Controller
      */
     public function createUser(Request $request): JsonResponse
     {
+        // Step 1: Check Unique email in users table
+        $request->validate([
+            'email' => 'required|string|email|max:255|unique:users,email',
+        ], [
+            'email.unique' => 'البريد الإلكتروني مسجل بالفعل لدينا.',
+            'email.email' => 'صيغة البريد الإلكتروني غير صحيحة.',
+            'email.required' => 'البريد الإلكتروني مطلوب.',
+        ]);
+
+        // Step 2: Check email is real via Hunter.io
+        $hunter = app(HunterVerifierService::class);
+        [$isReal, $hunterError] = $hunter->verify($request->email);
+        if (!$isReal) {
+            throw ValidationException::withMessages([
+                'email' => [$hunterError ?? 'البريد الإلكتروني المدخل غير حقيقي أو غير صالح للاستخدام.'],
+            ]);
+        }
+
+        // Step 3: Other validation steps
         $request->validate([
             'name' => 'required|string|max:255',
             'display_name' => 'nullable|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|in:khatma,seeker,admin',
             'city' => 'nullable|string|max:255',
