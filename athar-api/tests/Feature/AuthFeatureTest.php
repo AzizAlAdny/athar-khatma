@@ -6,7 +6,11 @@ use App\Models\AuthEvent;
 use App\Models\Gift;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Auth\Events\Registered;
 use Tests\TestCase;
@@ -224,5 +228,109 @@ class AuthFeatureTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('X-Frame-Options', 'DENY');
         $response->assertHeader('X-Content-Type-Options', 'nosniff');
+    }
+
+    private function enableHunterVerification(): void
+    {
+        Mail::fake();
+        config([
+            'services.hunter.api_key' => 'test-api-key',
+            'services.hunter.enabled' => true,
+            'services.verification.resend_cooldown' => 120,
+            'services.verification.max_resends' => 3,
+        ]);
+    }
+
+    public function test_registration_validates_real_unique_email()
+    {
+        $this->enableHunterVerification();
+
+        Http::fake(function ($request) {
+            $email = $request['email'] ?? '';
+            if ($email === 'disposable@fake.com') {
+                return Http::response(['data' => ['status' => 'disposable', 'disposable' => true, 'mx_records' => false]], 200);
+            }
+            if ($email === 'failopen@valid.com') {
+                return Http::response(['error' => 'Service Unavailable'], 503);
+            }
+            return Http::response(['data' => ['status' => 'valid', 'disposable' => false, 'mx_records' => true]], 200);
+        });
+
+        // 1. Step 1: Rejects duplicate email immediately without calling Hunter API
+        User::factory()->create(['email' => 'existing@example.com']);
+        $this->postJson('/api/register', [
+            'name' => 'Existing User',
+            'email' => 'existing@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+            'pledge_accepted' => true,
+        ])->assertStatus(422)->assertJsonValidationErrors(['email']);
+        Http::assertNotSent(fn ($req) => str_contains($req->url(), 'existing@example.com'));
+
+        // 2. Step 2: Rejects disposable / invalid email via Hunter
+        $this->postJson('/api/register', [
+            'name' => 'Disp User',
+            'email' => 'disposable@fake.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+            'pledge_accepted' => true,
+        ])->assertStatus(422)->assertJsonValidationErrors(['email']);
+
+        // 3. Step 3: Successfully registers with real email & initializes cooldown
+        $this->postJson('/api/register', [
+            'name' => 'Real User',
+            'email' => 'realuser@valid.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+            'pledge_accepted' => true,
+        ])->assertStatus(201);
+        $this->assertDatabaseHas('users', ['email' => 'realuser@valid.com']);
+
+        // 4. Fail-open allows registration when Hunter API is unavailable
+        $this->postJson('/api/register', [
+            'name' => 'Failopen User',
+            'email' => 'failopen@valid.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+            'pledge_accepted' => true,
+        ])->assertStatus(201);
+        $this->assertDatabaseHas('users', ['email' => 'failopen@valid.com']);
+    }
+
+    public function test_resend_verification_code_enforces_cooldown_and_limit()
+    {
+        $this->enableHunterVerification();
+        Http::fake(['api.hunter.io/*' => Http::response(['data' => ['status' => 'valid', 'disposable' => false, 'mx_records' => true]], 200)]);
+
+        $now = Carbon::create(2026, 9, 13, 12, 0, 0);
+        Carbon::setTestNow($now);
+
+        $this->postJson('/api/register', [
+            'name' => 'Cooldown User',
+            'email' => 'cooldown@valid.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+            'pledge_accepted' => true,
+        ])->assertStatus(201);
+
+        // Immediate resend attempt blocked by 2-min cooldown (0s < 120s)
+        $this->postJson('/api/resend-verification-code', ['email' => 'cooldown@valid.com'])->assertStatus(429);
+
+        // Advance past cooldown for 3 allowed resends
+        for ($i = 1; $i <= 3; $i++) {
+            $now->addSeconds(125);
+            Carbon::setTestNow($now);
+            $this->postJson('/api/resend-verification-code', ['email' => 'cooldown@valid.com'])->assertStatus(200);
+        }
+
+        // 4th attempt rejected after maximum 3 repeats
+        $now->addSeconds(125);
+        Carbon::setTestNow($now);
+        $this->postJson('/api/resend-verification-code', ['email' => 'cooldown@valid.com'])->assertStatus(429);
     }
 }

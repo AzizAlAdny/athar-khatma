@@ -2,14 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuthEvent;
 use App\Models\Gift;
 use App\Models\Khatma;
 use App\Models\KhatmaGift;
+use App\Models\Message;
 use App\Models\Review;
 use App\Models\SeekerNeed;
 use App\Models\User;
 use App\Models\Call;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class AdminFeatureTest extends TestCase
@@ -307,5 +310,147 @@ class AdminFeatureTest extends TestCase
         $this->withToken($token)->getJson('/api/admin/needs')->assertStatus(403);
         $this->withToken($token)->getJson('/api/admin/reviews')->assertStatus(403);
         $this->withToken($token)->getJson('/api/admin/calls')->assertStatus(403);
+    }
+
+    public function test_admin_can_delete_user_and_all_associated_data()
+    {
+        [$admin, $token] = $this->createAdmin();
+        $secondAdmin = User::factory()->create(['role' => 'admin']);
+        $targetUser = User::factory()->create(['role' => 'khatma', 'email' => 'target@example.com']);
+        $otherUser = User::factory()->create(['role' => 'seeker']);
+
+        $gift = Gift::create([
+            'name' => 'مصحف مرمز',
+            'slug' => 'quran-book-' . uniqid(),
+            'category' => 'تعليم',
+            'description' => 'وصف الهدية',
+        ]);
+
+        // 1. Personal access tokens
+        $targetUser->createToken('test_token');
+
+        // 2. Auth events
+        AuthEvent::create([
+            'user_id' => $targetUser->id,
+            'event' => 'login',
+            'ip_address' => '127.0.0.1',
+        ]);
+
+        // 3. Khatmas & Gifts
+        $khatma = Khatma::create([
+            'user_id' => $targetUser->id,
+            'completion_date' => now()->toDateString(),
+            'impact_score' => 10,
+            'status' => 'active',
+        ]);
+
+        $khatmaGift = KhatmaGift::create([
+            'khatma_id' => $khatma->id,
+            'gift_id' => $gift->id,
+            'description' => 'هدية تجريبية',
+            'status' => 'pending',
+            'delivered_to_id' => $otherUser->id,
+        ]);
+
+        // 4. Seeker Needs
+        $need = SeekerNeed::create([
+            'user_id' => $targetUser->id,
+            'gift_id' => $gift->id,
+            'description' => 'طلب تجريبي',
+            'city' => 'الرياض',
+            'status' => 'open',
+            'fulfilled_by_id' => $otherUser->id,
+        ]);
+
+        // 5. Calls
+        Call::create([
+            'caller_id' => $targetUser->id,
+            'receiver_id' => $otherUser->id,
+            'callable_type' => KhatmaGift::class,
+            'callable_id' => $khatmaGift->id,
+            'status' => 'ended',
+        ]);
+
+        // 6. Messages
+        Message::create([
+            'messageable_id' => $khatmaGift->id,
+            'messageable_type' => 'gift',
+            'participant_id' => $targetUser->id,
+            'sender_id' => $targetUser->id,
+            'body' => 'رسالة تجريبية',
+        ]);
+
+        // 7. Reviews
+        Review::create([
+            'reviewer_id' => $targetUser->id,
+            'reviewee_id' => $otherUser->id,
+            'reviewable_id' => $khatmaGift->id,
+            'reviewable_type' => KhatmaGift::class,
+            'rating' => 5,
+            'comment' => 'تقييم ممتاز',
+        ]);
+
+        // 8. Cache throttling keys
+        $emailHash = sha1(strtolower(trim($targetUser->email)));
+        Cache::put("verification_last_sent:{$emailHash}", now()->timestamp);
+        Cache::put("verification_resend_count:{$emailHash}", 1);
+
+        // Perform Delete
+        $response = $this->withToken($token)->deleteJson("/api/admin/users/{$targetUser->id}");
+
+        $response->assertStatus(200);
+        $response->assertJson(['message' => 'تم حذف المستخدم وجميع بياناته المرتبطة بنجاح من قاعدة البيانات.']);
+
+        // Assert all user tables are wiped
+        $this->assertDatabaseMissing('users', ['id' => $targetUser->id]);
+        $this->assertDatabaseMissing('khatmas', ['user_id' => $targetUser->id]);
+        $this->assertDatabaseMissing('khatma_gifts', ['id' => $khatmaGift->id]);
+        $this->assertDatabaseMissing('seeker_needs', ['id' => $need->id]);
+        $this->assertDatabaseMissing('calls', ['caller_id' => $targetUser->id]);
+        $this->assertDatabaseMissing('messages', ['sender_id' => $targetUser->id]);
+        $this->assertDatabaseMissing('reviews', ['reviewer_id' => $targetUser->id]);
+        $this->assertDatabaseMissing('auth_events', ['user_id' => $targetUser->id]);
+        $this->assertNull(Cache::get("verification_last_sent:{$emailHash}"));
+        $this->assertNull(Cache::get("verification_resend_count:{$emailHash}"));
+    }
+
+    public function test_admin_cannot_delete_their_own_account()
+    {
+        [$admin, $token] = $this->createAdmin();
+
+        $response = $this->withToken($token)->deleteJson("/api/admin/users/{$admin->id}");
+
+        $response->assertStatus(422);
+        $response->assertJson(['message' => 'لا يمكنك حذف حسابك الشخصي من لوحة التحكم.']);
+        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    }
+
+    public function test_admin_cannot_delete_last_remaining_admin()
+    {
+        [$performingAdmin, $token] = $this->createAdmin();
+
+        $response = $this->withToken($token)->deleteJson("/api/admin/users/{$performingAdmin->id}");
+        $response->assertStatus(422);
+    }
+
+    public function test_non_admin_cannot_delete_users()
+    {
+        [$khatmaUser, $token] = $this->createKhatmaUser();
+        $target = User::factory()->create(['role' => 'khatma']);
+
+        $response = $this->withToken($token)->deleteJson("/api/admin/users/{$target->id}");
+
+        $response->assertStatus(403);
+        $this->assertDatabaseHas('users', ['id' => $target->id]);
+    }
+
+    public function test_unauthenticated_guest_cannot_delete_users()
+    {
+        $target = User::factory()->create(['role' => 'khatma']);
+
+        $response = $this->deleteJson("/api/admin/users/{$target->id}");
+
+        $response->assertStatus(401);
+        $this->assertDatabaseHas('users', ['id' => $target->id]);
     }
 }

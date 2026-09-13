@@ -11,8 +11,10 @@ use App\Models\Gift;
 use App\Models\Review;
 use App\Models\Call;
 use App\Models\KhatmaGift;
+use App\Models\Message;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -154,6 +156,112 @@ class AdminController extends Controller
         ], 201);
     }
 
+    /**
+     * Delete a user and wipe all of their associated data from the database.
+     */
+    public function deleteUser(Request $request, $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+
+        // Security check 1: Prevent admin from deleting their own account
+        if ($request->user()->id === $user->id) {
+            return response()->json([
+                'message' => 'لا يمكنك حذف حسابك الشخصي من لوحة التحكم.'
+            ], 422);
+        }
+
+        // Security check 2: Prevent deleting the last remaining admin account
+        if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return response()->json([
+                'message' => 'لا يمكن حذف آخر حساب إداري في النظام.'
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($user, $request) {
+            $userId = $user->id;
+            $userEmail = $user->email;
+            $userName = $user->name;
+
+            // 1. Personal access tokens (Sanctum)
+            $user->tokens()->delete();
+
+            // 2. Active Sessions
+            DB::table('sessions')->where('user_id', $userId)->delete();
+
+            // 3. Password reset tokens
+            DB::table('password_reset_tokens')->where('email', $userEmail)->delete();
+
+            // 4. Notifications (as notifiable)
+            DB::table('notifications')
+                ->where('notifiable_type', User::class)
+                ->where('notifiable_id', $userId)
+                ->delete();
+
+            // 5. Auth events
+            $user->authEvents()->delete();
+
+            // 6. Calls (where caller or receiver)
+            Call::where('caller_id', $userId)->orWhere('receiver_id', $userId)->delete();
+
+            // 7. Direct Messages (where participant or sender)
+            Message::where('participant_id', $userId)->orWhere('sender_id', $userId)->delete();
+
+            // 8. Direct Reviews (where reviewer or reviewee)
+            Review::where('reviewer_id', $userId)->orWhere('reviewee_id', $userId)->delete();
+
+            // 9. Khatmas and Khatma Gifts
+            // Reset gifts delivered to this user
+            KhatmaGift::where('delivered_to_id', $userId)->update([
+                'delivered_to_id' => null,
+                'delivered_at' => null,
+                'status' => 'pending'
+            ]);
+
+            // User's own khatmas & associated child records
+            foreach ($user->khatmas as $khatma) {
+                foreach ($khatma->khatmaGifts as $gift) {
+                    Message::where('messageable_type', 'gift')->where('messageable_id', $gift->id)->delete();
+                    Review::where('reviewable_type', KhatmaGift::class)->where('reviewable_id', $gift->id)->delete();
+                }
+                $khatma->khatmaGifts()->delete();
+                $khatma->delete();
+            }
+
+            // 10. Seeker Needs
+            // Reset seeker needs fulfilled by this user
+            SeekerNeed::where('fulfilled_by_id', $userId)->update([
+                'fulfilled_by_id' => null,
+                'fulfilled_at' => null,
+                'status' => 'open'
+            ]);
+
+            // User's own seeker needs & associated child records
+            foreach ($user->seekerNeeds as $need) {
+                Message::where('messageable_type', 'need')->where('messageable_id', $need->id)->delete();
+                Review::where('reviewable_type', SeekerNeed::class)->where('reviewable_id', $need->id)->delete();
+                $need->delete();
+            }
+
+            // 11. Clear verification & rate-limiting cache entries
+            $emailHash = sha1(strtolower(trim($userEmail)));
+            Cache::forget("verification_last_sent:{$emailHash}");
+            Cache::forget("verification_resend_count:{$emailHash}");
+
+            // 12. Delete User
+            $user->delete();
+
+            Log::warning('User and all associated data permanently deleted by admin', [
+                'admin_id' => $request->user()->id,
+                'deleted_user_id' => $userId,
+                'deleted_user_email' => $userEmail,
+                'deleted_user_name' => $userName,
+            ]);
+
+            return response()->json([
+                'message' => 'تم حذف المستخدم وجميع بياناته المرتبطة بنجاح من قاعدة البيانات.'
+            ]);
+        });
+    }
 
     /**
      * Get platform-wide khatmas with search, filters, and relationship eager loading.

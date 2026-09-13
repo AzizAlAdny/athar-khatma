@@ -450,6 +450,11 @@ export const createAdminUser = (payload: {
 
 export const createUser = createAdminUser;
 
+export const deleteAdminUser = (id: number) =>
+  fetchJson<{ message: string }>(`/admin/users/${id}`, {
+    method: 'DELETE',
+  });
+
 export const getAdminKhatmas = (params?: { status?: string; search?: string; page?: number; per_page?: number }) => {
   const cleanParams = Object.fromEntries(
     Object.entries(params || {}).filter(([_, v]) => v !== undefined && v !== '')

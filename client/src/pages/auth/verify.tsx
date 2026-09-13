@@ -146,12 +146,6 @@ export default function VerifyEmail() {
       setResendCount((prev) => (data.resend_count !== undefined ? data.resend_count : prev + 1));
       setMessage(data.message || 'تم إرسال رمز التحقق الجديد بنجاح.');
     } catch (err: any) {
-      if (err.data?.remaining_seconds) {
-        setResendCooldown(err.data.remaining_seconds);
-      }
-      if (err.data?.resend_count !== undefined) {
-        setResendCount(err.data.resend_count);
-      }
       setError(err.message || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً.');
     } finally {
       setResending(false);

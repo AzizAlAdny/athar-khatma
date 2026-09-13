@@ -19,11 +19,14 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { useAuth } from '@/context/AuthContext';
 import {
   getAdminStats,
   getAdminUsers,
+  deleteAdminUser,
   type AdminStats,
   type User,
   type PaginatedUsers,
@@ -285,13 +288,17 @@ function OverviewTab({ stats }: { stats: AdminStats }) {
 }
 
 function UsersTab() {
+  const { user: currentUser } = useAuth();
   const [data, setData] = useState<PaginatedUsers | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -332,8 +339,32 @@ function UsersTab() {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteAdminUser(userToDelete.id);
+      setActionMessage(res.message || 'تم حذف المستخدم وجميع بياناته المرتبطة بنجاح.');
+      setUserToDelete(null);
+      await loadUsers();
+      setTimeout(() => setActionMessage(null), 4000);
+    } catch (err: any) {
+      setError(err.message || 'فشل حذف المستخدم.');
+      setUserToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {actionMessage && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+          {actionMessage}
+        </div>
+      )}
+
       {/* Control Bar */}
       <div className="rounded-2xl sm:rounded-[2rem] bg-white p-4 sm:p-6 shadow-sm border border-secondary-light/30 flex flex-col md:flex-row gap-3 sm:gap-4 justify-between items-stretch md:items-center">
         <div className="relative w-full md:w-80">
@@ -414,7 +445,8 @@ function UsersTab() {
                   <th className="pb-4">الدور</th>
                   <th className="pb-4">المدينة</th>
                   <th className="pb-4">النشاط</th>
-                  <th className="pb-4 pl-4 text-left">تاريخ التسجيل</th>
+                  <th className="pb-4 text-center">تاريخ التسجيل</th>
+                  <th className="pb-4 pl-4 text-center">الإجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-background">
@@ -449,8 +481,24 @@ function UsersTab() {
                         )}
                       </div>
                     </td>
-                    <td className="py-4 sm:py-5 pl-4 text-left text-primary-muted font-medium text-xs whitespace-nowrap">
+                    <td className="py-4 sm:py-5 text-center text-primary-muted font-medium text-xs whitespace-nowrap">
                       {u.created_at ? new Date(u.created_at).toLocaleDateString('ar-SA') : '-'}
+                    </td>
+                    <td className="py-4 sm:py-5 pl-4 text-center whitespace-nowrap">
+                      {u.id === currentUser?.id ? (
+                        <span className="text-[11px] font-bold text-primary-muted/60 bg-background/80 px-2.5 py-1 rounded-md">
+                          حسابك الحالي
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setUserToDelete(u)}
+                          className="p-2 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+                          title="حذف المستخدم وجميع بياناته"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -485,7 +533,6 @@ function UsersTab() {
         )}
       </div>
 
-      {/* Create User Modal */}
       {showCreateModal && (
         <CreateUserModal
           onClose={() => setShowCreateModal(false)}
@@ -495,7 +542,54 @@ function UsersTab() {
           }}
         />
       )}
+
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 border border-secondary-light/30">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
+              <Trash2 size={28} />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-lg sm:text-xl font-black text-primary">تأكيد حذف المستخدم نهائياً</h3>
+              <p className="text-xs sm:text-sm text-primary-muted font-medium leading-relaxed">
+                أنتِ على وشك حذف حساب <span className="font-bold text-primary">"{userToDelete.display_name || userToDelete.name}"</span> ({userToDelete.email}).
+              </p>
+            </div>
+
+            <div className="bg-red-50/80 border border-red-100 rounded-2xl p-4 text-right">
+              <p className="text-xs text-red-700 font-bold leading-relaxed">
+                ⚠️ تنبيه هام: سيتم مسح المستخدم وكافة الختمات والطلبات والرسائل والتقييمات والسجلات المرتبطة به نهائياً من قاعدة البيانات ولا يمكن التراجع عن هذا الإجراء.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setUserToDelete(null)}
+                className="flex-1 py-3 px-4 rounded-xl border border-secondary-light/40 font-bold text-primary text-sm hover:bg-background transition-colors cursor-pointer"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-600/20"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" /> جاري الحذف...
+                  </>
+                ) : (
+                  'تأكيد الحذف النهائي'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
