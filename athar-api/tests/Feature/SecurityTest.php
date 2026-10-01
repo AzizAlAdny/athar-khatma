@@ -94,6 +94,7 @@ class SecurityTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'admin',

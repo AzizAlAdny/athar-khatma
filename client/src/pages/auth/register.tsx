@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
-import { User, Mail, Lock, MapPin, Briefcase, Gift, ArrowLeft, Sparkles } from 'lucide-react';
+import { User, Mail, Phone, Lock, MapPin, Briefcase, Gift, ArrowLeft, Sparkles } from 'lucide-react';
 import { register, getGifts, Gift as GiftType } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -16,6 +16,7 @@ export default function Register() {
     const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [role, setRole] = useState('khatma');
@@ -25,6 +26,7 @@ export default function Register() {
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
+    phoneNumber?: string;
     password?: string;
     passwordConfirm?: string;
     city?: string;
@@ -44,6 +46,13 @@ export default function Register() {
     if (!name) newErrors.name = 'الاسم الكامل مطلوب';
     if (!email) newErrors.email = 'البريد الإلكتروني مطلوب';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'صيغة البريد الإلكتروني غير صحيحة';
+
+    const saudiPhoneRegex = /^(05|\+9665|9665)[0-9]{8}$/;
+    if (!phoneNumber) {
+      newErrors.phoneNumber = 'رقم الجوال (واتساب) مطلوب';
+    } else if (!saudiPhoneRegex.test(phoneNumber.replace(/\s+/g, ''))) {
+      newErrors.phoneNumber = 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx)';
+    }
 
     if (!password) newErrors.password = 'كلمة المرور مطلوبة';
     else if (password.length < 8) newErrors.password = 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
@@ -67,10 +76,11 @@ export default function Register() {
     const selectedNeighborhood = CITY_DATA[city]?.find(n => n.name === neighborhood);
 
     try {
-            const payload = {
+      const payload = {
         name,
         display_name: displayName || undefined,
         email,
+        phone_number: phoneNumber.replace(/\s+/g, ''),
         password,
         password_confirmation: passwordConfirm,
         role,
@@ -91,6 +101,8 @@ export default function Register() {
     } catch (err: any) {
       if (err.errors?.email?.[0]) {
         setErrors({ email: err.errors.email[0], general: err.message });
+      } else if (err.errors?.phone_number?.[0]) {
+        setErrors({ phoneNumber: err.errors.phone_number[0], general: err.message });
       } else {
         setErrors({ general: err.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً.' });
       }
@@ -146,6 +158,20 @@ export default function Register() {
             icon={Mail}
             placeholder="example@mail.com"
             error={errors.email}
+            required
+          />
+
+          <Input
+            containerClassName="md:col-span-2"
+            label="رقم الجوال (واتساب)"
+            type="tel"
+            value={phoneNumber}
+            onChange={e => setPhoneNumber(e.target.value)}
+            icon={Phone}
+            placeholder="05xxxxxxxx"
+            error={errors.phoneNumber}
+            dir="ltr"
+            className="text-right"
             required
           />
 

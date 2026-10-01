@@ -103,7 +103,7 @@ export interface Review {
 
 export interface KhatmaProfile {
   id: number;
-  user: { name: string; bio: string; city: string };
+  user: { name: string; bio?: string; city: string; role?: string; phone_number?: string };
   completion_date?: string;
   impact_score?: number;
   achievements?: Array<Record<string, any>>;
@@ -115,6 +115,7 @@ export interface User {
   name: string;
   display_name?: string | null;
   email: string;
+  phone_number?: string;
   role: 'khatma' | 'seeker' | 'admin';
   neighborhood?: string;
   city?: string;
@@ -313,6 +314,7 @@ export const register = (payload: {
   name: string;
   display_name?: string;
   email: string;
+  phone_number: string;
   password: string;
   password_confirmation: string;
   role: string;
@@ -320,6 +322,7 @@ export const register = (payload: {
   neighborhood?: string;
   lat?: number;
   lng?: number;
+  pledge_accepted?: boolean;
 }) =>
   fetchJson<AuthResponse>('/register', {
     method: 'POST',
@@ -393,6 +396,7 @@ export const updateUserProfile = (payload: {
   bio?: string;
   city?: string;
   neighborhood?: string;
+  phone_number?: string;
 }) =>
   fetchJson<{ message: string; user: User }>('/user/profile', {
     method: 'PUT',

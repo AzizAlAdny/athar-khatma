@@ -10,7 +10,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getKhatmaProfile, KhatmaProfile, authUserKey, updateUserProfile, getUserReviews, Review } from '@/services/api';
 import { CITY_DATA } from '@/constants/locations';
-import { User, ArrowLeft, Check, X, MapPin, Edit3 } from 'lucide-react';
+import { User, ArrowLeft, Check, X, MapPin, Edit3, Phone } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const [editBio, setEditBio] = useState('');
   const [editCity, setEditCity] = useState('');
   const [editNeighborhood, setEditNeighborhood] = useState('');
+  const [editPhoneNumber, setEditPhoneNumber] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
@@ -44,6 +45,7 @@ export default function ProfilePage() {
           setEditBio(data.user.bio || '');
           setEditCity(data.user.city || 'الرياض');
           setEditNeighborhood(storedUser.neighborhood || '');
+          setEditPhoneNumber(storedUser.phone_number || data.user.phone_number || '');
 
           if (storedUser.role === 'khatma') {
             try {
@@ -79,7 +81,8 @@ export default function ProfilePage() {
         display_name: editDisplayName,
         bio: editBio,
         city: editCity,
-        neighborhood: editNeighborhood
+        neighborhood: editNeighborhood,
+        phone_number: editPhoneNumber
       });
 
       // Update AuthContext state (this also updates localStorage)
@@ -93,7 +96,8 @@ export default function ProfilePage() {
             ...profile.user,
             name: res.user.display_name || res.user.name,
             bio: res.user.bio || '',
-            city: res.user.city || ''
+            city: res.user.city || '',
+            phone_number: res.user.phone_number
           }
         });
       }
@@ -180,6 +184,17 @@ export default function ProfilePage() {
                       onChange={e => setEditDisplayName(e.target.value)}
                       icon={User}
                       placeholder="الاسم الذي سيظهر للآخرين"
+                    />
+                    <Input
+                      containerClassName="md:col-span-2"
+                      label="رقم الجوال (واتساب)"
+                      type="tel"
+                      value={editPhoneNumber}
+                      onChange={e => setEditPhoneNumber(e.target.value)}
+                      icon={Phone}
+                      placeholder="05xxxxxxxx"
+                      dir="ltr"
+                      className="text-right"
                     />
                     <div className="md:col-span-2 space-y-2">
                        <label className="block text-sm font-black text-primary mr-1">النبذة التعريفية</label>

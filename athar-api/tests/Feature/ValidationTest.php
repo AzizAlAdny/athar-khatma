@@ -107,6 +107,7 @@ class ValidationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'invalid-email',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -121,6 +122,7 @@ class ValidationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => '123',
             'password_confirmation' => '123',
             'role' => 'khatma',
@@ -135,6 +137,7 @@ class ValidationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'DifferentPassword!',
             'role' => 'khatma',
@@ -148,6 +151,7 @@ class ValidationTest extends TestCase
     {
         $response = $this->postJson('/api/register', [
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -162,6 +166,7 @@ class ValidationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'invalid_role',
@@ -169,5 +174,51 @@ class ValidationTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['role']);
+    }
+
+    public function test_phone_number_validation_is_required()
+    {
+        $response = $this->postJson('/api/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['phone_number']);
+    }
+
+    public function test_phone_number_validation_rejects_invalid_format()
+    {
+        $response = $this->postJson('/api/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'phone_number' => '123456789',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['phone_number']);
+    }
+
+    public function test_phone_number_validation_rejects_duplicate()
+    {
+        \App\Models\User::factory()->create(['phone_number' => '0512345678']);
+
+        $response = $this->postJson('/api/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'phone_number' => '0512345678',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'khatma',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['phone_number']);
     }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X as XIcon, Award, MapPin, Star, User } from 'lucide-react';
+import { X as XIcon, Award, MapPin, Star, User, Phone } from 'lucide-react';
 
 interface Achievement {
   gift_name: string;
@@ -32,7 +32,7 @@ interface Need {
 
 interface ProfileProps {
   data: {
-    user: { name: string; bio: string; city: string; role?: string };
+    user: { name: string; bio?: string; city: string; role?: string; phone_number?: string };
     impact_score?: number;
     achievements?: Achievement[];
     reviews?: Review[];
@@ -69,9 +69,26 @@ const AtharProfile = ({ data, onClose, isPage = false }: ProfileProps) => {
 
         <div className="mt-6 space-y-2">
           <h3 className="text-3xl font-black text-primary tracking-tight">{data.user.name}</h3>
-          <div className="flex items-center justify-center gap-2 text-primary-muted font-bold">
-             <MapPin size={16} className="text-secondary" />
-             <span>{data.user.city}</span>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-primary-muted font-bold">
+             <div className="flex items-center gap-1.5">
+               <MapPin size={16} className="text-secondary" />
+               <span>{data.user.city}</span>
+             </div>
+             {data.user.phone_number && (
+               <>
+                 <span className="opacity-40">•</span>
+                 <a
+                   href={`https://wa.me/${data.user.phone_number.replace(/[^0-9]/g, '').replace(/^05/, '9665')}`}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200/60 px-2.5 py-1 rounded-xl text-xs transition-colors shadow-xs"
+                   title="تواصل عبر الواتساب"
+                 >
+                   <Phone size={13} className="shrink-0 text-emerald-600" />
+                   <span dir="ltr" className="font-bold">{data.user.phone_number}</span>
+                 </a>
+               </>
+             )}
           </div>
           <p className="text-sm text-primary-muted/80 max-w-xs mx-auto leading-relaxed">
             {data.user.bio || (

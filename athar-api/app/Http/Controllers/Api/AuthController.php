@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -35,13 +35,28 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        // Step 1: Check Unique email in users table
+        if ($request->has('phone_number')) {
+            $request->merge([
+                'phone_number' => preg_replace('/\s+/', '', (string) $request->phone_number),
+            ]);
+        }
+
+        // Step 1: Check Unique email & phone in users table
         $request->validate([
             'email' => 'required|string|email|max:255|unique:users,email',
+            'phone_number' => [
+                'required',
+                'string',
+                'regex:/^(05|\+9665|9665)[0-9]{8}$/',
+                'unique:users,phone_number',
+            ],
         ], [
             'email.unique' => 'البريد الإلكتروني مسجل بالفعل لدينا.',
             'email.email' => 'صيغة البريد الإلكتروني غير صحيحة.',
             'email.required' => 'البريد الإلكتروني مطلوب.',
+            'phone_number.required' => 'رقم الجوال (واتساب) مطلوب.',
+            'phone_number.regex' => 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx).',
+            'phone_number.unique' => 'رقم الجوال مسجل بالفعل لدينا.',
         ]);
 
         // Step 2: Check email is real via Hunter.io
@@ -71,6 +86,7 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'display_name' => $request->filled('display_name') ? strip_tags($request->display_name) : null,
                 'email' => $request->email,
+                'phone_number' => $request->phone_number,
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
                 'city' => $request->city,
@@ -457,12 +473,27 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
+        if ($request->has('phone_number') && $request->phone_number !== null) {
+            $request->merge([
+                'phone_number' => preg_replace('/\s+/', '', (string) $request->phone_number),
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'display_name' => 'nullable|string|max:255',
             'bio' => 'nullable|string|max:1000',
             'city' => 'nullable|string|max:255',
             'neighborhood' => 'nullable|string|max:255',
+            'phone_number' => [
+                'nullable',
+                'string',
+                'regex:/^(05|\+9665|9665)[0-9]{8}$/',
+                Rule::unique('users', 'phone_number')->ignore($user->id),
+            ],
+        ], [
+            'phone_number.regex' => 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx).',
+            'phone_number.unique' => 'رقم الجوال مسجل بالفعل لدينا.',
         ]);
 
         $user->update([
@@ -471,6 +502,7 @@ class AuthController extends Controller
             'bio' => $request->has('bio') ? strip_tags($validated['bio']) : $user->bio,
             'city' => $validated['city'] ?? $user->city,
             'neighborhood' => $request->has('neighborhood') ? $validated['neighborhood'] : $user->neighborhood,
+            'phone_number' => $request->has('phone_number') ? $validated['phone_number'] : $user->phone_number,
         ]);
 
         $this->auditService->record('profile_updated', $user, $request);
@@ -524,6 +556,7 @@ class AuthController extends Controller
                 'bio' => $user->bio,
                 'city' => $user->city,
                 'role' => $user->role,
+                'phone_number' => $user->phone_number,
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,
@@ -570,6 +603,7 @@ class AuthController extends Controller
                 // Public view: prefer the map display name (الاسم الظاهر على خريطة الأثر).
                 'name' => $user->display_name ?: $user->name,
                 'city' => $user->city,
+                'phone_number' => $user->phone_number,
             ],
             'completion_date' => $khatma?->completion_date,
             'impact_score' => $user->khatmas->sum('impact_score') + $fulfilledNeedsPoints,

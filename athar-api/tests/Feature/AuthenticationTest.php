@@ -15,6 +15,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -35,6 +36,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'invalid-email',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -49,6 +51,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => '123',
             'password_confirmation' => '123',
             'role' => 'khatma',
@@ -65,6 +68,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -157,6 +161,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'admin',
@@ -171,6 +176,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone_number' => '0512345678',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -185,6 +191,7 @@ class AuthenticationTest extends TestCase
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'test2@example.com',
+            'phone_number' => '0587654321',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'seeker',

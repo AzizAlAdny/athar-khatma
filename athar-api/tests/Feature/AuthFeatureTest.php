@@ -261,6 +261,7 @@ class AuthFeatureTest extends TestCase
         $this->postJson('/api/register', [
             'name' => 'Existing User',
             'email' => 'existing@example.com',
+            'phone_number' => '0510000001',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -272,6 +273,7 @@ class AuthFeatureTest extends TestCase
         $this->postJson('/api/register', [
             'name' => 'Disp User',
             'email' => 'disposable@fake.com',
+            'phone_number' => '0510000002',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -282,6 +284,7 @@ class AuthFeatureTest extends TestCase
         $this->postJson('/api/register', [
             'name' => 'Real User',
             'email' => 'realuser@valid.com',
+            'phone_number' => '0510000003',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -293,6 +296,7 @@ class AuthFeatureTest extends TestCase
         $this->postJson('/api/register', [
             'name' => 'Failopen User',
             'email' => 'failopen@valid.com',
+            'phone_number' => '0510000004',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
@@ -312,6 +316,7 @@ class AuthFeatureTest extends TestCase
         $this->postJson('/api/register', [
             'name' => 'Cooldown User',
             'email' => 'cooldown@valid.com',
+            'phone_number' => '0510000005',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'khatma',
