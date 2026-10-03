@@ -38,7 +38,11 @@ export default function ForgotPassword() {
       const data = await requestPasswordReset(email);
       setMessage(data.message || 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني من support@athar-khatma.online');
     } catch (err: any) {
-      setError(err.message || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.');
+      if (err?.message === 'Failed to fetch' || err?.name === 'TypeError') {
+        setError('تعذر الاتصال بالخادم، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً.');
+      } else {
+        setError(err?.message || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.');
+      }
     } finally {
       setIsSubmitting(false);
     }

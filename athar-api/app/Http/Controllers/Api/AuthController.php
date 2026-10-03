@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -661,6 +662,9 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            return response()->json([
+                'message' => 'تعذر إرسال بريد إعادة تعيين كلمة المرور حالياً، يرجى المحاولة لاحقاً أو التواصل مع الدعم الفني.'
+            ], 500);
         }
 
         return response()->json([

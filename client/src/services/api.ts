@@ -280,10 +280,32 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
     let errorMessage = `Request failed with status ${response.status}`;
     try {
       const errorData = JSON.parse(text);
-      errorMessage = errorData.message || errorMessage;
+      if (errorData.message) {
+        if (errorData.message === 'Server Error' || errorData.message === 'Internal Server Error') {
+          errorMessage = 'حدث خطأ في الخادم أثناء معالجة الطلب، يرجى المحاولة مرة أخرى لاحقاً.';
+        } else if (errorData.message.includes('Too Many Attempts')) {
+          errorMessage = 'تم تجاوز الحد المسموح من المحاولات، يرجى الانتظار دقيقة والمحاولة مرة أخرى.';
+        } else {
+          errorMessage = errorData.message;
+        }
+      } else if (errorData.errors && typeof errorData.errors === 'object') {
+        const firstField = Object.keys(errorData.errors)[0];
+        if (firstField && Array.isArray(errorData.errors[firstField]) && errorData.errors[firstField].length > 0) {
+          errorMessage = errorData.errors[firstField][0];
+        }
+      } else if (response.status >= 500) {
+        errorMessage = 'حدث خطأ في الخادم أثناء معالجة الطلب، يرجى المحاولة مرة أخرى لاحقاً.';
+      }
     } catch (e) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Non-JSON error response:', text);
+      }
+      if (response.status >= 502 && response.status <= 504) {
+        errorMessage = 'الخادم غير متاح حالياً، يرجى المحاولة بعد قليل.';
+      } else if (response.status >= 500) {
+        errorMessage = 'حدث خطأ في الخادم أثناء معالجة الطلب، يرجى المحاولة مرة أخرى لاحقاً.';
+      } else if (response.status === 429) {
+        errorMessage = 'تم تجاوز الحد المسموح من المحاولات، يرجى الانتظار دقيقة والمحاولة مرة أخرى.';
       }
     }
     const err = new Error(errorMessage) as Error & { status?: number };

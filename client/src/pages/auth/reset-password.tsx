@@ -61,7 +61,11 @@ export default function ResetPassword() {
         router.push('/auth/login');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.');
+      if (err?.message === 'Failed to fetch' || err?.name === 'TypeError') {
+        setError('تعذر الاتصال بالخادم، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً.');
+      } else {
+        setError(err.message || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.');
+      }
     } finally {
       setIsSubmitting(false);
     }

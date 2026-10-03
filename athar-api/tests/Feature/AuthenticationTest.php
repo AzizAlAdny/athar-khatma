@@ -2,8 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Mail\PasswordResetEmail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -199,5 +204,99 @@ class AuthenticationTest extends TestCase
         ]);
 
         $response->assertStatus(201);
+    }
+
+    public function test_user_can_request_password_reset()
+    {
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'email' => 'resetuser@example.com',
+            'name' => 'Reset User',
+        ]);
+
+        $response = $this->postJson('/api/forgot-password', [
+            'email' => 'resetuser@example.com',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.',
+        ]);
+
+        $this->assertDatabaseHas('password_reset_tokens', [
+            'email' => 'resetuser@example.com',
+        ]);
+
+        Mail::assertSent(PasswordResetEmail::class, function ($mail) use ($user) {
+            return $mail->hasTo($user->email);
+        });
+    }
+
+    public function test_password_reset_for_nonexistent_email_returns_success_message()
+    {
+        Mail::fake();
+
+        $response = $this->postJson('/api/forgot-password', [
+            'email' => 'nonexistent@example.com',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'إذا كان البريد الإلكتروني مسجلاً، تم إرسال رابط إعادة تعيين كلمة المرور.',
+        ]);
+
+        Mail::assertNothingSent();
+    }
+
+    public function test_user_can_reset_password_with_valid_token()
+    {
+        $user = User::factory()->create([
+            'email' => 'resetuser2@example.com',
+            'password' => Hash::make('OldPassword123!'),
+        ]);
+
+        $plainToken = Str::random(60);
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->email,
+            'token' => Hash::make($plainToken),
+            'created_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/reset-password', [
+            'email' => $user->email,
+            'token' => $plainToken,
+            'password' => 'NewPassword123!',
+            'password_confirmation' => 'NewPassword123!',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'تم إعادة تعيين كلمة المرور بنجاح.',
+        ]);
+
+        $this->assertTrue(Hash::check('NewPassword123!', $user->fresh()->password));
+        $this->assertDatabaseMissing('password_reset_tokens', [
+            'email' => $user->email,
+        ]);
+    }
+
+    public function test_password_reset_handles_mail_failure_gracefully()
+    {
+        Mail::shouldReceive('to->send')->andThrow(new \Exception('Mail service unavailable'));
+
+        User::factory()->create([
+            'email' => 'resetfail@example.com',
+            'name' => 'Reset Fail User',
+        ]);
+
+        $response = $this->postJson('/api/forgot-password', [
+            'email' => 'resetfail@example.com',
+        ]);
+
+        $response->assertStatus(500);
+        $response->assertJson([
+            'message' => 'تعذر إرسال بريد إعادة تعيين كلمة المرور حالياً، يرجى المحاولة لاحقاً أو التواصل مع الدعم الفني.',
+        ]);
     }
 }
