@@ -97,7 +97,7 @@ const UserDashboard = () => {
         const [statsRes, giftsRes, needsRes, khatmasRes, visitorMsgsRes] = await Promise.allSettled([
           getPublicStats(),
           getRecentGifts(),
-          !isVisitor ? getSeekerNeeds() : Promise.resolve(null),
+          getSeekerNeeds(),
           !isSeeker && !isVisitor ? getUserKhatmas() : Promise.resolve(null),
           getVisitorMessages(1),
         ]);
@@ -163,7 +163,7 @@ const UserDashboard = () => {
                 onClick={() => setShowWordModal(true)}
                 className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95 cursor-pointer"
               >
-                <Heart size={18} className="text-secondary" /> سجلي كلمة أو مساحة لكِ
+                <Heart size={18} className="text-secondary" /> أخبرينا عن رأيكِ بالمنصة
               </button>
               <Link href="/needs/giftbrowser" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
                 <Sparkles size={18} /> استكشفي أثر المنصة
@@ -194,7 +194,7 @@ const UserDashboard = () => {
   );
 
   const visitorOptions = [
-    { label: 'شاركينا كلمتكِ', icon: Heart, color: 'bg-background text-primary', onClick: () => setShowWordModal(true) },
+    { label: 'أخبرينا عن رأيكِ', icon: Heart, color: 'bg-background text-primary', onClick: () => setShowWordModal(true) },
     { label: 'استكشاف العطايا', icon: Gift, color: 'bg-background text-secondary', href: '/needs/giftbrowser' },
     { label: 'تصفح المبادرات', icon: MapPin, color: 'bg-background text-accent', href: '/needs/browse' },
     { label: 'الملف التعريفي', icon: UserIcon, color: 'bg-background text-primary-muted', href: '/profile' },
@@ -240,8 +240,15 @@ const UserDashboard = () => {
                     <Sparkles size={24} />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-black text-primary">كلمتكِ ومساحتكِ في منصة أثر</h3>
-                    <p className="text-xs text-primary-muted font-bold">بصمة شرف واعتزاز نعتز بها في مسيرتنا المباركة</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base sm:text-lg font-black text-primary">رأيكِ وانطباعكِ في منصة أثر</h3>
+                      {visitorMessages.find(m => m.user_id === user?.id)?.organization && (
+                        <span className="text-[11px] font-bold text-accent bg-accent/10 px-2.5 py-0.5 rounded-full border border-accent/20">
+                          {visitorMessages.find(m => m.user_id === user?.id)?.organization}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-primary-muted font-bold mt-0.5">بصمة شرف واعتزاز نعتز بها في مسيرتنا المباركة</p>
                   </div>
                 </div>
                 <button
@@ -249,11 +256,11 @@ const UserDashboard = () => {
                   onClick={() => setShowWordModal(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-white text-primary rounded-xl text-xs font-black border border-secondary-light/40 hover:bg-secondary-light/20 transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
                 >
-                  <Plus size={16} /> إضافة كلمة أو انطباع
+                  <Plus size={16} /> شاركينا رأيكِ بالمنصة
                 </button>
               </div>
-              <blockquote className="text-sm sm:text-base font-bold text-primary leading-relaxed italic bg-white/80 p-5 rounded-2xl border border-secondary-light/40">
-                "{user?.bio || visitorMessages.find(m => m.user_id === user?.id)?.message || 'أهلاً وسهلاً بكِ في منصة أثر.. نسعد بتسجيل كلمتكِ الكريمة لتكون أثراً ممتداً في مجتمعنا.'}"
+              <blockquote className="text-sm sm:text-base font-semibold text-primary leading-relaxed bg-white/90 p-5 rounded-2xl border border-secondary-light/40 shadow-xs">
+                “{user?.bio || visitorMessages.find(m => m.user_id === user?.id)?.message || 'أهلاً وسهلاً بكِ في منصة أثر.. نسعد بمشاركتكِ رأيكِ الكريم ليكون أثراً ممتداً في مجتمعنا.'}”
               </blockquote>
             </section>
           )}
@@ -329,11 +336,11 @@ const UserDashboard = () => {
 
           {/* Bottom Feed Section */}
           <section className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {/* 1. Needs Feed Card (Own needs for seeker, community needs for khatma) */}
+            {/* 1. Needs Feed Card (Own needs for seeker, community needs for khatma and visitor) */}
             <div className="bg-white p-5 sm:p-7 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="mb-4 sm:mb-6 text-base sm:text-lg font-black text-primary border-b border-background pb-3 sm:pb-4 text-center">
-                  {isSeeker ? "طلباتي الأخيرة" : "طلبات تحتاج أثركِ"}
+                  {isSeeker ? "طلباتي الأخيرة" : isVisitor ? "أحدث احتياجات المجتمع" : "طلبات تحتاج أثركِ"}
                 </h3>
                 <div className="space-y-4 sm:space-y-5">
                   {isSeeker ? (
@@ -386,14 +393,14 @@ const UserDashboard = () => {
               </Link>
             </div>
 
-            {/* 2. Gifts Feed Card (Own gifts for khatma, community gifts for seeker) */}
+            {/* 2. Gifts Feed Card (Own gifts for khatma, community gifts for seeker/visitor) */}
             <div className="bg-white p-5 sm:p-7 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="mb-4 sm:mb-6 text-base sm:text-lg font-black text-primary border-b border-background pb-3 sm:pb-4 text-center">
-                  {!isSeeker ? "عطاياي ومبادراتي" : "أحدث العطايا المتاحة"}
+                  {!isSeeker && !isVisitor ? "عطاياي ومبادراتي" : "أحدث العطايا المتاحة"}
                 </h3>
                 <div className="space-y-4 sm:space-y-5">
-                  {!isSeeker ? (
+                  {!isSeeker && !isVisitor ? (
                     myGifts.length > 0 ? myGifts.map((gift, i) => (
                       <Link key={i} href="/my-gifts">
                         <div className="flex justify-between items-center group cursor-pointer p-2 rounded-2xl hover:bg-background/50 transition-colors">
@@ -436,9 +443,9 @@ const UserDashboard = () => {
                   )}
                 </div>
               </div>
-              <Link href={!isSeeker ? "/my-gifts" : "/needs/giftbrowser"}>
+              <Link href={!isSeeker && !isVisitor ? "/my-gifts" : "/needs/giftbrowser"}>
                 <button className="w-full mt-6 sm:mt-8 py-3 sm:py-3.5 text-xs font-black text-primary-muted hover:text-primary bg-background rounded-2xl transition-colors active:scale-95">
-                  {!isSeeker ? "سجل جميع عطاياي" : "استكشاف جميع العطايا"}
+                  {!isSeeker && !isVisitor ? "سجل جميع عطاياي" : "استكشاف جميع العطايا"}
                 </button>
               </Link>
             </div>
@@ -468,7 +475,9 @@ const UserDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-white/80 font-medium leading-relaxed mt-6 sm:mt-8">
-                  {isSeeker
+                  {isVisitor
+                    ? "نسعد بزيارتكِ الكريمة؛ فكل دعم وكلمة طيبة تسهم في ترسيخ بركة القرآن وأثر العطاء في مجتمعنا."
+                    : isSeeker
                     ? "نحن هنا لخدمتكِ، كل مبادرة هي هدية من القلب لنشر بركة القرآن."
                     : "كل ختمة قرآن تسجلينها تفتح باباً جديداً من أبواب الأثر في مجتمعكِ."}
                 </p>
@@ -496,13 +505,15 @@ const UserDashboard = () => {
                   سجل تشريفي لكلمات مسؤولي وضيوف المنصة وشركاء الأثر
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowWordModal(true)}
-                className="px-5 py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
-              >
-                <Plus size={16} /> سجلي كلمة أو انطباع
-              </button>
+              {isVisitor && (
+                <button
+                  type="button"
+                  onClick={() => setShowWordModal(true)}
+                  className="px-5 py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
+                >
+                  <Plus size={16} /> أخبرينا عن رأيكِ بالمنصة
+                </button>
+              )}
             </div>
 
             {visitorMessages.length === 0 ? (
@@ -556,7 +567,7 @@ const UserDashboard = () => {
               <div className="flex justify-between items-center border-b border-background pb-3">
                 <div className="flex items-center gap-2">
                   <Heart className="text-secondary" size={20} />
-                  <h3 className="font-black text-base sm:text-lg text-primary">شاركينا كلمتكِ أو انطباعكِ</h3>
+                  <h3 className="font-black text-base sm:text-lg text-primary">أخبرينا عن رأيكِ بالمنصة</h3>
                 </div>
                 <button
                   type="button"
@@ -589,14 +600,14 @@ const UserDashboard = () => {
 
                 <div>
                   <label className="block text-xs font-black text-primary mb-1.5">
-                    سجلي كلمة أو مساحة لكِ / رأيكِ بالمنصة <span className="text-red-500">*</span>
+                    أخبرينا عن رأيكِ بالمنصة <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
                     rows={4}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="اكتبي مشاعركِ الكريمة أو مقترحاتكِ أو انطباعكِ عن منصة أثر..."
+                    placeholder="اكتبي مشاعركِ الكريمة أو مقترحاتكِ أو رأيكِ بالمنصة..."
                     className="w-full px-4 py-3 rounded-xl bg-background border border-secondary-light/40 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary resize-none"
                   />
                 </div>

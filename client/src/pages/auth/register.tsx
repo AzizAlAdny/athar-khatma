@@ -205,9 +205,9 @@ export default function Register() {
                   <Sparkles size={20} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-primary">مساحتكِ ورأيكِ في المنصة</h4>
+                  <h4 className="text-sm font-black text-primary">رأيكِ في المنصة</h4>
                   <p className="text-xs text-primary-muted font-bold mt-0.5">
-                    سجلي كلمة أو مساحة لكِ، وأخبرينا عن رأيكِ بالمنصة ورسالتكِ الكريمة ✨
+                    أخبرينا عن رأيكِ بالمنصة ورسالتكِ الكريمة ✨
                   </p>
                 </div>
               </div>
@@ -215,13 +215,13 @@ export default function Register() {
               <div className="space-y-4 pt-1">
                 <div>
                   <label className="block text-xs font-black text-primary mb-2">
-                    سجلي كلمة أو مساحة لكِ (أخبرينا عن رأيك بالمنصة)
+                    أخبرينا عن رأيكِ بالمنصة
                   </label>
                   <textarea
                     value={visitorMessage}
                     onChange={e => setVisitorMessage(e.target.value)}
                     rows={4}
-                    placeholder="يسعدنا ويشرفنا تدوين كلمتكِ الكريمة أو انطباعكِ ورأيكِ بالمنصة ورسالتكِ لفريق ختمة وأثر..."
+                    placeholder="يسعدنا ويشرفنا تدوين انطباعكِ ورأيكِ بالمنصة ورسالتكِ لفريق ختمة وأثر..."
                     className="w-full p-4 rounded-2xl bg-white border border-secondary-light/40 text-sm font-bold text-primary placeholder:text-primary-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-xs"
                   />
                 </div>
