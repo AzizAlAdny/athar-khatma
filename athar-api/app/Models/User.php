@@ -28,9 +28,10 @@ class User extends Authenticatable implements MustVerifyEmail
      * Token abilities granted at issue time, keyed by role.
      */
     public const ROLE_ABILITIES = [
-        'khatma' => ['read', 'khatma:create'],
-        'seeker' => ['read', 'need:create'],
-        'admin'  => ['*'],
+        'khatma'  => ['read', 'khatma:create'],
+        'seeker'  => ['read', 'need:create'],
+        'admin'   => ['*'],
+        'visitor' => ['read', 'visitor:create'],
     ];
 
     /**
@@ -108,6 +109,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function authEvents()
     {
         return $this->hasMany(AuthEvent::class);
+    }
+
+    public function visitorMessages()
+    {
+        return $this->hasMany(VisitorMessage::class);
     }
 }
 

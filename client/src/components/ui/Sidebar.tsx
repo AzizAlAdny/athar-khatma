@@ -14,7 +14,9 @@ import {
   LogOut,
   X,
   MessageCircle,
-  LayoutDashboard
+  LayoutDashboard,
+  Heart,
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -58,6 +60,13 @@ const adminNav: NavItem[] = [
   { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
 ];
 
+const visitorNav: NavItem[] = [
+  { label: 'الرئيسية', href: '/', activePath: '/', Icon: Home },
+  { label: 'مساحة الزائرة', href: '/dashboard', activePath: '/dashboard', Icon: Heart },
+  { label: 'خريطة الأثر', href: '/#map', activePath: '/#map', Icon: MapPin },
+  { label: 'سجل العطاء', href: '/needs/giftbrowser', activePath: '/needs/giftbrowser', Icon: Gift },
+];
+
 function getNavItems(role?: string, isAuthenticated = false): NavItem[] {
   if (!isAuthenticated) return guestNav;
   switch (role) {
@@ -67,6 +76,8 @@ function getNavItems(role?: string, isAuthenticated = false): NavItem[] {
       return khatmaNav;
     case 'admin':
       return adminNav;
+    case 'visitor':
+      return visitorNav;
     default:
       return guestNav;
   }

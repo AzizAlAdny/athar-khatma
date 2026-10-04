@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use App\Mail\PasswordResetEmail;
 use App\Mail\VerificationCodeEmail;
 use App\Models\User;
+use App\Models\VisitorMessage;
 use App\Services\AuthAuditService;
 use App\Services\HunterVerifierService;
 use App\Services\NotificationService;
@@ -74,12 +75,14 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'display_name' => 'nullable|string|max:255',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:khatma,seeker',
+            'role' => 'required|in:khatma,seeker,visitor',
             'city' => 'nullable|string|max:255',
             'neighborhood' => 'nullable|string|max:255',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
             'pledge_accepted' => 'required|accepted',
+            'visitor_message' => 'nullable|string|max:2000',
+            'organization' => 'nullable|string|max:255',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -90,12 +93,39 @@ class AuthController extends Controller
                 'phone_number' => $request->phone_number,
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
+                'bio' => $request->filled('visitor_message') ? strip_tags($request->visitor_message) : null,
                 'city' => $request->city,
                 'neighborhood' => $request->neighborhood,
                 'latitude' => $request->lat,
                 'longitude' => $request->lng,
                 'pledge_accepted' => (bool) $request->pledge_accepted,
             ]);
+
+            if ($request->filled('visitor_message')) {
+                VisitorMessage::create([
+                    'user_id' => $user->id,
+                    'message' => strip_tags($request->visitor_message),
+                    'organization' => $request->filled('organization') ? strip_tags($request->organization) : null,
+                    'is_featured' => true,
+                ]);
+            }
+
+            // Visitors get auto-verified and an instant auth token for smooth demo and immediate access
+            if ($user->role === 'visitor') {
+                $user->email_verified_at = now();
+                $user->save();
+
+                $token = $user->createToken('auth_token', $user->tokenAbilities())->plainTextToken;
+
+                $this->auditService->record('register', $user, $request);
+                $this->notificationService->notifyAdminNewUser($user);
+
+                return response()->json([
+                    'message' => 'أهلاً بكِ ضيفتنا الكريمة في منصة ختمة وأثر، تم تسجيلكِ وتدوين كلمتكِ بنجاح.',
+                    'user' => new UserResource($user),
+                    'token' => $token,
+                ], 201);
+            }
 
             // Generate 6-digit verification code
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);

@@ -8,7 +8,7 @@ import Hero from '@/components/ui/Hero';
 import ImpactMap from '@/components/maps/ImpactMap';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { getRecentGifts, getSeekerNeeds, getPublicStats, getUserKhatmas, KhatmaGift, SeekerNeed } from '@/services/api';
+import { getRecentGifts, getSeekerNeeds, getPublicStats, getUserKhatmas, getVisitorMessages, createVisitorMessage, KhatmaGift, SeekerNeed, VisitorMessage } from '@/services/api';
 import {
   BookOpen,
   Sparkles,
@@ -27,7 +27,8 @@ import {
   PenTool,
   FileText,
   User as UserIcon,
-  GraduationCap
+  GraduationCap,
+  X
 } from 'lucide-react';
 
 const khatmaOptions = [
@@ -47,29 +48,64 @@ const seekerOptions = [
 const UserDashboard = () => {
   const { user } = useAuth();
   const isSeeker = user?.role === 'seeker';
+  const isVisitor = user?.role === 'visitor';
 
   const [stats, setStats] = useState<any>(null);
   const [recentGifts, setRecentGifts] = useState<KhatmaGift[]>([]);
   const [myGifts, setMyGifts] = useState<any[]>([]);
   const [recentNeeds, setRecentNeeds] = useState<SeekerNeed[]>([]);
   const [myNeeds, setMyNeeds] = useState<SeekerNeed[]>([]);
+  const [visitorMessages, setVisitorMessages] = useState<VisitorMessage[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Visitor message modal state
+  const [showWordModal, setShowWordModal] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const [newOrganization, setNewOrganization] = useState('');
+  const [sendingWord, setSendingWord] = useState(false);
+  const [wordSuccess, setWordSuccess] = useState<string | null>(null);
+
+  const handleWordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    setSendingWord(true);
+    try {
+      await createVisitorMessage({
+        message: newMessage.trim(),
+        organization: newOrganization.trim() || undefined,
+      });
+      setWordSuccess('تم تسجيل كلمتكِ المباركة بنجاح! نعتز بمشاركتكِ.');
+      setNewMessage('');
+      setNewOrganization('');
+      const updated = await getVisitorMessages(1);
+      setVisitorMessages(updated.data || []);
+      setTimeout(() => {
+        setWordSuccess(null);
+        setShowWordModal(false);
+      }, 1500);
+    } catch (err) {
+      console.error('Failed to submit visitor message:', err);
+    } finally {
+      setSendingWord(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
       try {
-        const [statsRes, giftsRes, needsRes, khatmasRes] = await Promise.allSettled([
+        const [statsRes, giftsRes, needsRes, khatmasRes, visitorMsgsRes] = await Promise.allSettled([
           getPublicStats(),
           getRecentGifts(),
-          getSeekerNeeds(),
-          !isSeeker ? getUserKhatmas() : Promise.resolve(null)
+          !isVisitor ? getSeekerNeeds() : Promise.resolve(null),
+          !isSeeker && !isVisitor ? getUserKhatmas() : Promise.resolve(null),
+          getVisitorMessages(1),
         ]);
 
-        if (statsRes.status === 'fulfilled') setStats(statsRes.value);
-        if (giftsRes.status === 'fulfilled') setRecentGifts((giftsRes.value || []).slice(0, 3));
+        if (statsRes.status === 'fulfilled' && statsRes.value) setStats(statsRes.value);
+        if (giftsRes.status === 'fulfilled' && giftsRes.value) setRecentGifts((giftsRes.value || []).slice(0, 3));
 
-        if (needsRes.status === 'fulfilled') {
+        if (needsRes.status === 'fulfilled' && needsRes.value) {
           const allNeeds = needsRes.value || [];
           setRecentNeeds(allNeeds.filter(n => !n.status || n.status === 'open').slice(0, 3));
           setMyNeeds(allNeeds.filter(n => n.user_id === user.id).slice(0, 3));
@@ -87,6 +123,10 @@ const UserDashboard = () => {
           );
           setMyGifts(extractedGifts.slice(0, 3));
         }
+
+        if (visitorMsgsRes.status === 'fulfilled' && visitorMsgsRes.value) {
+          setVisitorMessages(visitorMsgsRes.value.data || []);
+        }
       } catch (err) {
         console.error('Dashboard data fetch error:', err);
       } finally {
@@ -94,56 +134,129 @@ const UserDashboard = () => {
       }
     };
     fetchData();
-  }, [user, isSeeker]);
+  }, [user, isSeeker, isVisitor]);
 
   const dashboardHero = (
     <Hero
-      title={isSeeker ? "مرحباً بكِ في مجتمع الأثر" : "مرحباً بكِ صانعة الأثر"}
-      subtitle={isSeeker ? "سجلي احتياجكِ اليوم وستجدين الدعم من صانعات الأثر في مجتمعنا." : "تابعي ختماتكِ، وأضيفي أثراً جديداً في مجتمعكِ اليوم."}
+      title={
+        isVisitor
+          ? `أهلاً وسهلاً بكِ ضيفتنا الكريمة ${user?.display_name || user?.name || ''}`
+          : isSeeker
+          ? "مرحباً بكِ في مجتمع الأثر"
+          : "مرحباً بكِ صانعة الأثر"
+      }
+      subtitle={
+        isVisitor
+          ? "نتشرف بزيارتكِ لمنصة أثر، ونسعد بمشاركتكِ كلمتكِ وانطباعكِ الكريم الداعم لمسيرة العطاء القرآني."
+          : isSeeker
+          ? "سجلي احتياجكِ اليوم وستجدين الدعم من صانعات الأثر في مجتمعنا."
+          : "تابعي ختماتكِ، وأضيفي أثراً جديداً في مجتمعكِ اليوم."
+      }
       variant="primary"
       centered={true}
       actions={
         <>
-          {isSeeker ? (
-            <Link href="/needs/register" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
-              <Plus size={18} /> سجلي احتياجكِ
-            </Link>
+          {isVisitor ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowWordModal(true)}
+                className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95 cursor-pointer"
+              >
+                <Heart size={18} className="text-secondary" /> سجلي كلمة أو مساحة لكِ
+              </button>
+              <Link href="/needs/giftbrowser" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
+                <Sparkles size={18} /> استكشفي أثر المنصة
+              </Link>
+            </>
+          ) : isSeeker ? (
+            <>
+              <Link href="/needs/register" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
+                <Plus size={18} /> سجلي احتياجكِ
+              </Link>
+              <Link href="/needs/giftbrowser" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
+                <Gift size={18} /> استكشفي العطايا
+              </Link>
+            </>
           ) : (
-            <Link href="/khatma/register" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
-              <Plus size={18} /> سجلي ختمتكِ
-            </Link>
+            <>
+              <Link href="/khatma/register" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
+                <Plus size={18} /> سجلي ختمتكِ
+              </Link>
+              <Link href="/my-gifts" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
+                <Sparkles size={18} /> تابعي أثركِ
+              </Link>
+            </>
           )}
-          <Link href={isSeeker ? "/needs/giftbrowser" : "/my-gifts"} className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
-            {isSeeker ? <Gift size={18} /> : <Sparkles size={18} />}
-            {isSeeker ? "استكشفي العطايا" : "تابعي أثركِ"}
-          </Link>
         </>
       }
     />
   );
 
-  const activeOptions = isSeeker ? seekerOptions : khatmaOptions;
+  const visitorOptions = [
+    { label: 'شاركينا كلمتكِ', icon: Heart, color: 'bg-background text-primary', onClick: () => setShowWordModal(true) },
+    { label: 'استكشاف العطايا', icon: Gift, color: 'bg-background text-secondary', href: '/needs/giftbrowser' },
+    { label: 'تصفح المبادرات', icon: MapPin, color: 'bg-background text-accent', href: '/needs/browse' },
+    { label: 'الملف التعريفي', icon: UserIcon, color: 'bg-background text-primary-muted', href: '/profile' },
+  ];
+
+  const activeOptions = isVisitor ? visitorOptions : isSeeker ? seekerOptions : khatmaOptions;
 
   return (
-    <ProtectedRoute allowedRoles={['khatma', 'seeker']}>
+    <ProtectedRoute allowedRoles={['khatma', 'seeker', 'visitor']}>
       <AppShell hero={dashboardHero}>
         <div className="space-y-6 sm:space-y-8">
           {/* Quick Action Grid */}
           <section className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
-            {activeOptions.map(({ label, icon: Icon, color, href }) => (
-              <Link key={label} href={href}>
+            {activeOptions.map(({ label, icon: Icon, color, href, onClick }: any) => {
+              const btnContent = (
                 <button
                   type="button"
-                  className="w-full group flex flex-col items-center gap-2.5 sm:gap-3 p-4 sm:p-6 rounded-2xl sm:rounded-[32px] bg-white border border-secondary-light/10 shadow-sm transition-all hover:shadow-md active:scale-95"
+                  onClick={onClick}
+                  className="w-full group flex flex-col items-center gap-2.5 sm:gap-3 p-4 sm:p-6 rounded-2xl sm:rounded-[32px] bg-white border border-secondary-light/10 shadow-sm transition-all hover:shadow-md active:scale-95 cursor-pointer"
                 >
                   <div className={`w-11 h-11 sm:w-14 sm:h-14 ${color} rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform`}>
                     <Icon size={22} className="sm:w-6 sm:h-6" />
                   </div>
                   <span className="text-xs sm:text-sm md:text-base font-black text-primary text-center leading-tight">{label}</span>
                 </button>
-              </Link>
-            ))}
+              );
+              return href ? (
+                <Link key={label} href={href}>
+                  {btnContent}
+                </Link>
+              ) : (
+                <div key={label}>{btnContent}</div>
+              );
+            })}
           </section>
+
+          {/* Visitor's Personal Word Card (if visitor) */}
+          {isVisitor && (
+            <section className="bg-gradient-to-l from-primary/5 via-secondary-light/20 to-background border-2 border-secondary/30 rounded-3xl md:rounded-[40px] p-6 sm:p-8 relative overflow-hidden shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-secondary/20 pb-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-secondary/20 text-secondary-dark flex items-center justify-center font-black shrink-0">
+                    <Sparkles size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-primary">كلمتكِ ومساحتكِ في منصة أثر</h3>
+                    <p className="text-xs text-primary-muted font-bold">بصمة شرف واعتزاز نعتز بها في مسيرتنا المباركة</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWordModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white text-primary rounded-xl text-xs font-black border border-secondary-light/40 hover:bg-secondary-light/20 transition-all self-start sm:self-auto cursor-pointer shadow-xs active:scale-95"
+                >
+                  <Plus size={16} /> إضافة كلمة أو انطباع
+                </button>
+              </div>
+              <blockquote className="text-sm sm:text-base font-bold text-primary leading-relaxed italic bg-white/80 p-5 rounded-2xl border border-secondary-light/40">
+                "{user?.bio || visitorMessages.find(m => m.user_id === user?.id)?.message || 'أهلاً وسهلاً بكِ في منصة أثر.. نسعد بتسجيل كلمتكِ الكريمة لتكون أثراً ممتداً في مجتمعنا.'}"
+              </blockquote>
+            </section>
+          )}
 
           {/* Service Grid */}
           <section className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 sm:gap-4 py-1 sm:py-2">
@@ -181,10 +294,14 @@ const UserDashboard = () => {
             {/* Side Column: Steps/Journey */}
             <div className="lg:col-span-4 space-y-6 sm:space-y-8">
               <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl md:rounded-[40px] border border-secondary-light/30 shadow-sm h-full flex flex-col">
-                <h3 className="text-base sm:text-lg font-black text-primary mb-4 sm:mb-6">{isSeeker ? "كيف تحصلين على الدعم" : "الرحلة إلى الأثر"}</h3>
+                <h3 className="text-base sm:text-lg font-black text-primary mb-4 sm:mb-6">{isVisitor ? "مساحة ضيوف الأثر" : isSeeker ? "كيف تحصلين على الدعم" : "الرحلة إلى الأثر"}</h3>
                 <div className="space-y-4 sm:space-y-6 relative flex-1">
                   <div className="absolute right-[15px] sm:right-[17px] top-2 bottom-2 w-0.5 bg-secondary-light/60"></div>
-                  {(isSeeker ? [
+                  {(isVisitor ? [
+                    { title: 'سجلي انطباعكِ', detail: 'شاركينا برأيكِ الكريم ومقترحاتكِ البناءة.', status: 'completed' },
+                    { title: 'استكشفي أثر المبادرات', detail: 'اطلعي على العطايا والاحتياجات في مختلف المدن.', status: 'completed' },
+                    { title: 'كوني شريكة الأثر', detail: 'انشري فكرة المنصة وساهمي في دعم المجتمع القرآني.', status: 'completed' },
+                  ] : isSeeker ? [
                     { title: 'سجلي احتياجكِ', detail: 'صفي نوع المساعدة التي تحتاجينها.', status: 'completed' },
                     { title: 'تواصلي مع الخاتمة', detail: 'نسقي التفاصيل عبر الدردشة الخاصة.', status: 'completed' },
                     { title: 'تمت تلبية الطلب', detail: 'أغلقي الطلب وقيمي التجربة.', status: 'completed' },
@@ -366,7 +483,144 @@ const UserDashboard = () => {
               </Link>
             </div>
           </section>
+
+          {/* Visitor Guestbook Wall */}
+          <section id="guestbook" className="bg-white rounded-3xl md:rounded-[40px] p-6 sm:p-8 border border-secondary-light/30 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-background pb-4">
+              <div>
+                <div className="flex items-center gap-2 text-primary font-black text-lg sm:text-xl">
+                  <Heart className="text-secondary" size={24} />
+                  <span>حائط كلمات وانطباعات الزائرات الكريمات</span>
+                </div>
+                <p className="text-xs text-primary-muted font-bold mt-1">
+                  سجل تشريفي لكلمات مسؤولي وضيوف المنصة وشركاء الأثر
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWordModal(true)}
+                className="px-5 py-2.5 bg-primary text-white text-xs font-black rounded-xl hover:bg-primary-dark transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
+              >
+                <Plus size={16} /> سجلي كلمة أو انطباع
+              </button>
+            </div>
+
+            {visitorMessages.length === 0 ? (
+              <div className="text-center py-12 text-primary-muted space-y-3">
+                <Heart size={40} className="mx-auto text-secondary/40 animate-pulse" />
+                <p className="font-bold text-sm">شاركينا أول كلمة مباركة في حائط الزائرات الكريمات.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {visitorMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className="bg-background/40 hover:bg-background/80 transition-all border border-secondary-light/30 p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between space-y-4 shadow-xs"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                            {msg.user_name ? msg.user_name.charAt(0) : 'ز'}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-black text-xs sm:text-sm text-primary truncate">
+                              {msg.user_name || 'زائرة كريمة'}
+                            </h4>
+                            {msg.organization && (
+                              <span className="inline-block text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full mt-0.5 truncate max-w-[180px]">
+                                {msg.organization}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs sm:text-sm text-primary/90 font-medium leading-relaxed bg-white p-3.5 rounded-xl border border-secondary-light/20">
+                        "{msg.message}"
+                      </p>
+                    </div>
+                    <div className="text-[10px] text-primary-muted font-bold text-left pt-2 border-t border-secondary-light/20">
+                      {new Date(msg.created_at).toLocaleDateString('ar-SA', { dateStyle: 'medium' })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
+
+        {/* New Word Modal */}
+        {showWordModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl border border-secondary-light/40 animate-in fade-in zoom-in-95">
+              <div className="flex justify-between items-center border-b border-background pb-3">
+                <div className="flex items-center gap-2">
+                  <Heart className="text-secondary" size={20} />
+                  <h3 className="font-black text-base sm:text-lg text-primary">شاركينا كلمتكِ أو انطباعكِ</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWordModal(false)}
+                  className="w-8 h-8 rounded-full bg-background hover:bg-secondary-light/40 flex items-center justify-center text-primary-muted hover:text-primary transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {wordSuccess && (
+                <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-black text-center">
+                  {wordSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handleWordSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black text-primary mb-1.5">
+                    الجهة أو المسمى الوظيفي (اختياري)
+                  </label>
+                  <input
+                    type="text"
+                    value={newOrganization}
+                    onChange={(e) => setNewOrganization(e.target.value)}
+                    placeholder="مثال: وزارة التعليم، مشرفة تربوية، زائرة مهتمة"
+                    className="w-full px-4 py-2.5 rounded-xl bg-background border border-secondary-light/40 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-primary mb-1.5">
+                    سجلي كلمة أو مساحة لكِ / رأيكِ بالمنصة <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="اكتبي مشاعركِ الكريمة أو مقترحاتكِ أو انطباعكِ عن منصة أثر..."
+                    className="w-full px-4 py-3 rounded-xl bg-background border border-secondary-light/40 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary resize-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowWordModal(false)}
+                    className="px-4 py-2 text-xs font-bold text-primary-muted hover:text-primary transition-colors cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sendingWord || !newMessage.trim()}
+                    className="px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-black hover:bg-primary-dark transition-all disabled:opacity-50 cursor-pointer shadow-md active:scale-95"
+                  >
+                    {sendingWord ? 'جاري التسجيل...' : 'تسجيل الكلمة'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </AppShell>
     </ProtectedRoute>
   );

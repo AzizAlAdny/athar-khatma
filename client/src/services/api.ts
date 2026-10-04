@@ -116,7 +116,7 @@ export interface User {
   display_name?: string | null;
   email: string;
   phone_number?: string;
-  role: 'khatma' | 'seeker' | 'admin';
+  role: 'khatma' | 'seeker' | 'admin' | 'visitor';
   neighborhood?: string;
   city?: string;
   bio?: string;
@@ -124,6 +124,17 @@ export interface User {
   longitude?: number;
   email_verified: boolean;
   created_at?: string;
+}
+
+export interface VisitorMessage {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_city?: string;
+  organization?: string | null;
+  message: string;
+  created_at: string;
+  created_at_human?: string;
 }
 
 export interface AdminStats {
@@ -138,6 +149,7 @@ export interface AdminStats {
   khatma_users: number;
   seeker_users: number;
   admin_users: number;
+  visitor_users?: number;
   total_reviews?: number;
   average_platform_rating?: number;
   total_impact_points: number;
@@ -345,8 +357,10 @@ export const register = (payload: {
   lat?: number;
   lng?: number;
   pledge_accepted?: boolean;
+  visitor_message?: string;
+  organization?: string;
 }) =>
-  fetchJson<AuthResponse>('/register', {
+  fetchJson<AuthResponse & { email?: string }>('/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -459,7 +473,7 @@ export const createAdminUser = (payload: {
   display_name?: string;
   email: string;
   password: string;
-  role: 'khatma' | 'seeker' | 'admin';
+  role: 'khatma' | 'seeker' | 'admin' | 'visitor';
   city?: string;
   neighborhood?: string;
   latitude?: number;
@@ -680,6 +694,18 @@ export const submitReview = (payload: {
 
 export const getUserReviews = (userId: number) =>
   fetchJson<{ reviews: Review[]; average_rating: number; total_reviews: number }>(`/users/${userId}/reviews`);
+
+export const getVisitorMessages = (page = 1, perPage = 15) =>
+  fetchJson<PaginatedResponse<VisitorMessage>>(`/visitor-messages?page=${page}&per_page=${perPage}`);
+
+export const createVisitorMessage = (payload: { message: string; organization?: string }) =>
+  fetchJson<{ message: string; data: VisitorMessage }>('/visitor-messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
 
 export const authUserKey = 'auth_user';
 

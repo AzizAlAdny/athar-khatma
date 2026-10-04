@@ -20,6 +20,8 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [role, setRole] = useState('khatma');
+  const [visitorMessage, setVisitorMessage] = useState('');
+  const [organization, setOrganization] = useState('');
   const [city, setCity] = useState('الرياض');
   const [neighborhood, setNeighborhood] = useState('');
   const [pledge, setPledge] = useState(false);
@@ -88,16 +90,24 @@ export default function Register() {
         neighborhood,
         lat: selectedNeighborhood?.lat,
         lng: selectedNeighborhood?.lng,
-        pledge_accepted: pledge
+        pledge_accepted: pledge,
+        visitor_message: visitorMessage || undefined,
+        organization: organization || undefined,
       };
 
       const data = await register(payload as any);
-      // Store email for verification page (user not fully authenticated yet)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('pending_verification_email', data.email || data.user.email);
+      if ((data as any).token) {
+        // Auto-login for visitor VIP access!
+        login(data.user, (data as any).token);
+        router.push('/dashboard');
+      } else {
+        // Store email for verification page (user not fully authenticated yet)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('pending_verification_email', data.email || data.user.email);
+        }
+        // Redirect to verification page with email verification required
+        router.push('/auth/verify');
       }
-      // Redirect to verification page with email verification required
-      router.push('/auth/verify');
     } catch (err: any) {
       if (err.errors?.email?.[0]) {
         setErrors({ email: err.errors.email[0], general: err.message });
@@ -185,7 +195,52 @@ export default function Register() {
           >
             <option value="khatma">خاتمة (مانحة للأثر)</option>
             <option value="seeker">صاحب احتياج (مستفيد)</option>
+            <option value="visitor">زائرة (ضيفة وشريكة الأثر)</option>
           </Input>
+
+          {role === 'visitor' && (
+            <div className="md:col-span-2 space-y-4 bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/10 p-6 rounded-[1.5rem] border border-primary/20 shadow-sm animate-fadeIn">
+              <div className="flex items-center gap-3 border-b border-primary/10 pb-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-primary">مساحتكِ ورأيكِ في المنصة</h4>
+                  <p className="text-xs text-primary-muted font-bold mt-0.5">
+                    سجلي كلمة أو مساحة لكِ، وأخبرينا عن رأيكِ بالمنصة ورسالتكِ الكريمة ✨
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-1">
+                <div>
+                  <label className="block text-xs font-black text-primary mb-2">
+                    سجلي كلمة أو مساحة لكِ (أخبرينا عن رأيك بالمنصة)
+                  </label>
+                  <textarea
+                    value={visitorMessage}
+                    onChange={e => setVisitorMessage(e.target.value)}
+                    rows={4}
+                    placeholder="يسعدنا ويشرفنا تدوين كلمتكِ الكريمة أو انطباعكِ ورأيكِ بالمنصة ورسالتكِ لفريق ختمة وأثر..."
+                    className="w-full p-4 rounded-2xl bg-white border border-secondary-light/40 text-sm font-bold text-primary placeholder:text-primary-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-primary mb-2">
+                    الجهة أو المسمى الوظيفي (اختياري)
+                  </label>
+                  <input
+                    type="text"
+                    value={organization}
+                    onChange={e => setOrganization(e.target.value)}
+                    placeholder="مثال: وزارة التعليم / مشرفة تربوية / ضيفة كريمة..."
+                    className="w-full p-3.5 rounded-2xl bg-white border border-secondary-light/40 text-sm font-bold text-primary placeholder:text-primary-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <Input
             as="select"
@@ -246,10 +301,19 @@ export default function Register() {
                 <Sparkles className="text-primary" size={18} />
               </div>
               <p className="text-xs font-bold text-primary-muted leading-relaxed whitespace-pre-line">
-                عزيزتي :
-                الإخلاص ومراقبة الله عزوجل قبل كل شيء وسلامة النطق وخلو التلاوة من اللحون الجلية والمحافظة على خصوصية المستفيدين وكرامتهم
-                وتقديم الأثر النافع لهم
-                واستخدام المنصة فيما خُصصت له فقط
+                {role === 'visitor' ? (
+                  <>
+                    عزيزتي الزائرة الكريمة :
+                    نرحب بكِ ضيفة شرف في منصة ختمة وأثر، ويسعدنا مشاركتكِ انطباعكِ ودعمكِ لمسيرة الأثر المجتمعي والقرآني والمحافظة على خصوصية المنصة ومستفيديها.
+                  </>
+                ) : (
+                  <>
+                    عزيزتي :
+                    الإخلاص ومراقبة الله عزوجل قبل كل شيء وسلامة النطق وخلو التلاوة من اللحون الجلية والمحافظة على خصوصية المستفيدين وكرامتهم
+                    وتقديم الأثر النافع لهم
+                    واستخدام المنصة فيما خُصصت له فقط
+                  </>
+                )}
               </p>
             </div>
 

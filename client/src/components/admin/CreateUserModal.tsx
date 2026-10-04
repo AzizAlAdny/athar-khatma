@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  Heart,
 } from 'lucide-react';
 import { createAdminUser } from '@/services/api';
 import { CITY_DATA, CITIES, DEFAULT_CITY, getNeighborhoodCoordinates } from '@/constants/locations';
@@ -30,7 +31,7 @@ export default function CreateUserModal({ onClose, onSuccess }: CreateUserModalP
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'khatma' | 'seeker' | 'admin'>('khatma');
+  const [role, setRole] = useState<'khatma' | 'seeker' | 'admin' | 'visitor'>('khatma');
   const [city, setCity] = useState(DEFAULT_CITY);
   const [neighborhood, setNeighborhood] = useState(
     CITY_DATA[DEFAULT_CITY]?.[0]?.name || 'حي الملقى'
@@ -85,7 +86,7 @@ export default function CreateUserModal({ onClose, onSuccess }: CreateUserModalP
   };
 
   const roleOptions: {
-    id: 'khatma' | 'seeker' | 'admin';
+    id: 'khatma' | 'seeker' | 'admin' | 'visitor';
     title: string;
     description: string;
     icon: React.ElementType;
@@ -104,6 +105,13 @@ export default function CreateUserModal({ onClose, onSuccess }: CreateUserModalP
       description: 'طلب الخدمات والمبادرات القرآنية للمجتمع',
       icon: HeartHandshake,
       badgeColor: 'bg-accent/10 text-accent border-accent/20',
+    },
+    {
+      id: 'visitor',
+      title: 'زائرة (ضيفة كريمة)',
+      description: 'تسجيل الكلمات والانطباعات واستكشاف أثر المبادرات',
+      icon: Heart,
+      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     },
     {
       id: 'admin',

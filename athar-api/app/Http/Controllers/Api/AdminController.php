@@ -40,6 +40,7 @@ class AdminController extends Controller
             'khatma_users' => User::where('role', 'khatma')->count(),
             'seeker_users' => User::where('role', 'seeker')->count(),
             'admin_users' => User::where('role', 'admin')->count(),
+            'visitor_users' => User::where('role', 'visitor')->count(),
             'total_reviews' => Review::count(),
             'average_platform_rating' => round((float) (Review::avg('rating') ?? 5.0), 1),
             'total_impact_points' => (int) Khatma::sum('impact_score') + (int) SeekerNeed::where('status', 'fulfilled')->sum('points_earned'),
@@ -103,7 +104,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'display_name' => 'nullable|string|max:255',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:khatma,seeker,admin',
+            'role' => 'required|in:khatma,seeker,admin,visitor',
             'city' => 'nullable|string|max:255',
             'neighborhood' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric',
@@ -594,5 +595,27 @@ class AdminController extends Controller
         $calls = $query->latest()->paginate((int) ($request->per_page ?? 20));
 
         return response()->json($calls);
+    }
+
+    /**
+     * Admin view of all visitor messages.
+     */
+    public function visitorMessages(Request $request): JsonResponse
+    {
+        $messages = \App\Models\VisitorMessage::with('user:id,name,display_name,email,city,phone_number')
+            ->latest()
+            ->paginate((int) ($request->per_page ?? 20));
+
+        return response()->json($messages);
+    }
+
+    /**
+     * Admin delete visitor message.
+     */
+    public function deleteVisitorMessage($id): JsonResponse
+    {
+        $msg = \App\Models\VisitorMessage::findOrFail($id);
+        $msg->delete();
+        return response()->json(['message' => 'تم حذف الكلمة بنجاح']);
     }
 }

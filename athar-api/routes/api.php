@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\SeekerNeedController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\VisitorMessageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,7 @@ Route::middleware('throttle:60,1')->get('/recent-gifts', [KhatmaGiftController::
 Route::get('/public-stats', [StatsController::class, 'publicStats']);
 Route::get('/users/{id}/public-profile', [AuthController::class, 'publicProfile']);
 Route::get('/users/{id}/reviews', [ReviewController::class, 'userReviews']);
+Route::get('/visitor-messages', [VisitorMessageController::class, 'index']);
 
 // Health check endpoint
 Route::get('/health', function () {
@@ -109,6 +111,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin/reviews/{id}', [AdminController::class, 'deleteReview']);
 
         Route::get('/admin/calls', [AdminController::class, 'calls']);
+
+        Route::get('/admin/visitor-messages', [AdminController::class, 'visitorMessages']);
+        Route::delete('/admin/visitor-messages/{id}', [AdminController::class, 'deleteVisitorMessage']);
     });
 
     Route::get('/khatmas', [KhatmaController::class, 'index']);
@@ -122,6 +127,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Reviews
     Route::post('/reviews', [ReviewController::class, 'store']);
+
+    // Visitor Messages
+    Route::post('/visitor-messages', [VisitorMessageController::class, 'store']);
 
     // Routes that require email verification
     Route::middleware('verified')->group(function () {

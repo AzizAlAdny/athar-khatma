@@ -45,7 +45,7 @@ const timeAgo = (value?: string): string => {
 export default function Header({ onMenuClick }: HeaderProps) {
   const { user, isAuthenticated } = useAuth();
   const userName = user?.display_name || user?.name || 'زائرة';
-  const roleLabel = user?.role === 'seeker' ? 'طالبة عون' : user?.role === 'admin' ? 'مشرفة النظام' : 'ختماتي';
+  const roleLabel = user?.role === 'seeker' ? 'طالبة عون' : user?.role === 'admin' ? 'مشرفة النظام' : user?.role === 'visitor' ? 'زائرة كريمة' : 'ختماتي';
 
   const router = useRouter();
   const [bellOpen, setBellOpen] = useState(false);
