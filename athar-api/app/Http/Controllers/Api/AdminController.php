@@ -55,7 +55,7 @@ class AdminController extends Controller
      */
     public function users(Request $request): JsonResponse
     {
-        $query = User::query()->withCount(['khatmas', 'seekerNeeds', 'authEvents']);
+        $query = User::query()->withCount(['khatmas', 'seekerNeeds', 'authEvents', 'visitorMessages']);
 
         if ($request->filled('role')) {
             $query->where('role', $request->role);

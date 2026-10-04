@@ -499,7 +499,7 @@ const UserDashboard = () => {
               <div>
                 <div className="flex items-center gap-2 text-primary font-black text-lg sm:text-xl">
                   <Heart className="text-secondary" size={24} />
-                  <span>حائط كلمات وانطباعات الزائرات الكريمات</span>
+                  <span>سجل كلمات وانطباعات الزائرات الكريمات</span>
                 </div>
                 <p className="text-xs text-primary-muted font-bold mt-1">
                   سجل تشريفي لكلمات مسؤولي وضيوف المنصة وشركاء الأثر
@@ -519,7 +519,7 @@ const UserDashboard = () => {
             {visitorMessages.length === 0 ? (
               <div className="text-center py-12 text-primary-muted space-y-3">
                 <Heart size={40} className="mx-auto text-secondary/40 animate-pulse" />
-                <p className="font-bold text-sm">شاركينا أول كلمة مباركة في حائط الزائرات الكريمات.</p>
+                <p className="font-bold text-sm">شاركينا أول كلمة مباركة في سجل الزائرات الكريمات.</p>
               </div>
             ) : (
               <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">

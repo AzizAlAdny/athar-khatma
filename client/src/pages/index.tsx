@@ -3,7 +3,18 @@ import Link from 'next/link';
 import ImpactMap from '../components/maps/ImpactMap';
 import AppShell from '../components/ui/AppShell';
 import Hero from '../components/ui/Hero';
-import { getPublicStats, getNeeds, getMapPins, getRecentGifts, Need, KhatmaPin, RecentGift } from '@/services/api';
+import {
+  getPublicStats,
+  getNeeds,
+  getMapPins,
+  getRecentGifts,
+  getVisitorMessages,
+  createVisitorMessage,
+  Need,
+  KhatmaPin,
+  RecentGift,
+  VisitorMessage
+} from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import {
   BookOpen,
@@ -24,7 +35,8 @@ import {
   Sparkles,
   Clock,
   GraduationCap,
-  LayoutDashboard
+  LayoutDashboard,
+  X
 } from 'lucide-react';
 
 // Human-friendly Arabic relative time for the gifts feed.
@@ -60,6 +72,13 @@ export default function Home() {
   const [pins, setPins] = useState<KhatmaPin[]>([]);
   const [recentGifts, setRecentGifts] = useState<RecentGift[]>([]);
   const [feedsLoading, setFeedsLoading] = useState(true);
+  const [visitorMessages, setVisitorMessages] = useState<VisitorMessage[]>([]);
+  const [visitorLoading, setVisitorLoading] = useState(true);
+  const [showWordModal, setShowWordModal] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const [newOrganization, setNewOrganization] = useState('');
+  const [sendingWord, setSendingWord] = useState(false);
+  const [wordSuccess, setWordSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -72,14 +91,46 @@ export default function Home() {
         console.error('Stats fetch error:', err);
         setLoading(false);
       });
-    Promise.allSettled([getNeeds(), getMapPins(), getRecentGifts()])
-      .then(([needsRes, pinsRes, recentRes]) => {
+    Promise.allSettled([getNeeds(), getMapPins(), getRecentGifts(), getVisitorMessages(1, 6)])
+      .then(([needsRes, pinsRes, recentRes, visitorRes]) => {
         if (needsRes.status === 'fulfilled') setNeeds(needsRes.value || []);
         if (pinsRes.status === 'fulfilled') setPins(pinsRes.value || []);
         if (recentRes.status === 'fulfilled') setRecentGifts(recentRes.value || []);
+        if (visitorRes.status === 'fulfilled' && visitorRes.value?.data) {
+          setVisitorMessages(visitorRes.value.data);
+        }
         setFeedsLoading(false);
+        setVisitorLoading(false);
       });
   }, []);
+
+  const handleWordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || sendingWord) return;
+
+    setSendingWord(true);
+    try {
+      const res = await createVisitorMessage({
+        message: newMessage.trim(),
+        organization: newOrganization.trim() || undefined,
+      });
+      if (res?.data) {
+        setVisitorMessages(prev => [res.data, ...prev]);
+        setWordSuccess('تم تسجيل كلمتكِ المباركة بنجاح، شكراً لمشاركتكِ الكريمة!');
+        setNewMessage('');
+        setNewOrganization('');
+        setTimeout(() => {
+          setShowWordModal(false);
+          setWordSuccess(null);
+        }, 1800);
+      }
+    } catch (err: any) {
+      console.error('Submit visitor word error:', err);
+      alert(err.message || 'تعذر تسجيل الكلمة حالياً، يرجى المحاولة لاحقاً');
+    } finally {
+      setSendingWord(false);
+    }
+  };
 
   // Real gifts feed: prefer the chronological API; fall back to map-pin services.
   const giftsFeed = (recentGifts.length > 0
@@ -101,6 +152,14 @@ export default function Home() {
     <Link href="/admin" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
       <LayoutDashboard size={18} /> لوحة التحكم والإشراف
     </Link>
+  ) : user?.role === 'visitor' ? (
+    <button
+      type="button"
+      onClick={() => setShowWordModal(true)}
+      className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95 cursor-pointer"
+    >
+      <Heart size={18} className="text-secondary" /> أخبرينا عن رأيكِ بالمنصة
+    </button>
   ) : user?.role === 'seeker' ? (
     <Link href="/needs/register" className="bg-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/10 active:scale-95">
       <Plus size={18} /> سجلي احتياجكِ
@@ -119,6 +178,10 @@ export default function Home() {
     <Link href="/admin" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
       <Info size={18} /> إحصائيات المنصة
     </Link>
+  ) : user?.role === 'visitor' ? (
+    <Link href="/dashboard" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
+      <Sparkles size={18} /> لوحة الزائرة
+    </Link>
   ) : user?.role === 'seeker' ? (
     <Link href="/needs" className="bg-white text-primary border border-secondary-light/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-background transition-all shadow-sm active:scale-95">
       <Info size={18} /> طلباتي
@@ -130,11 +193,17 @@ export default function Home() {
   );
 
   const isSeeker = user?.role === 'seeker';
+  const isVisitor = user?.role === 'visitor';
 
   const welcomeMessage = user?.role === 'admin' ? (
     <span className="flex items-center gap-1.5">
       <span>🛡️</span>
       <span>مرحباً بكِ في لوحة التحكم والإشراف الإداري</span>
+    </span>
+  ) : isVisitor ? (
+    <span className="flex items-center gap-1.5">
+      <span>💐</span>
+      <span>أهلاً وسهلاً بكِ ضيفتنا الكريمة</span>
     </span>
   ) : isSeeker ? (
     <span className="flex items-center gap-1.5">
@@ -376,6 +445,97 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Visitor Guestbook Wall / سجل كلمات وانطباعات الزائرات الكريمات */}
+        <section id="guestbook" className="bg-white rounded-3xl md:rounded-[40px] p-6 sm:p-8 md:p-10 border border-secondary-light/30 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-background pb-5">
+            <div>
+              <div className="flex items-center gap-2.5 text-primary font-black text-lg sm:text-xl md:text-2xl">
+                <div className="w-10 h-10 rounded-2xl bg-secondary/15 flex items-center justify-center text-secondary shrink-0">
+                  <Heart size={22} className="fill-secondary/20" />
+                </div>
+                <span>سجل كلمات وانطباعات الزائرات الكريمات</span>
+              </div>
+              <p className="text-xs sm:text-sm text-primary-muted font-bold mt-1.5">
+                سجل تشريفي لكلمات مسؤولي وضيوف المنصة وشركاء الأثر
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              {isVisitor ? (
+                <button
+                  type="button"
+                  onClick={() => setShowWordModal(true)}
+                  className="px-5 py-2.5 bg-primary text-white text-xs sm:text-sm font-black rounded-xl hover:bg-primary-dark transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
+                >
+                  <Plus size={16} /> أخبرينا عن رأيكِ بالمنصة
+                </button>
+              ) : !isAuthenticated ? (
+                <Link
+                  href="/auth/register"
+                  className="px-5 py-2.5 bg-secondary text-white text-xs sm:text-sm font-black rounded-xl hover:bg-secondary-dark transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                >
+                  <Heart size={16} /> سجلي كزائرة وشاركينا رأيكِ
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          {visitorLoading ? (
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-40 rounded-2xl bg-background animate-pulse"></div>
+              ))}
+            </div>
+          ) : visitorMessages.length === 0 ? (
+            <div className="text-center py-12 text-primary-muted space-y-3 bg-background/30 rounded-2xl sm:rounded-3xl border border-dashed border-secondary-light/40">
+              <Heart size={40} className="mx-auto text-secondary/40 animate-pulse" />
+              <p className="font-bold text-sm">شاركينا أول كلمة مباركة في سجل الزائرات الكريمات.</p>
+              {!isAuthenticated && (
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center gap-1.5 text-xs font-black text-secondary hover:underline"
+                >
+                  انضمي كزائرة وسجلي رأيكِ الآن <ChevronLeft size={14} />
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {visitorMessages.slice(0, 6).map((msg) => (
+                <div
+                  key={msg.id}
+                  className="bg-background/40 hover:bg-background/80 transition-all border border-secondary-light/30 p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between space-y-4 shadow-xs hover:shadow-sm"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                          {msg.user_name ? msg.user_name.charAt(0) : 'ز'}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-black text-xs sm:text-sm text-primary truncate">
+                            {msg.user_name || 'زائرة كريمة'}
+                          </h4>
+                          {msg.organization && (
+                            <span className="inline-block text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full mt-0.5 truncate max-w-[190px]">
+                              {msg.organization}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs sm:text-sm text-primary/90 font-medium leading-relaxed bg-white p-3.5 rounded-xl border border-secondary-light/20">
+                      &ldquo;{msg.message}&rdquo;
+                    </p>
+                  </div>
+                  <div className="text-[10px] text-primary-muted font-bold text-left pt-2 border-t border-secondary-light/20">
+                    {new Date(msg.created_at).toLocaleDateString('ar-SA', { dateStyle: 'medium' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Inspiring Initiatives Card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 pb-10">
           {topContributor && (
@@ -426,6 +586,79 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* New Word Modal for Visitors */}
+        {showWordModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl border border-secondary-light/40 animate-in fade-in zoom-in-95">
+              <div className="flex justify-between items-center border-b border-background pb-3">
+                <div className="flex items-center gap-2">
+                  <Heart className="text-secondary" size={20} />
+                  <h3 className="font-black text-base sm:text-lg text-primary">أخبرينا عن رأيكِ بالمنصة</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWordModal(false)}
+                  className="w-8 h-8 rounded-full bg-background hover:bg-secondary-light/40 flex items-center justify-center text-primary-muted hover:text-primary transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {wordSuccess && (
+                <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-black text-center">
+                  {wordSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handleWordSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black text-primary mb-1.5">
+                    الجهة أو المسمى الوظيفي (اختياري)
+                  </label>
+                  <input
+                    type="text"
+                    value={newOrganization}
+                    onChange={(e) => setNewOrganization(e.target.value)}
+                    placeholder="مثال: وزارة التعليم، مشرفة تربوية، زائرة مهتمة"
+                    className="w-full px-4 py-2.5 rounded-xl bg-background border border-secondary-light/40 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-primary mb-1.5">
+                    أخبرينا عن رأيكِ بالمنصة <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="اكتبي مشاعركِ الكريمة أو مقترحاتكِ أو رأيكِ بالمنصة..."
+                    className="w-full px-4 py-3 rounded-xl bg-background border border-secondary-light/40 text-xs sm:text-sm font-bold text-primary focus:outline-none focus:border-primary resize-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowWordModal(false)}
+                    className="px-4 py-2 text-xs font-bold text-primary-muted hover:text-primary transition-colors cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sendingWord || !newMessage.trim()}
+                    className="px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-black hover:bg-primary-dark transition-all disabled:opacity-50 cursor-pointer shadow-md active:scale-95"
+                  >
+                    {sendingWord ? 'جاري التسجيل...' : 'تسجيل الكلمة'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   );

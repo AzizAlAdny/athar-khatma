@@ -198,6 +198,7 @@ function OverviewTab({ stats }: { stats: AdminStats }) {
             {[
               { label: 'الخاتمات', value: stats.khatma_users, color: 'bg-primary' },
               { label: 'طالبات الاحتياج', value: stats.seeker_users, color: 'bg-accent' },
+              { label: 'الزائرات وضيوف المنصة', value: stats.visitor_users ?? 0, color: 'bg-emerald-600' },
               { label: 'المشرفات الإداريات', value: stats.admin_users, color: 'bg-secondary' },
             ].map((item) => {
               const pct = stats.total_users > 0 ? Math.round((item.value / stats.total_users) * 100) : 0;
@@ -334,8 +335,12 @@ function UsersTab() {
         return <span className="px-3 py-1 rounded-full text-xs font-black bg-secondary-light text-primary whitespace-nowrap">مشرفة إدارية</span>;
       case 'khatma':
         return <span className="px-3 py-1 rounded-full text-xs font-black bg-primary/10 text-primary whitespace-nowrap">خاتمة</span>;
-      default:
+      case 'visitor':
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">زائرة كريمة</span>;
+      case 'seeker':
         return <span className="px-3 py-1 rounded-full text-xs font-black bg-accent/10 text-accent whitespace-nowrap">طالبة احتياج</span>;
+      default:
+        return <span className="px-3 py-1 rounded-full text-xs font-black bg-gray-100 text-gray-800 whitespace-nowrap">{r}</span>;
     }
   };
 
@@ -395,6 +400,7 @@ function UsersTab() {
               <option value="">جميع الأدوار</option>
               <option value="khatma">الخاتمات</option>
               <option value="seeker">طالبات الاحتياج</option>
+              <option value="visitor">الزائرات الكرام</option>
               <option value="admin">المشرفات</option>
             </select>
           </div>
@@ -477,6 +483,16 @@ function UsersTab() {
                         {u.role === 'seeker' && (
                           <span className="px-2 py-0.5 rounded-md bg-background whitespace-nowrap">
                             {(u as any).seeker_needs_count || 0} طلب
+                          </span>
+                        )}
+                        {u.role === 'visitor' && (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                            {(u as any).visitor_messages_count !== undefined ? `${(u as any).visitor_messages_count} رأي/انطباع` : 'سجلت رأيها'}
+                          </span>
+                        )}
+                        {u.role === 'admin' && (
+                          <span className="px-2 py-0.5 rounded-md bg-secondary/15 text-primary whitespace-nowrap">
+                            إشراف كامل
                           </span>
                         )}
                       </div>
