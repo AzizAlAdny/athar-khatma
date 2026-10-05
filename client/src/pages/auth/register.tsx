@@ -60,9 +60,11 @@ export default function Register() {
     else if (password.length < 8) newErrors.password = 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
     else if (password !== passwordConfirm) newErrors.passwordConfirm = 'كلمتا المرور غير متطابقتين';
 
-    if (!city) newErrors.city = 'الرجاء اختيار المدينة';
-    if (!neighborhood) newErrors.neighborhood = 'الرجاء اختيار الحي السكني';
-    if (!pledge) newErrors.pledge = 'يجب الموافقة على التعهد للمتابعة';
+    if (role !== 'visitor') {
+      if (!city) newErrors.city = 'الرجاء اختيار المدينة';
+      if (!neighborhood) newErrors.neighborhood = 'الرجاء اختيار الحي السكني';
+      if (!pledge) newErrors.pledge = 'يجب الموافقة على التعهد للمتابعة';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -75,7 +77,8 @@ export default function Register() {
     setErrors({});
     setIsSubmitting(true);
 
-    const selectedNeighborhood = CITY_DATA[city]?.find(n => n.name === neighborhood);
+    const isVisitor = role === 'visitor';
+    const selectedNeighborhood = !isVisitor ? CITY_DATA[city]?.find(n => n.name === neighborhood) : undefined;
 
     try {
       const payload = {
@@ -86,11 +89,11 @@ export default function Register() {
         password,
         password_confirmation: passwordConfirm,
         role,
-        city,
-        neighborhood,
-        lat: selectedNeighborhood?.lat,
-        lng: selectedNeighborhood?.lng,
-        pledge_accepted: pledge,
+        city: isVisitor ? undefined : city,
+        neighborhood: isVisitor ? undefined : neighborhood,
+        lat: isVisitor ? undefined : selectedNeighborhood?.lat,
+        lng: isVisitor ? undefined : selectedNeighborhood?.lng,
+        pledge_accepted: isVisitor ? true : pledge,
         visitor_message: visitorMessage || undefined,
         organization: organization || undefined,
       };
@@ -242,34 +245,38 @@ export default function Register() {
             </div>
           )}
 
-          <Input
-            as="select"
-            label="المدينة"
-            value={city}
-            onChange={e => setCity(e.target.value)}
-            icon={MapPin}
-            error={errors.city}
-            required
-          >
-            {Object.keys(CITY_DATA).map(cityName => (
-              <option key={cityName} value={cityName}>{cityName}</option>
-            ))}
-          </Input>
+          {role !== 'visitor' && (
+            <>
+              <Input
+                as="select"
+                label="المدينة"
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                icon={MapPin}
+                error={errors.city}
+                required
+              >
+                {Object.keys(CITY_DATA).map(cityName => (
+                  <option key={cityName} value={cityName}>{cityName}</option>
+                ))}
+              </Input>
 
-          <Input
-            as="select"
-            label="الحي السكني"
-            value={neighborhood}
-            onChange={e => setNeighborhood(e.target.value)}
-            icon={MapPin}
-            error={errors.neighborhood}
-            required
-          >
-            <option value="">اختر الحي السكني</option>
-            {CITY_DATA[city]?.map(n => (
-              <option key={n.name} value={n.name}>{n.name}</option>
-            ))}
-          </Input>
+              <Input
+                as="select"
+                label="الحي السكني"
+                value={neighborhood}
+                onChange={e => setNeighborhood(e.target.value)}
+                icon={MapPin}
+                error={errors.neighborhood}
+                required
+              >
+                <option value="">اختر الحي السكني</option>
+                {CITY_DATA[city]?.map(n => (
+                  <option key={n.name} value={n.name}>{n.name}</option>
+                ))}
+              </Input>
+            </>
+          )}
 
           <Input
             containerClassName="md:col-span-2"
@@ -295,46 +302,39 @@ export default function Register() {
             required
           />
 
-          <div className="md:col-span-2 space-y-4 bg-primary/5 p-5 rounded-[1.25rem] border border-primary/10">
-            <div className="flex items-start gap-3">
-              <div className="mt-1">
-                <Sparkles className="text-primary" size={18} />
-              </div>
-              <p className="text-xs font-bold text-primary-muted leading-relaxed whitespace-pre-line">
-                {role === 'visitor' ? (
-                  <>
-                    عزيزتي الزائرة الكريمة :
-                    نرحب بكِ ضيفة شرف في منصة ختمة وأثر، ويسعدنا مشاركتكِ انطباعكِ ودعمكِ لمسيرة الأثر المجتمعي والقرآني والمحافظة على خصوصية المنصة ومستفيديها.
-                  </>
-                ) : (
-                  <>
-                    عزيزتي :
-                    الإخلاص ومراقبة الله عزوجل قبل كل شيء وسلامة النطق وخلو التلاوة من اللحون الجلية والمحافظة على خصوصية المستفيدين وكرامتهم
-                    وتقديم الأثر النافع لهم
-                    واستخدام المنصة فيما خُصصت له فقط
-                  </>
-                )}
-              </p>
-            </div>
-
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className="relative flex items-center">
-                <input
-                  type="checkbox"
-                  checked={pledge}
-                  onChange={e => setPledge(e.target.checked)}
-                  className="peer appearance-none w-6 h-6 rounded-lg border-2 border-primary/20 checked:bg-primary checked:border-primary transition-all cursor-pointer"
-                />
-                <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          {role !== 'visitor' && (
+            <div className="md:col-span-2 space-y-4 bg-primary/5 p-5 rounded-[1.25rem] border border-primary/10">
+              <div className="flex items-start gap-3">
+                <div className="mt-1">
+                  <Sparkles className="text-primary" size={18} />
                 </div>
+                <p className="text-xs font-bold text-primary-muted leading-relaxed whitespace-pre-line">
+                  عزيزتي :
+                  الإخلاص ومراقبة الله عزوجل قبل كل شيء وسلامة النطق وخلو التلاوة من اللحون الجلية والمحافظة على خصوصية المستفيدين وكرامتهم
+                  وتقديم الأثر النافع لهم
+                  واستخدام المنصة فيما خُصصت له فقط
+                </p>
               </div>
-              <span className="text-sm font-black text-primary group-hover:opacity-80 transition-opacity select-none">
-                أتعهد بالالتزام بذلك
-              </span>
-            </label>
-            {errors.pledge && <p className="text-[11px] text-red-500 font-black pr-1">{errors.pledge}</p>}
-          </div>
+
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={pledge}
+                    onChange={e => setPledge(e.target.checked)}
+                    className="peer appearance-none w-6 h-6 rounded-lg border-2 border-primary/20 checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                </div>
+                <span className="text-sm font-black text-primary group-hover:opacity-80 transition-opacity select-none">
+                  أتعهد بالالتزام بذلك
+                </span>
+              </label>
+              {errors.pledge && <p className="text-[11px] text-red-500 font-black pr-1">{errors.pledge}</p>}
+            </div>
+          )}
         </div>
 
         {errors.general && (

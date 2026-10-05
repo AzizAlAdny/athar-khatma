@@ -80,7 +80,7 @@ class AuthController extends Controller
             'neighborhood' => 'nullable|string|max:255',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
-            'pledge_accepted' => 'required|accepted',
+            'pledge_accepted' => $request->role === 'visitor' ? 'nullable|boolean' : 'required|accepted',
             'visitor_message' => 'nullable|string|max:2000',
             'organization' => 'nullable|string|max:255',
         ]);

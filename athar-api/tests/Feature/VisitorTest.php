@@ -55,6 +55,28 @@ class VisitorTest extends TestCase
         ]);
     }
 
+    public function test_visitor_can_register_without_city_neighborhood_and_pledge()
+    {
+        $response = $this->postJson('/api/register', [
+            'name' => 'ريم التميمي',
+            'email' => 'reem.guest@example.com',
+            'phone_number' => '0598765432',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'role' => 'visitor',
+            'visitor_message' => 'انطباع رائع ومبادرة مباركة لخدمة المجتمع.',
+            'organization' => 'وزارة التعليم',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertEquals('visitor', $response->json('user.role'));
+
+        $user = User::where('email', 'reem.guest@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertNull($user->city);
+        $this->assertNull($user->neighborhood);
+    }
+
     public function test_visitor_messages_can_be_retrieved_publicly()
     {
         $user = User::factory()->create(['role' => 'visitor', 'name' => 'نورة المنصور']);
