@@ -44,12 +44,20 @@ class AuthController extends Controller
         }
 
         // Step 1: Check Unique email & phone in users table
+        $isSeeker = $request->input('role') === 'seeker';
+        $phoneRegex = $isSeeker
+            ? '/^((05[0-9]{8})|(\+?[1-9][0-9]{6,14})|(00[1-9][0-9]{6,14}))$/'
+            : '/^(05|\+9665|9665)[0-9]{8}$/';
+        $phoneRegexError = $isSeeker
+            ? 'يرجى إدخال رقم جوال دولي صحيح مع رمز الدولة.'
+            : 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx).';
+
         $request->validate([
             'email' => 'required|string|email|max:255|unique:users,email',
             'phone_number' => [
                 'required',
                 'string',
-                'regex:/^(05|\+9665|9665)[0-9]{8}$/',
+                'regex:' . $phoneRegex,
                 'unique:users,phone_number',
             ],
         ], [
@@ -57,7 +65,7 @@ class AuthController extends Controller
             'email.email' => 'صيغة البريد الإلكتروني غير صحيحة.',
             'email.required' => 'البريد الإلكتروني مطلوب.',
             'phone_number.required' => 'رقم الجوال (واتساب) مطلوب.',
-            'phone_number.regex' => 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx).',
+            'phone_number.regex' => $phoneRegexError,
             'phone_number.unique' => 'رقم الجوال مسجل بالفعل لدينا.',
         ]);
 
@@ -510,6 +518,14 @@ class AuthController extends Controller
             ]);
         }
 
+        $isSeeker = $user->role === 'seeker';
+        $phoneRegex = $isSeeker
+            ? '/^((05[0-9]{8})|(\+?[1-9][0-9]{6,14})|(00[1-9][0-9]{6,14}))$/'
+            : '/^(05|\+9665|9665)[0-9]{8}$/';
+        $phoneRegexError = $isSeeker
+            ? 'يرجى إدخال رقم جوال دولي صحيح مع رمز الدولة.'
+            : 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx).';
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'display_name' => 'nullable|string|max:255',
@@ -519,11 +535,11 @@ class AuthController extends Controller
             'phone_number' => [
                 'nullable',
                 'string',
-                'regex:/^(05|\+9665|9665)[0-9]{8}$/',
+                'regex:' . $phoneRegex,
                 Rule::unique('users', 'phone_number')->ignore($user->id),
             ],
         ], [
-            'phone_number.regex' => 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx).',
+            'phone_number.regex' => $phoneRegexError,
             'phone_number.unique' => 'رقم الجوال مسجل بالفعل لدينا.',
         ]);
 

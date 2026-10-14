@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Button from '@/components/ui/Button';
 import AuthLayout from '@/components/ui/AuthLayout';
 import Input from '@/components/ui/Input';
+import PhoneInput from '@/components/ui/PhoneInput';
 import { User, Mail, Phone, Lock, MapPin, Briefcase, Gift, ArrowLeft, Sparkles } from 'lucide-react';
 import { register, getGifts, Gift as GiftType } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
@@ -49,11 +50,20 @@ export default function Register() {
     if (!email) newErrors.email = 'البريد الإلكتروني مطلوب';
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'صيغة البريد الإلكتروني غير صحيحة';
 
-    const saudiPhoneRegex = /^(05|\+9665|9665)[0-9]{8}$/;
-    if (!phoneNumber) {
+    const cleanPhone = (phoneNumber || '').replace(/\s+/g, '');
+    if (!cleanPhone || cleanPhone === '+') {
       newErrors.phoneNumber = 'رقم الجوال (واتساب) مطلوب';
-    } else if (!saudiPhoneRegex.test(phoneNumber.replace(/\s+/g, ''))) {
-      newErrors.phoneNumber = 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx)';
+    } else if (role !== 'seeker') {
+      const saudiPhoneRegex = /^(05|\+9665|9665)[0-9]{8}$/;
+      if (!saudiPhoneRegex.test(cleanPhone)) {
+        newErrors.phoneNumber = 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx)';
+      }
+    } else {
+      const intlPhoneRegex = /^(\+|00)?[1-9][0-9]{6,14}$/;
+      const saudiDomesticRegex = /^05[0-9]{8}$/;
+      if (!intlPhoneRegex.test(cleanPhone) && !saudiDomesticRegex.test(cleanPhone)) {
+        newErrors.phoneNumber = 'يرجى إدخال رقم جوال دولي صحيح مع رمز الدولة (مثال: +9665xxxxxxxx أو +2010xxxxxxxx)';
+      }
     }
 
     if (!password) newErrors.password = 'كلمة المرور مطلوبة';
@@ -176,23 +186,13 @@ export default function Register() {
 
           <Input
             containerClassName="md:col-span-2"
-            label="رقم الجوال (واتساب)"
-            type="tel"
-            value={phoneNumber}
-            onChange={e => setPhoneNumber(e.target.value)}
-            icon={Phone}
-            placeholder="05xxxxxxxx"
-            error={errors.phoneNumber}
-            dir="ltr"
-            className="text-right"
-            required
-          />
-
-          <Input
             as="select"
             label="نوع الحساب"
             value={role}
-            onChange={e => setRole(e.target.value)}
+            onChange={e => {
+              setRole(e.target.value);
+              setErrors(prev => ({ ...prev, phoneNumber: undefined }));
+            }}
             icon={Briefcase}
             required
           >
@@ -200,6 +200,16 @@ export default function Register() {
             <option value="seeker">صاحب احتياج (مستفيد)</option>
             <option value="visitor">زائرة (ضيفة وشريكة الأثر)</option>
           </Input>
+
+          <PhoneInput
+            containerClassName="md:col-span-2"
+            label="رقم الجوال (واتساب)"
+            value={phoneNumber}
+            onChange={setPhoneNumber}
+            isMultiCountry={role === 'seeker'}
+            error={errors.phoneNumber}
+            required
+          />
 
           {role === 'visitor' && (
             <div className="md:col-span-2 space-y-4 bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/10 p-6 rounded-[1.5rem] border border-primary/20 shadow-sm animate-fadeIn">

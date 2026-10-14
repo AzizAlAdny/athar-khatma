@@ -6,6 +6,7 @@ import AtharProfile from '@/components/ui/AtharProfile';
 import Hero from '@/components/ui/Hero';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PhoneInput from '@/components/ui/PhoneInput';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { getKhatmaProfile, KhatmaProfile, authUserKey, updateUserProfile, getUserReviews, Review } from '@/services/api';
@@ -185,16 +186,12 @@ export default function ProfilePage() {
                       icon={User}
                       placeholder="الاسم الذي سيظهر للآخرين"
                     />
-                    <Input
+                    <PhoneInput
                       containerClassName="md:col-span-2"
                       label="رقم الجوال (واتساب)"
-                      type="tel"
                       value={editPhoneNumber}
-                      onChange={e => setEditPhoneNumber(e.target.value)}
-                      icon={Phone}
-                      placeholder="05xxxxxxxx"
-                      dir="ltr"
-                      className="text-right"
+                      onChange={setEditPhoneNumber}
+                      isMultiCountry={user?.role === 'seeker'}
                     />
                     <div className="md:col-span-2 space-y-2">
                        <label className="block text-sm font-black text-primary mr-1">النبذة التعريفية</label>

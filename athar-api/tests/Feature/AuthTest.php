@@ -141,4 +141,47 @@ class AuthTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['phone_number']);
     }
+
+    public function test_seeker_can_register_with_international_phone_number()
+    {
+        $payload = [
+            'name' => 'Seeker International',
+            'email' => 'seeker.intl@example.com',
+            'phone_number' => '+201012345678',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'seeker',
+            'city' => 'Cairo',
+            'pledge_accepted' => true,
+        ];
+
+        $response = $this->postJson('/api/register', $payload);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('users', [
+            'email' => 'seeker.intl@example.com',
+            'phone_number' => '+201012345678',
+            'role' => 'seeker',
+        ]);
+    }
+
+    public function test_seeker_can_update_profile_with_international_phone()
+    {
+        $user = User::factory()->create([
+            'role' => 'seeker',
+            'phone_number' => '0512345678',
+            'email_verified_at' => now(),
+        ]);
+        $token = $user->createToken('test-token', ['user:update'])->plainTextToken;
+
+        $response = $this->withToken($token)->putJson('/api/user/profile', [
+            'phone_number' => '+971501234567',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'phone_number' => '+971501234567',
+        ]);
+    }
 }
