@@ -184,4 +184,49 @@ class AuthTest extends TestCase
             'phone_number' => '+971501234567',
         ]);
     }
+
+    public function test_khatma_can_register_with_international_phone_number()
+    {
+        $payload = [
+            'name' => 'Khatma International',
+            'email' => 'khatma.intl@example.com',
+            'phone_number' => '+96598765432',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'khatma',
+            'city' => 'Kuwait',
+            'pledge_accepted' => true,
+        ];
+
+        $response = $this->postJson('/api/register', $payload);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('users', [
+            'email' => 'khatma.intl@example.com',
+            'phone_number' => '+96598765432',
+            'role' => 'khatma',
+        ]);
+    }
+
+    public function test_visitor_can_register_with_international_phone_number()
+    {
+        $payload = [
+            'name' => 'Visitor International',
+            'email' => 'visitor.intl@example.com',
+            'phone_number' => '+97444123456',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => 'visitor',
+        ];
+
+        $response = $this->postJson('/api/register', $payload);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('users', [
+            'email' => 'visitor.intl@example.com',
+            'phone_number' => '+97444123456',
+            'role' => 'visitor',
+        ]);
+    }
 }
+

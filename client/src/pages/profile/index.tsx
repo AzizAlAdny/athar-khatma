@@ -191,7 +191,7 @@ export default function ProfilePage() {
                       label="رقم الجوال (واتساب)"
                       value={editPhoneNumber}
                       onChange={setEditPhoneNumber}
-                      isMultiCountry={user?.role === 'seeker'}
+                      isMultiCountry={true}
                     />
                     <div className="md:col-span-2 space-y-2">
                        <label className="block text-sm font-black text-primary mr-1">النبذة التعريفية</label>

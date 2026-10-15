@@ -45,7 +45,7 @@ export default function PhoneInput({
   label = 'رقم الجوال (واتساب)',
   value,
   onChange,
-  isMultiCountry = false,
+  isMultiCountry = true,
   error,
   containerClassName = '',
   disabled = false,

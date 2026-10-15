@@ -53,11 +53,6 @@ export default function Register() {
     const cleanPhone = (phoneNumber || '').replace(/\s+/g, '');
     if (!cleanPhone || cleanPhone === '+') {
       newErrors.phoneNumber = 'رقم الجوال (واتساب) مطلوب';
-    } else if (role !== 'seeker') {
-      const saudiPhoneRegex = /^(05|\+9665|9665)[0-9]{8}$/;
-      if (!saudiPhoneRegex.test(cleanPhone)) {
-        newErrors.phoneNumber = 'يرجى إدخال رقم جوال سعودي صحيح (مثال: 05xxxxxxxx أو +9665xxxxxxxx)';
-      }
     } else {
       const intlPhoneRegex = /^(\+|00)?[1-9][0-9]{6,14}$/;
       const saudiDomesticRegex = /^05[0-9]{8}$/;
@@ -206,7 +201,7 @@ export default function Register() {
             label="رقم الجوال (واتساب)"
             value={phoneNumber}
             onChange={setPhoneNumber}
-            isMultiCountry={role === 'seeker'}
+            isMultiCountry={true}
             error={errors.phoneNumber}
             required
           />
